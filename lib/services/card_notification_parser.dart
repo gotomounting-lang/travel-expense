@@ -140,6 +140,10 @@ class CardNotificationParser {
     '가맹점',
     '이용',
     '알림',
+    '실적인정',
+    '매입',
+    '확정',
+    '이용내역',
     'approved',
     'approval',
     'card',
@@ -147,11 +151,26 @@ class CardNotificationParser {
 
   static final _textDate = RegExp(r'(\d{1,2})/(\d{1,2})\s+(\d{1,2}):(\d{2})');
 
+  /// 카드 앱 이용내역 화면의 "2026. 09. 28" · "2026.09.28" · "2026-09-28".
+  static final _fullDate = RegExp(
+    r'(20\d{2})\s?[./-]\s?(\d{1,2})\s?[./-]\s?(\d{1,2})',
+  );
+
+  /// 붙여넣은 이용내역에서 결제가 끝났음을 뜻하는 말.
+  static final _settled = RegExp(r'매입|확정|결제완료|이용완료');
+
+  /// 원화 금액 (예: 31,528원). 내 나라 통화가 원화일 때 붙여넣기에서만 쓴다.
+  static final _wonAmount = RegExp(r'(\d{1,3}(?:,\d{3})+|\d+)\s?원');
+
   /// [useTextDate] 가 true 면 (붙여넣은 문구처럼 도착 시각을 모를 때)
-  /// 알림 글자 속 "월/일 시:분" 을 결제 시각으로 쓴다.
+  /// 알림 글자 속 "월/일 시:분" 이나 "2026. 09. 28" 을 결제 시각으로 쓴다.
+  /// 사용자가 직접 붙여넣은 것이므로 카드 앱 이용내역처럼 원화로 확정된
+  /// 해외 결제(매입금액)도 내 나라 통화 금액으로 읽는다.
   CardPayment? parse(CardNotification n, {bool useTextDate = false}) {
     final text = '${n.title}\n${n.text}'.trim();
-    if (!_approved.hasMatch(text) || _rejected.hasMatch(text)) return null;
+    if (_rejected.hasMatch(text)) return null;
+    final settled = useTextDate && _settled.hasMatch(text);
+    if (!_approved.hasMatch(text) && !settled) return null;
 
     String? currency;
     double? amount;
@@ -167,11 +186,46 @@ class CardNotificationParser {
       amountMatch = m;
       break;
     }
+    if (currency == null && useTextDate) {
+      // 외화 금액이 없으면 내 나라 통화 금액을 쓴다 (매입금액이 있으면 그것).
+      final matches = [
+        ..._currencyAmount
+            .allMatches(text)
+            .where((m) => (m[1] ?? m[4]) == homeCurrency),
+        if (homeCurrency == 'KRW') ..._wonAmount.allMatches(text),
+      ];
+      final purchase = text.indexOf('매입금액');
+      matches.sort((a, b) {
+        if (purchase >= 0) {
+          final pa = a.start > purchase ? 0 : 1;
+          final pb = b.start > purchase ? 0 : 1;
+          if (pa != pb) return pa - pb;
+        }
+        return a.start - b.start;
+      });
+      for (final m in matches) {
+        final raw = m.groupCount >= 4 ? (m[2] ?? m[3]!) : m[1]!;
+        final value = double.tryParse(raw.replaceAll(',', ''));
+        if (value == null || value <= 0) continue;
+        currency = homeCurrency;
+        amount = value;
+        amountMatch = m;
+        break;
+      }
+    }
     if (currency == null || amount == null) return null;
 
     final merchant = _merchant(text, amountMatch!);
     var spentAt = n.postedAt;
-    final d = useTextDate ? _textDate.firstMatch(text) : null;
+    final full = useTextDate ? _fullDate.firstMatch(text) : null;
+    if (full != null) {
+      final y = int.parse(full[1]!);
+      final month = int.parse(full[2]!);
+      final day = int.parse(full[3]!);
+      final parsed = DateTime(y, month, day, 12);
+      if (parsed.month == month && parsed.day == day) spentAt = parsed;
+    }
+    final d = useTextDate && full == null ? _textDate.firstMatch(text) : null;
     if (d != null) {
       final month = int.parse(d[1]!);
       final day = int.parse(d[2]!);

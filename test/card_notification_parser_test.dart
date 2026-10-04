@@ -89,4 +89,28 @@ void main() {
       isNull,
     );
   });
+
+  test('붙여넣은 카드 앱 이용내역(원화 매입금액)을 읽는다', () {
+    CardPayment? paste(String text) => parser.parse(
+      CardNotification(
+        id: 'p',
+        text: text,
+        postedAt: DateTime(2026, 10, 4, 15),
+      ),
+      useTextDate: true,
+    );
+    final p = paste(
+      '실적인정금액\n31,528원\n매입금액\n31,528원\n2026. 09. 28(매입)\n해외일시불\n확정',
+    )!;
+    expect(p.currency, 'KRW');
+    expect(p.amount, 31528);
+    expect(p.spentAt, DateTime(2026, 9, 28, 12));
+    expect(p.merchant, '');
+
+    // 매입금액이 실적인정금액과 다르면 매입금액을 쓴다.
+    expect(paste('실적인정금액 30,000원\n매입금액 31,528원\n확정')!.amount, 31528);
+    // 자동 알림에서는 여전히 원화(국내) 결제를 건너뛴다.
+    expect(parse('매입금액\n31,528원\n확정'), isNull);
+    expect(paste('매입 취소 31,528원'), isNull);
+  });
 }
