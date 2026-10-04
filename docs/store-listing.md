@@ -51,7 +51,7 @@ Travel Expense converts what you spend on a trip, including in Korea, into your 
 • Pie charts by category: food, snacks/cafe, souvenirs, shopping, transport, lodging, sightseeing.
 • Private by design: no developer server, no ads, no analytics. The app only accesses the sheet it created, and receipt photos and notifications never leave your phone.
 
-Available in Korean, English, Chinese and Japanese.
+Available in Korean, English, Chinese, Japanese, Vietnamese, Russian, German, Mongolian, French, Burmese, Filipino, Indonesian, Malay and Hindi.
 
 ## 中文 (zh-CN)
 

@@ -8,8 +8,9 @@ import 'user_profile.dart';
 
 /// 앱 언어를 정하는 순서:
 /// 1. 설정에서 직접 고른 언어
-/// 2. 국적 (한국 → 한국어, 중국·대만·홍콩·마카오 → 중국어, 일본 → 일본어, 그 외 → 영어)
-/// 3. 국적을 고르기 전(첫 화면): 기기(=Google Play) 언어, 지원하지 않으면 한국어
+/// 2. 국적의 언어 (앱이 그 나라 말을 지원할 때)
+/// 3. 기기(=Google Play) 언어 중 앱이 지원하는 언어
+/// 4. 국적을 골랐으면 영어, 아무것도 없으면 한국어
 class LocaleController extends ChangeNotifier {
   LocaleController({List<Locale> Function()? deviceLocales, this.profile})
     : _deviceLocales =
@@ -20,7 +21,22 @@ class LocaleController extends ChangeNotifier {
   /// 국적. 설정에서 언어를 직접 고르지 않았으면 국적 언어를 쓴다.
   final UserProfile? profile;
 
-  static const supported = ['ko', 'en', 'zh', 'ja'];
+  static const supported = [
+    'ko',
+    'en',
+    'zh',
+    'ja',
+    'vi',
+    'ru',
+    'de',
+    'mn',
+    'fr',
+    'my',
+    'fil',
+    'id',
+    'ms',
+    'hi',
+  ];
   static const fallback = Locale('ko');
 
   /// 언어 선택 화면에 쓰는 각 언어의 자기 이름.
@@ -29,6 +45,16 @@ class LocaleController extends ChangeNotifier {
     'en': 'English',
     'zh': '中文',
     'ja': '日本語',
+    'vi': 'Tiếng Việt',
+    'ru': 'Русский',
+    'de': 'Deutsch',
+    'mn': 'Монгол',
+    'fr': 'Français',
+    'my': 'မြန်မာ',
+    'fil': 'Filipino',
+    'id': 'Bahasa Indonesia',
+    'ms': 'Bahasa Melayu',
+    'hi': 'हिन्दी',
   };
 
   static const _prefKey = 'app_language';
@@ -57,21 +83,37 @@ class LocaleController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// MaterialApp.locale 에 넣는 값. null 이면 [resolve] 가 기기 언어로 고른다.
+  /// MaterialApp.locale 에 넣는 값.
+  /// 직접 고른 언어 > 국적의 언어(앱이 지원할 때) > 기기(플레이스토어) 언어 중
+  /// 지원하는 언어 > 국적을 골랐으면 영어.
+  /// null 이면 MaterialApp 이 [resolveDevice] 로 기기 언어를 고른다.
   Locale? get selected {
-    final code = _choice ?? profile?.country?.language;
-    return code == null ? null : Locale(code);
+    if (_choice != null) return Locale(_choice!);
+    final own = profile?.country?.ownLanguage;
+    return own == null ? null : Locale(own);
   }
 
   /// 지금 화면에 쓰는 언어.
-  Locale get current => selected ?? resolve(_deviceLocales());
+  Locale get current => selected ?? resolveDevice(_deviceLocales());
+
+  /// 기기 언어 중 지원하는 언어. 없으면 국적을 골랐을 때 영어, 아니면 한국어.
+  Locale resolveDevice(List<Locale>? deviceLocales) =>
+      _firstSupported(deviceLocales ?? const []) ??
+      (profile?.country == null ? fallback : const Locale('en'));
 
   /// 기기 언어 목록에서 처음으로 지원하는 언어를 고르고, 없으면 한국어.
-  static Locale resolve(List<Locale>? deviceLocales) {
-    for (final l in deviceLocales ?? const <Locale>[]) {
-      if (supported.contains(l.languageCode)) return Locale(l.languageCode);
+  static Locale resolve(List<Locale>? deviceLocales) =>
+      _firstSupported(deviceLocales ?? const []) ?? fallback;
+
+  /// 안드로이드 옛 버전이 쓰는 언어 코드 (인도네시아어 in, 타갈로그어 tl).
+  static const _aliases = {'in': 'id', 'tl': 'fil'};
+
+  static Locale? _firstSupported(List<Locale> locales) {
+    for (final l in locales) {
+      final code = _aliases[l.languageCode] ?? l.languageCode;
+      if (supported.contains(code)) return Locale(code);
     }
-    return fallback;
+    return null;
   }
 
   AppLocalizations get strings => lookupAppLocalizations(current);

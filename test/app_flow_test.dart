@@ -69,7 +69,7 @@ void main() {
     expect(find.text('지출 추가'), findsOneWidget);
   });
 
-  testWidgets('국적을 고르기 전 첫 화면: 기기 언어가 일본어면 일본어, 지원하지 않는 언어면 한국어', (
+  testWidgets('국적을 고르기 전 첫 화면: 기기(플레이스토어) 언어를 따르고, 지원하지 않는 언어면 한국어', (
     tester,
   ) async {
     late AppState state;
@@ -105,12 +105,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('旅行経費へようこそ'), findsOneWidget);
 
-    tester.platformDispatcher.localesTestValue = const [Locale('fr', 'FR')];
+    tester.platformDispatcher.localesTestValue = const [Locale('vi', 'VN')];
+    await tester.pumpAndSettle();
+    expect(find.text('Chào mừng đến với Travel Expense'), findsOneWidget);
+
+    tester.platformDispatcher.localesTestValue = const [Locale('th', 'TH')];
     await tester.pumpAndSettle();
     expect(find.text('여행 경비에 오신 것을 환영합니다'), findsOneWidget);
   });
 
-  testWidgets('로그인 다음에 국적을 고르면 그 나라 언어로 바뀐다 (그 외 나라는 영어)', (tester) async {
+  testWidgets('로그인 다음에 국적을 고르면 그 나라 언어로 바뀐다 (앱이 지원하지 않는 나라 말이면 기기 언어)', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     tester.platformDispatcher.localesTestValue = const [Locale('ko', 'KR')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -154,7 +160,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(profile.homeCurrency, 'EUR');
-    expect(locale.current, const Locale('en'));
+    expect(locale.current, const Locale('fr'));
+    expect(find.text('Nouveau voyage'), findsOneWidget);
+
+    // 앱이 말을 지원하지 않는 나라(태국)면 기기 언어(한국어)를 쓴다.
+    await tester.runAsync(() => profile.setCountry(Country.byCode('TH')!));
+    await tester.pumpAndSettle();
+    expect(find.text('새 여행'), findsOneWidget);
+
+    await tester.runAsync(() => profile.setCountry(Country.byCode('GB')!));
+    await tester.pumpAndSettle();
     expect(find.text('New trip'), findsOneWidget);
 
     await tester.runAsync(() => profile.setCountry(Country.byCode('TW')!));

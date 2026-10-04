@@ -92,10 +92,11 @@ class TravelExpenseApp extends StatelessWidget {
         builder: (context, locale, _) => MaterialApp(
           onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
           debugShowCheckedModeBanner: false,
-          // null 이면 기기 언어를 따르고, 지원하지 않는 언어면 한국어.
+          // null 이면 기기(플레이스토어) 언어를 따르고, 지원하지 않는 언어면
+          // 국적을 골랐을 때 영어, 아니면 한국어.
           locale: locale.selected,
           localeListResolutionCallback: (deviceLocales, _) =>
-              LocaleController.resolve(deviceLocales),
+              locale.resolveDevice(deviceLocales),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           theme: ThemeData(

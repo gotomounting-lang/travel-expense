@@ -67,6 +67,7 @@ class Currency {
     Currency('RUB', ['러시아 루블', 'Russian ruble', '俄罗斯卢布', 'ロシアルーブル']),
     Currency('AED', ['아랍에미리트 디르함', 'UAE dirham', '阿联酋迪拉姆', 'UAEディルハム']),
     Currency('SAR', ['사우디 리얄', 'Saudi riyal', '沙特里亚尔', 'サウジアラビアリヤル']),
+    Currency('MMK', ['미얀마 짯', 'Myanmar kyat', '缅甸元', 'ミャンマーチャット'], decimals: 0),
     Currency('MXN', ['멕시코 페소', 'Mexican peso', '墨西哥比索', 'メキシコペソ']),
     Currency('BRL', ['브라질 헤알', 'Brazilian real', '巴西雷亚尔', 'ブラジルレアル']),
     krw,
