@@ -329,4 +329,54 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get photoDeletedNote => '写真は端末内で解析した後すぐに削除され、保存・送信されることはありません。';
+
+  @override
+  String get cardAlertsSection => 'カード決済通知の自動記録';
+
+  @override
+  String get cardAlertsBody =>
+      '海外でカード決済すると、カードアプリ（またはメッセンジャー）の承認通知を読み取り、その日の旅行に自動で記録します。外貨決済の承認通知だけを端末内で処理し、他の通知は保存も送信もしません。';
+
+  @override
+  String get cardAlertsOn => 'オン';
+
+  @override
+  String get cardAlertsOff => 'オフ（通知へのアクセス許可が必要）';
+
+  @override
+  String get cardAlertsAllow => '通知へのアクセスを許可';
+
+  @override
+  String get cardAlertsSettings => '通知アクセス設定を開く';
+
+  @override
+  String get cardAlertsConsentTitle => '通知へのアクセスについて';
+
+  @override
+  String cardAlertsConsentBody(String appName) {
+    return '次の画面で「$appName」の通知へのアクセスを許可すると、アプリは届いた通知のうち海外カード決済の承認通知だけを支出として記録します。通知内容は端末の外に送られず、同じ設定からいつでもオフにできます。';
+  }
+
+  @override
+  String get agreeAndContinue => '同意して続行';
+
+  @override
+  String cardAlertsWaiting(int count) {
+    return '支払日に合う旅行がないカード決済が $count件あります。その期間の旅行を作成すると自動で追加されます。';
+  }
+
+  @override
+  String get pasteCardAlert => 'カード通知の文面を貼り付け';
+
+  @override
+  String get pasteCardAlertHint => 'カードアプリやSMSで届いた海外承認通知を貼り付けてください。';
+
+  @override
+  String get pasteCardAlertFailed => '海外決済の承認通知として読み取れませんでした。手入力してください。';
+
+  @override
+  String get cardReadNotice => 'カード通知から読み取りました。確認・修正してから保存してください。';
+
+  @override
+  String get read => '読み取る';
 }

@@ -8,6 +8,8 @@ import '../l10n/app_localizations.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
+import '../services/card_notification_parser.dart';
+import '../services/card_notification_source.dart';
 import '../services/exchange_rate_service.dart';
 import '../services/google_account_service.dart';
 import '../services/sheets_sync_service.dart';
@@ -23,8 +25,11 @@ class AppState extends ChangeNotifier {
     required this.account,
     required this.sync,
     required this.strings,
+    CardNotificationSource? cardNotifications,
     DateTime Function()? now,
-  }) : _now = now ?? DateTime.now {
+  }) : cardNotifications =
+           cardNotifications ?? CardNotificationSource(supported: false),
+       _now = now ?? DateTime.now {
     account.addListener(_onAccountChanged);
   }
 
@@ -35,6 +40,10 @@ class AppState extends ChangeNotifier {
 
   /// 시트에 쓸 언어 (앱 화면 언어와 같다).
   final AppLocalizations Function() strings;
+
+  /// 안드로이드 카드 결제 알림. iOS·테스트에서는 아무것도 하지 않는다.
+  final CardNotificationSource cardNotifications;
+  final _cardParser = CardNotificationParser();
   final DateTime Function() _now;
   final _uuid = const Uuid();
 
@@ -90,6 +99,8 @@ class AppState extends ChangeNotifier {
     await repository.saveTrip(trip);
     await load();
     _scheduleSync();
+    // 이 여행 기간에 해당하는 기다리던 카드 알림이 있으면 넣는다.
+    unawaited(importCardNotifications());
     return trip;
   }
 
@@ -217,6 +228,88 @@ class AppState extends ChangeNotifier {
       _scheduleSync();
     }
   }
+
+  // ---- 카드 결제 알림 ----
+
+  int _waitingCardPayments = 0;
+
+  /// 결제일에 맞는 여행이 없어 기다리는 카드 결제 수.
+  int get waitingCardPayments => _waitingCardPayments;
+
+  Future<void>? _importing;
+
+  /// 기기에 모인 카드 결제 알림을 해당 날짜의 여행에 지출로 기록한다.
+  /// 맞는 여행이 없는 알림은 지우지 않고 남겨 두었다가, 여행이 생기면 넣는다.
+  Future<void> importCardNotifications() async {
+    while (_importing != null) {
+      await _importing;
+    }
+    final run = _importCardNotifications();
+    _importing = run;
+    try {
+      await run;
+    } catch (e) {
+      debugPrint('card notification import failed: $e');
+    } finally {
+      _importing = null;
+    }
+  }
+
+  Future<void> _importCardNotifications() async {
+    final pending = await cardNotifications.pending();
+    final done = <String>[];
+    var waiting = 0;
+    for (final n in pending) {
+      final payment = _cardParser.parse(n);
+      if (payment == null) {
+        done.add(n.id); // 카드 결제가 아닌 알림
+        continue;
+      }
+      final trip = tripFor(payment.spentAt);
+      if (trip == null) {
+        waiting++;
+        continue;
+      }
+      if (!_isDuplicate(trip.id, payment)) {
+        await saveExpense(
+          tripId: trip.id,
+          spentAt: payment.spentAt,
+          category: payment.category ?? ExpenseCategory.other,
+          currency: payment.currency,
+          amount: payment.amount,
+          merchant: payment.merchant,
+          paymentMethod: payment.card,
+          source: ExpenseSource.cardNotification,
+        );
+      }
+      done.add(n.id);
+    }
+    await cardNotifications.remove(done);
+    if (waiting != _waitingCardPayments) {
+      _waitingCardPayments = waiting;
+      notifyListeners();
+    }
+  }
+
+  /// 결제일이 기간 안에 드는 여행 (여럿이면 가장 늦게 시작한 여행).
+  Trip? tripFor(DateTime at) {
+    final day = dateOnly(at);
+    final matches =
+        _trips
+            .where((t) => !day.isBefore(t.startDate) && !day.isAfter(t.endDate))
+            .toList()
+          ..sort((a, b) => b.startDate.compareTo(a.startDate));
+    return matches.firstOrNull;
+  }
+
+  /// 카드 앱 푸시와 알림톡이 둘 다 오거나 이미 직접 입력한 경우를 걸러낸다.
+  bool _isDuplicate(String tripId, CardPayment p) => _expenses.any(
+    (e) =>
+        e.tripId == tripId &&
+        e.currency == p.currency &&
+        (e.amount - p.amount).abs() < 0.005 &&
+        e.spentAt.difference(p.spentAt).inMinutes.abs() <= 10,
+  );
 
   // ---- 구글 시트 ----
 

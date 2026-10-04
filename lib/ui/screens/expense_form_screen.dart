@@ -25,11 +25,17 @@ class ExpenseFormScreen extends StatefulWidget {
     required this.trip,
     this.expense,
     this.receipt,
+    this.draftSource = ExpenseSource.receipt,
   });
 
   final Trip trip;
   final Expense? expense;
+
+  /// 영수증이나 붙여넣은 카드 알림에서 읽은 내용.
   final ReceiptDraft? receipt;
+
+  /// [receipt] 가 어디서 왔는지 (영수증 / 카드 알림).
+  final ExpenseSource draftSource;
 
   @override
   State<ExpenseFormScreen> createState() => _ExpenseFormScreenState();
@@ -49,7 +55,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
     text: widget.expense?.merchant ?? _receipt?.merchant,
   );
   late final _payment = TextEditingController(
-    text: widget.expense?.paymentMethod,
+    text: widget.expense?.paymentMethod ?? _receipt?.paymentMethod,
   );
   late final _memo = TextEditingController(
     text:
@@ -162,7 +168,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
       merchant: _merchant.text,
       paymentMethod: _payment.text,
       memo: _memo.text,
-      source: _receipt == null ? ExpenseSource.manual : ExpenseSource.receipt,
+      source: _receipt == null ? ExpenseSource.manual : widget.draftSource,
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -206,7 +212,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          _receipt.amount == null
+                          widget.draftSource == ExpenseSource.cardNotification
+                              ? l.cardReadNotice
+                              : _receipt.amount == null
                               ? l.receiptNothingFound
                               : l.receiptReadNotice,
                         ),

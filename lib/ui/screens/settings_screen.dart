@@ -121,12 +121,118 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             ),
+          if (state.cardNotifications.isSupported) ...[
+            const Divider(height: 40),
+            const _CardAlertsSection(),
+          ],
           const Divider(height: 40),
           Text(l.rateInfoTitle, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(l.rateInfoBody, style: theme.textTheme.bodyMedium),
         ],
       ),
+    );
+  }
+}
+
+/// 카드 결제 알림 자동 기록 켜기. 시스템 설정으로 보내기 전에 무엇을 읽는지
+/// 먼저 알리고 동의를 받는다 (Google Play 정책의 사전 고지).
+class _CardAlertsSection extends StatefulWidget {
+  const _CardAlertsSection();
+
+  @override
+  State<_CardAlertsSection> createState() => _CardAlertsSectionState();
+}
+
+class _CardAlertsSectionState extends State<_CardAlertsSection> {
+  bool? _enabled;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+    // 시스템 설정에서 돌아오면 상태를 다시 확인한다.
+    _lifecycle = AppLifecycleListener(onResume: _refresh);
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final enabled = await context
+        .read<AppState>()
+        .cardNotifications
+        .isEnabled();
+    if (mounted) setState(() => _enabled = enabled);
+  }
+
+  Future<void> _openSettings() async {
+    final l = AppLocalizations.of(context);
+    final source = context.read<AppState>().cardNotifications;
+    if (_enabled != true) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.cardAlertsConsentTitle),
+          content: Text(l.cardAlertsConsentBody(l.appTitle)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.agreeAndContinue),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
+    await source.openSettings();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final enabled = _enabled;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l.cardAlertsSection, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(l.cardAlertsBody, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 12),
+        if (enabled != null)
+          Row(
+            children: [
+              Icon(
+                enabled ? Icons.check_circle : Icons.notifications_off_outlined,
+                color: enabled
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.error,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(enabled ? l.cardAlertsOn : l.cardAlertsOff)),
+            ],
+          ),
+        const SizedBox(height: 8),
+        enabled == true
+            ? OutlinedButton(
+                onPressed: _openSettings,
+                child: Text(l.cardAlertsSettings),
+              )
+            : FilledButton.icon(
+                onPressed: _openSettings,
+                icon: const Icon(Icons.notifications_active_outlined),
+                label: Text(l.cardAlertsAllow),
+              ),
+      ],
     );
   }
 }

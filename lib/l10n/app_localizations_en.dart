@@ -341,4 +341,63 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get photoDeletedNote =>
       'Photos are analyzed on your device and deleted right away. They are never stored or uploaded.';
+
+  @override
+  String get cardAlertsSection => 'Auto-record card payment alerts';
+
+  @override
+  String get cardAlertsBody =>
+      'When you pay abroad by card, the approval alert from your card app (or messenger) is read and recorded in the trip for that date. Only foreign-currency approval alerts are processed, on your device. Other notifications are never stored or sent anywhere.';
+
+  @override
+  String get cardAlertsOn => 'On';
+
+  @override
+  String get cardAlertsOff => 'Off (notification access needed)';
+
+  @override
+  String get cardAlertsAllow => 'Allow notification access';
+
+  @override
+  String get cardAlertsSettings => 'Open notification access settings';
+
+  @override
+  String get cardAlertsConsentTitle => 'About notification access';
+
+  @override
+  String cardAlertsConsentBody(String appName) {
+    return 'On the next screen, allow notification access for \"$appName\". The app will pick out only foreign card payment approvals from your notifications and record them as expenses. Notification content never leaves your device, and you can turn this off anytime in the same setting.';
+  }
+
+  @override
+  String get agreeAndContinue => 'Agree and continue';
+
+  @override
+  String cardAlertsWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count card payments are',
+      one: '1 card payment is',
+    );
+    return '$_temp0 waiting for a trip that covers the payment date. Create that trip and they\'ll be added automatically.';
+  }
+
+  @override
+  String get pasteCardAlert => 'Paste card alert text';
+
+  @override
+  String get pasteCardAlertHint =>
+      'Paste the approval alert you got from your card app or SMS.';
+
+  @override
+  String get pasteCardAlertFailed =>
+      'Couldn\'t read this as a foreign payment approval. Please enter it manually.';
+
+  @override
+  String get cardReadNotice =>
+      'Filled in from your card alert. Check and fix before saving.';
+
+  @override
+  String get read => 'Read';
 }

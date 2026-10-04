@@ -701,6 +701,96 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'사진은 기기 안에서 분석한 뒤 바로 삭제되며, 어디에도 저장·전송되지 않습니다.'**
   String get photoDeletedNote;
+
+  /// No description provided for @cardAlertsSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'카드 결제 알림 자동 기록'**
+  String get cardAlertsSection;
+
+  /// No description provided for @cardAlertsBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'해외에서 카드로 결제하면 카드 앱이나 카카오톡 알림톡으로 오는 승인 알림을 읽어 그 날짜의 여행에 자동으로 기록합니다. 외화 결제 승인 알림만 기기 안에서 처리하고, 다른 알림은 저장하지 않으며 어디로도 보내지 않습니다.'**
+  String get cardAlertsBody;
+
+  /// No description provided for @cardAlertsOn.
+  ///
+  /// In ko, this message translates to:
+  /// **'켜짐'**
+  String get cardAlertsOn;
+
+  /// No description provided for @cardAlertsOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'꺼짐 (알림 접근 허용 필요)'**
+  String get cardAlertsOff;
+
+  /// No description provided for @cardAlertsAllow.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 접근 허용하기'**
+  String get cardAlertsAllow;
+
+  /// No description provided for @cardAlertsSettings.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 접근 설정 열기'**
+  String get cardAlertsSettings;
+
+  /// No description provided for @cardAlertsConsentTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 접근 안내'**
+  String get cardAlertsConsentTitle;
+
+  /// No description provided for @cardAlertsConsentBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음 화면에서 \"{appName}\"의 알림 접근을 허용하면, 앱은 휴대폰에 오는 알림 중 해외 카드 결제 승인 알림만 골라 지출로 기록합니다. 알림 내용은 기기 밖으로 보내지 않으며, 언제든 같은 설정에서 끌 수 있습니다.'**
+  String cardAlertsConsentBody(String appName);
+
+  /// No description provided for @agreeAndContinue.
+  ///
+  /// In ko, this message translates to:
+  /// **'동의하고 계속'**
+  String get agreeAndContinue;
+
+  /// No description provided for @cardAlertsWaiting.
+  ///
+  /// In ko, this message translates to:
+  /// **'결제일에 맞는 여행이 없는 카드 결제 {count}건이 기다리고 있어요. 그 기간의 여행을 만들면 자동으로 들어갑니다.'**
+  String cardAlertsWaiting(int count);
+
+  /// No description provided for @pasteCardAlert.
+  ///
+  /// In ko, this message translates to:
+  /// **'카드 알림 문구 붙여넣기'**
+  String get pasteCardAlert;
+
+  /// No description provided for @pasteCardAlertHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'카드 앱·문자로 받은 해외 승인 알림 내용을 붙여넣으세요.'**
+  String get pasteCardAlertHint;
+
+  /// No description provided for @pasteCardAlertFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'해외 결제 승인 알림으로 읽지 못했어요. 직접 입력해 주세요.'**
+  String get pasteCardAlertFailed;
+
+  /// No description provided for @cardReadNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'카드 알림에서 읽은 내용입니다. 확인하고 고친 뒤 저장하세요.'**
+  String get cardReadNotice;
+
+  /// No description provided for @read.
+  ///
+  /// In ko, this message translates to:
+  /// **'읽기'**
+  String get read;
 }
 
 class _AppLocalizationsDelegate

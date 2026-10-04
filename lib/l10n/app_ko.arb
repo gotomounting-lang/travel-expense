@@ -168,5 +168,34 @@
       }
     }
   },
-  "photoDeletedNote": "사진은 기기 안에서 분석한 뒤 바로 삭제되며, 어디에도 저장·전송되지 않습니다."
+  "photoDeletedNote": "사진은 기기 안에서 분석한 뒤 바로 삭제되며, 어디에도 저장·전송되지 않습니다.",
+  "cardAlertsSection": "카드 결제 알림 자동 기록",
+  "cardAlertsBody": "해외에서 카드로 결제하면 카드 앱이나 카카오톡 알림톡으로 오는 승인 알림을 읽어 그 날짜의 여행에 자동으로 기록합니다. 외화 결제 승인 알림만 기기 안에서 처리하고, 다른 알림은 저장하지 않으며 어디로도 보내지 않습니다.",
+  "cardAlertsOn": "켜짐",
+  "cardAlertsOff": "꺼짐 (알림 접근 허용 필요)",
+  "cardAlertsAllow": "알림 접근 허용하기",
+  "cardAlertsSettings": "알림 접근 설정 열기",
+  "cardAlertsConsentTitle": "알림 접근 안내",
+  "cardAlertsConsentBody": "다음 화면에서 \"{appName}\"의 알림 접근을 허용하면, 앱은 휴대폰에 오는 알림 중 해외 카드 결제 승인 알림만 골라 지출로 기록합니다. 알림 내용은 기기 밖으로 보내지 않으며, 언제든 같은 설정에서 끌 수 있습니다.",
+  "@cardAlertsConsentBody": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "agreeAndContinue": "동의하고 계속",
+  "cardAlertsWaiting": "결제일에 맞는 여행이 없는 카드 결제 {count}건이 기다리고 있어요. 그 기간의 여행을 만들면 자동으로 들어갑니다.",
+  "@cardAlertsWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteCardAlert": "카드 알림 문구 붙여넣기",
+  "pasteCardAlertHint": "카드 앱·문자로 받은 해외 승인 알림 내용을 붙여넣으세요.",
+  "pasteCardAlertFailed": "해외 결제 승인 알림으로 읽지 못했어요. 직접 입력해 주세요.",
+  "cardReadNotice": "카드 알림에서 읽은 내용입니다. 확인하고 고친 뒤 저장하세요.",
+  "read": "읽기"
 }

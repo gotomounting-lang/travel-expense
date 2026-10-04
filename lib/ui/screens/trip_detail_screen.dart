@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/expense.dart';
 import '../../models/trip.dart';
+import '../../services/card_notification_parser.dart';
 import '../../services/receipt_scanner.dart';
 import '../../services/sheet_rows.dart';
 import '../../state/app_state.dart';
@@ -142,7 +143,7 @@ class TripDetailScreen extends StatelessWidget {
   }
 }
 
-enum _AddMode { camera, gallery, manual }
+enum _AddMode { camera, gallery, paste, manual }
 
 /// 지출 추가 방법 고르기: 영수증 촬영 / 앨범 사진 / 직접 입력.
 Future<void> _addExpense(BuildContext context, Trip trip) async {
@@ -163,6 +164,11 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
             leading: const Icon(Icons.photo_library_outlined),
             title: Text(l.pickReceipt),
             onTap: () => Navigator.pop(ctx, _AddMode.gallery),
+          ),
+          ListTile(
+            leading: const Icon(Icons.content_paste),
+            title: Text(l.pasteCardAlert),
+            onTap: () => Navigator.pop(ctx, _AddMode.paste),
           ),
           ListTile(
             leading: const Icon(Icons.edit_outlined),
@@ -187,6 +193,10 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
     navigator.push(
       MaterialPageRoute(builder: (_) => ExpenseFormScreen(trip: trip)),
     );
+    return;
+  }
+  if (mode == _AddMode.paste) {
+    await _pasteCardAlert(context, trip);
     return;
   }
 
@@ -232,6 +242,54 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
     if (progressShown) navigator.pop();
     messenger.showSnackBar(SnackBar(content: Text(l.receiptScanFailed('$e'))));
   }
+}
+
+/// iOS 처럼 알림을 자동으로 읽을 수 없을 때: 알림 문구를 붙여넣어 읽는다.
+Future<void> _pasteCardAlert(BuildContext context, Trip trip) async {
+  final l = AppLocalizations.of(context);
+  final controller = TextEditingController();
+  final text = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l.pasteCardAlert),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        minLines: 3,
+        maxLines: 8,
+        decoration: InputDecoration(hintText: l.pasteCardAlertHint),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, controller.text),
+          child: Text(l.read),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (text == null || text.trim().isEmpty || !context.mounted) return;
+
+  final payment = CardNotificationParser().parse(
+    CardNotification(id: 'paste', text: text, postedAt: DateTime.now()),
+    useTextDate: true,
+  );
+  if (payment == null) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(l.pasteCardAlertFailed)));
+  }
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => payment == null
+          ? ExpenseFormScreen(trip: trip)
+          : ExpenseFormScreen(
+              trip: trip,
+              receipt: payment.toDraft(),
+              draftSource: ExpenseSource.cardNotification,
+            ),
+    ),
+  );
 }
 
 class _ExpenseTile extends StatelessWidget {

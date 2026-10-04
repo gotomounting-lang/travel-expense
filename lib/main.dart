@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'data/expense_repository.dart';
 import 'l10n/app_localizations.dart';
+import 'services/card_notification_source.dart';
 import 'services/exchange_rate_service.dart';
 import 'services/google_account_service.dart';
 import 'services/receipt_scanner.dart';
@@ -34,12 +35,18 @@ Future<void> main() async {
     account: account,
     sync: SheetsSyncService(account),
     strings: () => locale.strings,
+    cardNotifications: CardNotificationSource(),
   );
   await state.load();
   // 언어를 바꾸면 시트 머리글·탭 이름도 그 언어로 다시 쓴다.
   locale.addListener(state.syncNow);
   // 로그인 확인은 화면을 띄운 뒤 백그라운드에서 한다.
   account.init();
+
+  // 카드 결제 알림: 앱을 열 때, 다시 돌아올 때, 켜져 있는 동안 새로 올 때 기록한다.
+  state.importCardNotifications();
+  AppLifecycleListener(onResume: state.importCardNotifications);
+  state.cardNotifications.onNew.listen((_) => state.importCardNotifications());
 
   runApp(TravelExpenseApp(state: state, locale: locale));
 }

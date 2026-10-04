@@ -33,6 +33,7 @@ class ReceiptDraft {
     this.merchant = '',
     this.category,
     this.items = const [],
+    this.paymentMethod = '',
   });
 
   final double? amount;
@@ -43,6 +44,9 @@ class ReceiptDraft {
   final String merchant;
   final ExpenseCategory? category;
   final List<ReceiptItem> items;
+
+  /// 카드 알림에서 읽은 카드 이름 (영수증에서는 비어 있음).
+  final String paymentMethod;
 
   bool get isEmpty => amount == null && date == null && merchant.isEmpty;
 }

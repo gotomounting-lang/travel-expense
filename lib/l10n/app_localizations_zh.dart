@@ -327,4 +327,54 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get photoDeletedNote => '照片仅在设备上识别并立即删除，不会保存或上传。';
+
+  @override
+  String get cardAlertsSection => '自动记录银行卡消费通知';
+
+  @override
+  String get cardAlertsBody =>
+      '在境外刷卡时，读取银行卡应用（或消息应用）发来的消费通知，并自动记录到当天的旅行中。仅在设备上处理外币消费通知，其他通知不会保存或发送到任何地方。';
+
+  @override
+  String get cardAlertsOn => '已开启';
+
+  @override
+  String get cardAlertsOff => '未开启（需要通知使用权）';
+
+  @override
+  String get cardAlertsAllow => '允许通知使用权';
+
+  @override
+  String get cardAlertsSettings => '打开通知使用权设置';
+
+  @override
+  String get cardAlertsConsentTitle => '关于通知使用权';
+
+  @override
+  String cardAlertsConsentBody(String appName) {
+    return '请在下一个页面允许“$appName”使用通知。应用只会从通知中挑选境外银行卡消费通知并记为支出。通知内容不会离开你的设备，你可以随时在同一设置中关闭。';
+  }
+
+  @override
+  String get agreeAndContinue => '同意并继续';
+
+  @override
+  String cardAlertsWaiting(int count) {
+    return '有 $count 笔银行卡消费没有对应日期的旅行。创建该期间的旅行后会自动加入。';
+  }
+
+  @override
+  String get pasteCardAlert => '粘贴银行卡通知内容';
+
+  @override
+  String get pasteCardAlertHint => '粘贴银行卡应用或短信收到的境外消费通知。';
+
+  @override
+  String get pasteCardAlertFailed => '无法识别为境外消费通知，请手动输入。';
+
+  @override
+  String get cardReadNotice => '已根据银行卡通知填写，请检查修改后保存。';
+
+  @override
+  String get read => '识别';
 }

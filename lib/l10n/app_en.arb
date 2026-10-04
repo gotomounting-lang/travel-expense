@@ -99,5 +99,20 @@
   "receiptReadNotice": "Filled in from your receipt. Check and fix before saving. The photo was deleted after analysis.",
   "receiptNothingFound": "Couldn't find an amount on the receipt. Please enter it manually. The photo was deleted.",
   "receiptScanFailed": "Couldn't read the receipt: {details}",
-  "photoDeletedNote": "Photos are analyzed on your device and deleted right away. They are never stored or uploaded."
+  "photoDeletedNote": "Photos are analyzed on your device and deleted right away. They are never stored or uploaded.",
+  "cardAlertsSection": "Auto-record card payment alerts",
+  "cardAlertsBody": "When you pay abroad by card, the approval alert from your card app (or messenger) is read and recorded in the trip for that date. Only foreign-currency approval alerts are processed, on your device. Other notifications are never stored or sent anywhere.",
+  "cardAlertsOn": "On",
+  "cardAlertsOff": "Off (notification access needed)",
+  "cardAlertsAllow": "Allow notification access",
+  "cardAlertsSettings": "Open notification access settings",
+  "cardAlertsConsentTitle": "About notification access",
+  "cardAlertsConsentBody": "On the next screen, allow notification access for \"{appName}\". The app will pick out only foreign card payment approvals from your notifications and record them as expenses. Notification content never leaves your device, and you can turn this off anytime in the same setting.",
+  "agreeAndContinue": "Agree and continue",
+  "cardAlertsWaiting": "{count, plural, =1{1 card payment is} other{{count} card payments are}} waiting for a trip that covers the payment date. Create that trip and they'll be added automatically.",
+  "pasteCardAlert": "Paste card alert text",
+  "pasteCardAlertHint": "Paste the approval alert you got from your card app or SMS.",
+  "pasteCardAlertFailed": "Couldn't read this as a foreign payment approval. Please enter it manually.",
+  "cardReadNotice": "Filled in from your card alert. Check and fix before saving.",
+  "read": "Read"
 }

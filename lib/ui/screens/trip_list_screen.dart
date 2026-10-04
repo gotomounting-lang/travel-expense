@@ -35,14 +35,33 @@ class TripListScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: trips.isEmpty
-          ? const _EmptyState()
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: trips.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, i) => _TripCard(trip: trips[i]),
+      body: Column(
+        children: [
+          if (state.waitingCardPayments > 0)
+            MaterialBanner(
+              leading: const Icon(Icons.credit_card),
+              content: Text(l.cardAlertsWaiting(state.waitingCardPayments)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TripFormScreen()),
+                  ),
+                  child: Text(l.newTrip),
+                ),
+              ],
             ),
+          Expanded(
+            child: trips.isEmpty
+                ? const _EmptyState()
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    itemCount: trips.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) => _TripCard(trip: trips[i]),
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final trip = await Navigator.of(context).push<Trip>(
