@@ -16,9 +16,17 @@ import 'state/user_profile.dart';
 import 'ui/screens/trip_list_screen.dart';
 import 'ui/screens/welcome_screen.dart';
 
-/// Google Cloud 콘솔에서 만든 "웹 애플리케이션" OAuth 클라이언트 ID.
-/// `flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=...` 로 넣는다. (README 참고)
-const _serverClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+/// Google Cloud 콘솔(프로젝트 travel-expense)에서 만든 "웹 애플리케이션" OAuth
+/// 클라이언트 ID. 공개돼도 되는 값이라 코드에 둔다. 다른 프로젝트로 시험할 때는
+/// `--dart-define=GOOGLE_SERVER_CLIENT_ID=...` 로 바꿀 수 있다. (README 참고)
+const _defaultServerClientId =
+    '56943146897-atnq01098spr65nqg2tkej54krisuvr7.apps.googleusercontent.com';
+const _definedServerClientId = String.fromEnvironment(
+  'GOOGLE_SERVER_CLIENT_ID',
+);
+const _serverClientId = _definedServerClientId == ''
+    ? _defaultServerClientId
+    : _definedServerClientId;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,9 +38,7 @@ Future<void> main() async {
   await locale.load();
 
   final repository = await ExpenseRepository.open();
-  final account = GoogleAccountService(
-    serverClientId: _serverClientId.isEmpty ? null : _serverClientId,
-  );
+  final account = GoogleAccountService(serverClientId: _serverClientId);
   final state = AppState(
     repository: repository,
     rates: ExchangeRateService(client: http.Client(), cache: repository),

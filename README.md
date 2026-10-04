@@ -71,7 +71,7 @@ Flutter 3.47 (Dart 3.13) 기준입니다. GitHub Actions 가 PR 마다 분석·�
 4. **사용자 인증 정보 → OAuth 클라이언트 ID** 를 두 개 만듭니다.
    - **Android**: 패키지 이름 `com.gotomounting.travelexpense`, 서명 인증서 SHA-1 (아래 서명 키의 SHA-1. Play 출시 후에는 Play Console 의 "앱 서명 키" SHA-1 도 추가)
    - **웹 애플리케이션**: 이 클라이언트 ID 가 `GOOGLE_SERVER_CLIENT_ID` 입니다.
-5. GitHub 저장소 **Settings → Secrets and variables → Actions → Variables** 에 `GOOGLE_SERVER_CLIENT_ID` 를 추가합니다.
+5. 웹 클라이언트 ID 는 `lib/main.dart` 의 `_defaultServerClientId` 에 들어 있습니다(공개돼도 되는 값). 다른 Cloud 프로젝트로 시험할 때만 `--dart-define=GOOGLE_SERVER_CLIENT_ID=...` 나 GitHub Actions 변수 `GOOGLE_SERVER_CLIENT_ID` 로 바꿉니다.
 
 ### 서명 키
 
