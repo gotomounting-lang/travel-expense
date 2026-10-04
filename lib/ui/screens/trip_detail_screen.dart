@@ -157,6 +157,11 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: Text(l.enterManually),
+            onTap: () => Navigator.pop(ctx, _AddMode.manual),
+          ),
+          ListTile(
             leading: const Icon(Icons.photo_camera_outlined),
             title: Text(l.scanReceipt),
             onTap: () => Navigator.pop(ctx, _AddMode.camera),
@@ -170,11 +175,6 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
             leading: const Icon(Icons.content_paste),
             title: Text(l.pasteCardAlert),
             onTap: () => Navigator.pop(ctx, _AddMode.paste),
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_outlined),
-            title: Text(l.enterManually),
-            onTap: () => Navigator.pop(ctx, _AddMode.manual),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
