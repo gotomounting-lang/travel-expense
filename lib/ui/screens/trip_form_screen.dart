@@ -45,6 +45,8 @@ class _TripFormScreenState extends State<TripFormScreen> {
       lastDate: DateTime(DateTime.now().year + 3),
       initialDateRange: _range,
       helpText: AppLocalizations.of(context).tripPeriod,
+      // 직접 타자 입력은 키보드에 '.' 이 없는 기기가 있어 막는다 (달력에서만 고른다).
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
     );
     if (picked != null) setState(() => _range = picked);
   }

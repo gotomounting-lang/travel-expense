@@ -125,6 +125,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
       initialDate: _spentAt,
       firstDate: DateTime(2015),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
     );
     if (picked == null) return;
     setState(() {
