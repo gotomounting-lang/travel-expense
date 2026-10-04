@@ -76,13 +76,8 @@ class ReceiptParser {
     final all = rows.join('\n');
 
     var currency = detectCurrency(all);
-    // 영수증에 통화 표시가 있어야 통화를 확인한 것으로 본다. 다만 통화 표시가
-    // 하나도 없는 한글 영수증은 원화다 (한국 영수증엔 "원"이 없는 경우가 많다).
-    var currencyFound = _currenciesIn(all).isNotEmpty;
-    if (!currencyFound && RegExp(r'[가-힣]').allMatches(all).length >= 6) {
-      currency = 'KRW';
-      currencyFound = true;
-    }
+    // 영수증에 통화 표시(₩, ￦, 원, \$, RM...)가 있어야 통화를 확인한 것으로 본다.
+    final currencyFound = _currenciesIn(all).isNotEmpty;
     final decimals = Currency.byCode(currency).decimals;
     final amount = _findTotal(rows, decimals);
     // 합계 줄에 통화 표시가 있으면 그것이 실제 결제 통화다
@@ -448,6 +443,7 @@ class ReceiptParser {
     '€': 'EUR',
     '£': 'GBP',
     '₩': 'KRW',
+    '￦': 'KRW',
     '฿': 'THB',
     '₫': 'VND',
     '₱': 'PHP',
@@ -458,7 +454,6 @@ class ReceiptParser {
     '₸': 'KZT',
     '円': 'JPY',
     '元': 'CNY',
-    '원': 'KRW',
     'บาท': 'THB',
     'ĐỒNG': 'VND',
   };
@@ -490,6 +485,8 @@ class ReceiptParser {
     }
     // 'RM 12.50', 'Rp 25.000' 처럼 숫자 바로 앞의 표시만 본다 ("TERMINAL" 의 RM 은 아님).
     if (RegExp(r'\bRM\s?\d').hasMatch(upper)) found.add('MYR');
+    // '원' 은 숫자 바로 뒤에 올 때만 ("17,600원"). "회원" 의 원은 아님.
+    if (RegExp(r'\d\s?원').hasMatch(text)) found.add('KRW');
     if (RegExp(r'\bRP\.?\s?\d').hasMatch(upper)) found.add('IDR');
     if (text.contains('¥') || text.contains('￥')) {
       found.add(tripCurrency == 'CNY' ? 'CNY' : 'JPY');
@@ -657,7 +654,7 @@ class ReceiptParser {
   // ---- 품목 ----
 
   static final _trailingPrice = RegExp(
-    r'^(.*?[^\d\s.,x×@*].*?)\s*[¥￥$€£₩฿₫]?\s*(\d[\d,.]*)\s*[円元원]?\s*$',
+    r'^(.*?[^\d\s.,x×@*].*?)\s*[¥￥$€£₩￦฿₫]?\s*(\d[\d,.]*)\s*[円元원]?\s*$',
   );
 
   List<ReceiptItem> _findItems(List<String> rows, int decimals, double? total) {

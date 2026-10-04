@@ -282,7 +282,7 @@ void main() {
   group('미국 여행 중 받은 한국 카페 전자영수증', () {
     final parser = ReceiptParser(tripCurrency: 'USD');
 
-    test('한글을 읽으면 결제금액을 원화로', () {
+    test('한글 결제금액을 읽고, ￦ 표시가 있으면 원화', () {
       final d = parser.parse(
         lines([
           '샘플커피',
@@ -295,7 +295,7 @@ void main() {
           'G)바닐라콜드브루 6,300 1 6,300',
           'I-G)아메리카노 5,000 1 5,000',
           '합계 -> 17,600',
-          '결제금액 17,600',
+          '결제금액 ￦17,600',
           '(부가세포함) (1,601)',
           '결제 17,600',
           '주문번호 320220124085830422',
@@ -304,6 +304,12 @@ void main() {
       expect(d.amount, 17600);
       expect(d.currency, 'KRW');
       expect(d.totalByWord, isTrue);
+    });
+
+    test('통화 표시가 없는 한글 영수증은 통화를 비워 둔다', () {
+      final d = parser.parse(lines(['샘플커피 가산점', '합계 17,600', '결제금액 17,600']));
+      expect(d.amount, 17600);
+      expect(d.currency, isNull);
     });
 
     test('한글이 깨져 합계를 못 읽으면 금액·통화를 비워 둔다', () {
