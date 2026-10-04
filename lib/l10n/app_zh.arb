@@ -130,5 +130,13 @@
   "exportTripSheetDone": "已保存到“{title}”表格",
   "receiptTotalNotFound": "无法确认收据上的合计金额。请手动输入金额和币种。照片已在分析后删除。",
   "receiptCurrencyNotFound": "无法确认收据上的币种。请核对金额并手动选择币种。照片已在分析后删除。",
-  "currencyRequired": "请选择币种"
+  "currencyRequired": "请选择币种",
+  "batchTitle": "识别到 {count} 笔付款",
+  "batchHint": "请选择要保存的记录。点击金额可修改。",
+  "batchSave": "保存所选 {count} 笔",
+  "batchSaved": "已保存 {count} 笔",
+  "batchOutsideTrip": "不在旅行期间",
+  "batchDuplicate": "已保存过",
+  "batchNeedsInput": "需确认金额/币种 · 点击金额输入",
+  "scanUnreadable": "有 {count} 张照片未能识别付款，请逐笔手动输入。"
 }

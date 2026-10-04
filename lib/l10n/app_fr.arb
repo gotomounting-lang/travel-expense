@@ -130,5 +130,13 @@
   "exportTripSheetDone": "Enregistré dans la feuille « {title} »",
   "receiptTotalNotFound": "Impossible de confirmer le total du reçu. Saisissez vous-même le montant et la devise. La photo a été supprimée après l'analyse.",
   "receiptCurrencyNotFound": "Impossible de confirmer la devise du reçu. Vérifiez le montant et choisissez vous-même la devise. La photo a été supprimée après l'analyse.",
-  "currencyRequired": "Choisissez une devise"
+  "currencyRequired": "Choisissez une devise",
+  "batchTitle": "{count} paiements trouvés",
+  "batchHint": "Choisissez ceux à enregistrer. Touchez un montant pour le modifier.",
+  "batchSave": "Enregistrer {count} sélection(s)",
+  "batchSaved": "{count} dépenses enregistrées",
+  "batchOutsideTrip": "Hors des dates du voyage",
+  "batchDuplicate": "Déjà enregistré",
+  "batchNeedsInput": "Vérifier montant/devise · touchez le montant",
+  "scanUnreadable": "Aucun paiement lu sur {count} photo(s). Saisissez-les un par un."
 }

@@ -186,7 +186,7 @@ class CardNotificationParser {
             .join('|');
         if (syms.isEmpty) return RegExp(r'(?!)');
         return RegExp(
-          '(?:$syms)[  ]?(?<a>$_amt)'
+          '(?<![A-Za-z])(?:$syms)[  ]?(?<a>$_amt)'
           '|(?<b>$_amt)[  ]?(?:$syms)(?![A-Za-z])',
           caseSensitive: false,
         );
@@ -315,6 +315,25 @@ class CardNotificationParser {
     caseSensitive: false,
   );
 
+  /// 통화 코드나 통화 기호가 붙은 금액이 있는지 ("₩1,700", "12.50 USD").
+  static bool hasMarkedAmount(String text) =>
+      _currencyAmount.allMatches(text).any((m) => _isCurrency(m[1] ?? m[4]!)) ||
+      _symbols.keys.any((code) => _symbolAmount(code).hasMatch(text));
+
+  /// [text] 에서 통화가 붙은 금액을 지운 나머지 (가맹점 이름 찾기용).
+  static String withoutAmounts(String text) {
+    var out = text.replaceAll(RegExp(r'\([^)]*\d[^)]*\)'), ' ');
+    out = out.replaceAll(_currencyAmount, ' ');
+    for (final code in _symbols.keys) {
+      out = out.replaceAll(_symbolAmount(code), ' ');
+    }
+    return out.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  /// 날짜("2026.10.4.", "10/04")만 있는 줄인지.
+  static bool isDateRow(String text) =>
+      _fullDate.hasMatch(text) || _textDate.hasMatch(text);
+
   static int _gap(Match a, Match b) =>
       a.start > b.end ? a.start - b.end : b.start - a.end;
 
@@ -324,7 +343,14 @@ class CardNotificationParser {
   /// 알림 글자 속 "월/일 시:분" 이나 "2026. 09. 28" 을 결제 시각으로 쓴다.
   /// 사용자가 직접 붙여넣은 것이므로 카드 앱 이용내역처럼 원화로 확정된
   /// 해외 결제(매입금액)도 내 나라 통화 금액으로 읽는다.
-  CardPayment? parse(CardNotification n, {bool useTextDate = false}) {
+  ///
+  /// [listItem] 은 카드 앱 이용내역 화면의 한 줄처럼 결제 건임이 이미 분명한
+  /// 글자다 ("승인" 같은 말이 없어도 읽는다).
+  CardPayment? parse(
+    CardNotification n, {
+    bool useTextDate = false,
+    bool listItem = false,
+  }) {
     final text = '${n.title}\n${n.text}'.trim();
     if (_rejected.hasMatch(text)) return null;
     String? currency;
@@ -365,7 +391,8 @@ class CardNotificationParser {
 
     // 붙여넣기는 사용자가 고른 문구라 "승인" 같은 말이 없어도 읽는다
     // (카드 앱 이용내역 화면에는 승인 표시가 없다).
-    final settled = useTextDate && (_settled.hasMatch(text) || foreign != null);
+    final settled =
+        listItem || useTextDate && (_settled.hasMatch(text) || foreign != null);
     if (!_approved.hasMatch(text) && !settled) return null;
 
     // 내 나라 통화 금액 후보. 누적·잔액·한도 금액은 결제 금액이 아니다.
@@ -429,7 +456,12 @@ class CardNotificationParser {
       final y = int.parse(full[1]!);
       final month = int.parse(full[2]!);
       final day = int.parse(full[3]!);
-      final parsed = DateTime(y, month, day, 12);
+      // 날짜 바로 뒤의 시간 ("2026.10.4. 17:46:32").
+      final t = RegExp(r'^[.\s]*(\d{1,2}):(\d{2})')
+          .firstMatch(text.substring(full.end));
+      final parsed = t == null
+          ? DateTime(y, month, day, 12)
+          : DateTime(y, month, day, int.parse(t[1]!), int.parse(t[2]!));
       if (parsed.month == month && parsed.day == day) spentAt = parsed;
     }
     final d = useTextDate && full == null ? _textDate.firstMatch(text) : null;

@@ -433,4 +433,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get currencyRequired => '请选择币种';
+
+  @override
+  String batchTitle(int count) {
+    return '识别到 $count 笔付款';
+  }
+
+  @override
+  String get batchHint => '请选择要保存的记录。点击金额可修改。';
+
+  @override
+  String batchSave(int count) {
+    return '保存所选 $count 笔';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '已保存 $count 笔';
+  }
+
+  @override
+  String get batchOutsideTrip => '不在旅行期间';
+
+  @override
+  String get batchDuplicate => '已保存过';
+
+  @override
+  String get batchNeedsInput => '需确认金额/币种 · 点击金额输入';
+
+  @override
+  String scanUnreadable(int count) {
+    return '有 $count 张照片未能识别付款，请逐笔手动输入。';
+  }
 }

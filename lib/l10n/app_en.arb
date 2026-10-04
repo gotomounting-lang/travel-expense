@@ -130,5 +130,13 @@
   "exportTripSheetDone": "Saved to the '{title}' sheet",
   "receiptTotalNotFound": "Couldn't confirm the total on this receipt. Please enter the amount and currency yourself. The photo was deleted after analysis.",
   "receiptCurrencyNotFound": "Couldn't confirm the currency on this receipt. Check the amount and choose the currency yourself. The photo was deleted after analysis.",
-  "currencyRequired": "Choose a currency"
+  "currencyRequired": "Choose a currency",
+  "batchTitle": "{count} payments found",
+  "batchHint": "Choose which to save. Tap an amount to edit it.",
+  "batchSave": "Save {count} selected",
+  "batchSaved": "Saved {count} expenses",
+  "batchOutsideTrip": "Outside trip dates",
+  "batchDuplicate": "Already saved",
+  "batchNeedsInput": "Check amount/currency · tap the amount",
+  "scanUnreadable": "Couldn't read any payment in {count} photo(s). Please enter them one by one."
 }

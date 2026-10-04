@@ -462,4 +462,36 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get currencyRequired => 'Валют сонгоно уу';
+
+  @override
+  String batchTitle(int count) {
+    return '$count төлбөр уншлаа';
+  }
+
+  @override
+  String get batchHint => 'Хадгалахыг сонгоно уу. Дүн дээр дарж засна.';
+
+  @override
+  String batchSave(int count) {
+    return 'Сонгосон $count-г хадгалах';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count зардал хадгаллаа';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Аяллын хугацаанаас гадуур';
+
+  @override
+  String get batchDuplicate => 'Өмнө хадгалсан';
+
+  @override
+  String get batchNeedsInput => 'Дүн/валют шалгах · дүн дээр дарна уу';
+
+  @override
+  String scanUnreadable(int count) {
+    return '$count зурагнаас төлбөр уншиж чадсангүй. Нэг бүрчлэн оруулна уу.';
+  }
 }

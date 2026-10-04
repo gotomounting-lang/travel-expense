@@ -461,4 +461,36 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get currencyRequired => 'ငွေကြေးကို ရွေးပါ';
+
+  @override
+  String batchTitle(int count) {
+    return 'ငွေပေးချေမှု $count ခု ဖတ်ပြီး';
+  }
+
+  @override
+  String get batchHint => 'သိမ်းမည့်အရာကို ရွေးပါ။ ပြင်ရန် ငွေပမာဏကို နှိပ်ပါ။';
+
+  @override
+  String batchSave(int count) {
+    return 'ရွေးထားသော $count ခု သိမ်းရန်';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count ခု သိမ်းပြီး';
+  }
+
+  @override
+  String get batchOutsideTrip => 'ခရီးကာလ ပြင်ပ';
+
+  @override
+  String get batchDuplicate => 'သိမ်းပြီးသား';
+
+  @override
+  String get batchNeedsInput => 'ငွေပမာဏ/ငွေကြေး စစ်ရန် · ငွေပမာဏကို နှိပ်ပါ';
+
+  @override
+  String scanUnreadable(int count) {
+    return 'ဓာတ်ပုံ $count ပုံမှ ငွေပေးချေမှုကို မဖတ်နိုင်ပါ။ တစ်ခုချင်း ထည့်ပါ။';
+  }
 }

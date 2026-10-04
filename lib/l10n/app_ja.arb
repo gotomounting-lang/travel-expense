@@ -130,5 +130,13 @@
   "exportTripSheetDone": "「{title}」シートに保存しました",
   "receiptTotalNotFound": "レシートの合計金額を確認できませんでした。金額と通貨を入力してください。写真は分析後に削除しました。",
   "receiptCurrencyNotFound": "レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。",
-  "currencyRequired": "通貨を選んでください"
+  "currencyRequired": "通貨を選んでください",
+  "batchTitle": "{count}件の支払いを読み取りました",
+  "batchHint": "保存する件を選んでください。金額をタップすると修正できます。",
+  "batchSave": "選んだ{count}件を保存",
+  "batchSaved": "{count}件を保存しました",
+  "batchOutsideTrip": "旅行期間外",
+  "batchDuplicate": "保存済み",
+  "batchNeedsInput": "金額・通貨の確認が必要 · 金額をタップして入力",
+  "scanUnreadable": "{count}枚の写真から支払いを読み取れませんでした。1件ずつ入力してください。"
 }

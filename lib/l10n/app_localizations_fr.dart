@@ -462,4 +462,37 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get currencyRequired => 'Choisissez une devise';
+
+  @override
+  String batchTitle(int count) {
+    return '$count paiements trouvés';
+  }
+
+  @override
+  String get batchHint =>
+      'Choisissez ceux à enregistrer. Touchez un montant pour le modifier.';
+
+  @override
+  String batchSave(int count) {
+    return 'Enregistrer $count sélection(s)';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count dépenses enregistrées';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Hors des dates du voyage';
+
+  @override
+  String get batchDuplicate => 'Déjà enregistré';
+
+  @override
+  String get batchNeedsInput => 'Vérifier montant/devise · touchez le montant';
+
+  @override
+  String scanUnreadable(int count) {
+    return 'Aucun paiement lu sur $count photo(s). Saisissez-les un par un.';
+  }
 }

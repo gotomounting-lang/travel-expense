@@ -130,5 +130,13 @@
   "exportTripSheetDone": "Tersimpan di sheet '{title}'",
   "receiptTotalNotFound": "Total pada struk tidak dapat dipastikan. Silakan masukkan jumlah dan mata uang sendiri. Foto sudah dihapus setelah dianalisis.",
   "receiptCurrencyNotFound": "Mata uang pada struk tidak dapat dipastikan. Periksa jumlahnya dan pilih mata uang sendiri. Foto sudah dihapus setelah dianalisis.",
-  "currencyRequired": "Pilih mata uang"
+  "currencyRequired": "Pilih mata uang",
+  "batchTitle": "{count} pembayaran terbaca",
+  "batchHint": "Pilih yang akan disimpan. Ketuk jumlah untuk mengubah.",
+  "batchSave": "Simpan {count} yang dipilih",
+  "batchSaved": "{count} pengeluaran disimpan",
+  "batchOutsideTrip": "Di luar tanggal perjalanan",
+  "batchDuplicate": "Sudah disimpan",
+  "batchNeedsInput": "Periksa jumlah/mata uang · ketuk jumlah",
+  "scanUnreadable": "Tidak ada pembayaran terbaca di {count} foto. Masukkan satu per satu."
 }

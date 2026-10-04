@@ -460,4 +460,36 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get currencyRequired => 'Pumili ng currency';
+
+  @override
+  String batchTitle(int count) {
+    return '$count bayad ang nabasa';
+  }
+
+  @override
+  String get batchHint => 'Piliin ang ise-save. I-tap ang halaga para baguhin.';
+
+  @override
+  String batchSave(int count) {
+    return 'I-save ang $count napili';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return 'Na-save ang $count gastos';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Labas sa petsa ng biyahe';
+
+  @override
+  String get batchDuplicate => 'Naka-save na';
+
+  @override
+  String get batchNeedsInput => 'Suriin ang halaga/currency · i-tap ang halaga';
+
+  @override
+  String scanUnreadable(int count) {
+    return 'Walang nabasang bayad sa $count larawan. Pakilagay isa-isa.';
+  }
 }

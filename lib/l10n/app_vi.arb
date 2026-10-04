@@ -130,5 +130,13 @@
   "exportTripSheetDone": "Đã lưu vào trang tính '{title}'",
   "receiptTotalNotFound": "Không xác định được tổng tiền trên hóa đơn. Vui lòng tự nhập số tiền và loại tiền. Ảnh đã được xóa sau khi phân tích.",
   "receiptCurrencyNotFound": "Không xác định được loại tiền trên hóa đơn. Hãy kiểm tra số tiền và tự chọn loại tiền. Ảnh đã được xóa sau khi phân tích.",
-  "currencyRequired": "Hãy chọn loại tiền"
+  "currencyRequired": "Hãy chọn loại tiền",
+  "batchTitle": "Đã đọc {count} khoản thanh toán",
+  "batchHint": "Chọn khoản cần lưu. Chạm vào số tiền để sửa.",
+  "batchSave": "Lưu {count} khoản đã chọn",
+  "batchSaved": "Đã lưu {count} khoản",
+  "batchOutsideTrip": "Ngoài thời gian chuyến đi",
+  "batchDuplicate": "Đã lưu trước đó",
+  "batchNeedsInput": "Cần kiểm tra số tiền/loại tiền · chạm vào số tiền",
+  "scanUnreadable": "Không đọc được khoản thanh toán nào trong {count} ảnh. Hãy nhập từng khoản."
 }

@@ -244,5 +244,41 @@
   },
   "receiptTotalNotFound": "영수증에서 합계 금액을 확인할 수 없어요. 금액과 통화를 직접 입력해 주세요. 사진은 분석 후 삭제했습니다.",
   "receiptCurrencyNotFound": "영수증에서 통화를 확인할 수 없어요. 금액을 확인하고 통화를 직접 골라 주세요. 사진은 분석 후 삭제했습니다.",
-  "currencyRequired": "통화를 골라 주세요"
+  "currencyRequired": "통화를 골라 주세요",
+  "batchTitle": "결제 {count}건 읽음",
+  "@batchTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batchHint": "저장할 건을 고르세요. 금액을 누르면 고칠 수 있어요.",
+  "batchSave": "선택한 {count}건 저장",
+  "@batchSave": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batchSaved": "{count}건 저장했어요",
+  "@batchSaved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batchOutsideTrip": "여행 기간 밖",
+  "batchDuplicate": "이미 저장된 건",
+  "batchNeedsInput": "통화·금액 확인 필요 · 금액을 눌러 입력",
+  "scanUnreadable": "사진 {count}장에서 결제 건을 읽지 못했어요. 건별로 직접 입력해 주세요.",
+  "@scanUnreadable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

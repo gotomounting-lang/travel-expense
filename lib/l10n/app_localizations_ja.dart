@@ -439,4 +439,36 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get currencyRequired => '通貨を選んでください';
+
+  @override
+  String batchTitle(int count) {
+    return '$count件の支払いを読み取りました';
+  }
+
+  @override
+  String get batchHint => '保存する件を選んでください。金額をタップすると修正できます。';
+
+  @override
+  String batchSave(int count) {
+    return '選んだ$count件を保存';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count件を保存しました';
+  }
+
+  @override
+  String get batchOutsideTrip => '旅行期間外';
+
+  @override
+  String get batchDuplicate => '保存済み';
+
+  @override
+  String get batchNeedsInput => '金額・通貨の確認が必要 · 金額をタップして入力';
+
+  @override
+  String scanUnreadable(int count) {
+    return '$count枚の写真から支払いを読み取れませんでした。1件ずつ入力してください。';
+  }
 }

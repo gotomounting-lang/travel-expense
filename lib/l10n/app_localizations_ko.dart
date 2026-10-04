@@ -440,4 +440,36 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get currencyRequired => '통화를 골라 주세요';
+
+  @override
+  String batchTitle(int count) {
+    return '결제 $count건 읽음';
+  }
+
+  @override
+  String get batchHint => '저장할 건을 고르세요. 금액을 누르면 고칠 수 있어요.';
+
+  @override
+  String batchSave(int count) {
+    return '선택한 $count건 저장';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count건 저장했어요';
+  }
+
+  @override
+  String get batchOutsideTrip => '여행 기간 밖';
+
+  @override
+  String get batchDuplicate => '이미 저장된 건';
+
+  @override
+  String get batchNeedsInput => '통화·금액 확인 필요 · 금액을 눌러 입력';
+
+  @override
+  String scanUnreadable(int count) {
+    return '사진 $count장에서 결제 건을 읽지 못했어요. 건별로 직접 입력해 주세요.';
+  }
 }

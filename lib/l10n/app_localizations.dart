@@ -907,6 +907,54 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'통화를 골라 주세요'**
   String get currencyRequired;
+
+  /// No description provided for @batchTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'결제 {count}건 읽음'**
+  String batchTitle(int count);
+
+  /// No description provided for @batchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장할 건을 고르세요. 금액을 누르면 고칠 수 있어요.'**
+  String get batchHint;
+
+  /// No description provided for @batchSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 {count}건 저장'**
+  String batchSave(int count);
+
+  /// No description provided for @batchSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}건 저장했어요'**
+  String batchSaved(int count);
+
+  /// No description provided for @batchOutsideTrip.
+  ///
+  /// In ko, this message translates to:
+  /// **'여행 기간 밖'**
+  String get batchOutsideTrip;
+
+  /// No description provided for @batchDuplicate.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미 저장된 건'**
+  String get batchDuplicate;
+
+  /// No description provided for @batchNeedsInput.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화·금액 확인 필요 · 금액을 눌러 입력'**
+  String get batchNeedsInput;
+
+  /// No description provided for @scanUnreadable.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 {count}장에서 결제 건을 읽지 못했어요. 건별로 직접 입력해 주세요.'**
+  String scanUnreadable(int count);
 }
 
 class _AppLocalizationsDelegate

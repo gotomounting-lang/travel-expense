@@ -461,4 +461,36 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get currencyRequired => 'मुद्रा चुनें';
+
+  @override
+  String batchTitle(int count) {
+    return '$count भुगतान पढ़े गए';
+  }
+
+  @override
+  String get batchHint => 'सहेजने के लिए चुनें। बदलने के लिए राशि पर टैप करें।';
+
+  @override
+  String batchSave(int count) {
+    return 'चुने गए $count सहेजें';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count खर्च सहेजे गए';
+  }
+
+  @override
+  String get batchOutsideTrip => 'यात्रा की तारीखों से बाहर';
+
+  @override
+  String get batchDuplicate => 'पहले से सहेजा गया';
+
+  @override
+  String get batchNeedsInput => 'राशि/मुद्रा जाँचें · राशि पर टैप करें';
+
+  @override
+  String scanUnreadable(int count) {
+    return '$count फ़ोटो में कोई भुगतान नहीं पढ़ा जा सका। कृपया एक-एक करके दर्ज करें।';
+  }
 }

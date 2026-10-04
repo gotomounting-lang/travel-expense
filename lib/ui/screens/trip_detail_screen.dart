@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/expense.dart';
 import '../../models/trip.dart';
 import '../../services/card_notification_parser.dart';
+import '../../services/receipt_parser.dart';
 import '../../services/receipt_scanner.dart';
 import '../../services/sheet_rows.dart';
 import '../../services/sheets_sync_service.dart';
@@ -14,6 +15,7 @@ import '../../state/app_state.dart';
 import '../../util/dates.dart';
 import '../../util/money.dart';
 import '../widgets/category_pie_chart.dart';
+import 'batch_review_screen.dart';
 import 'expense_form_screen.dart';
 import 'trip_form_screen.dart';
 
@@ -256,7 +258,7 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
       : ReceiptImageSource.gallery;
   var progressShown = false;
   try {
-    final draft = await scanner.scan(
+    final result = await scanner.scan(
       trip,
       source,
       homeCurrency: context.read<AppState>().homeCurrency(),
@@ -282,12 +284,40 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
       },
     );
     if (progressShown) navigator.pop();
-    if (draft == null) return; // 사진을 고르지 않음
-    navigator.push(
-      MaterialPageRoute(
-        builder: (_) => ExpenseFormScreen(trip: trip, receipt: draft),
-      ),
-    );
+    if (result == null) return; // 사진을 고르지 않음
+    final drafts = result.drafts;
+    if (drafts.isEmpty) {
+      // 결제 건을 하나도 읽지 못함: 건별로 직접 입력하도록 안내하고 입력 화면으로.
+      if (result.photoCount > 1) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l.scanUnreadable(result.unreadable))),
+        );
+      }
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ExpenseFormScreen(
+            trip: trip,
+            receipt: result.firstFailed ?? const ReceiptDraft(),
+          ),
+        ),
+      );
+    } else if (drafts.length == 1 && result.unreadable == 0) {
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ExpenseFormScreen(trip: trip, receipt: drafts.single),
+        ),
+      );
+    } else {
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => BatchReviewScreen(
+            trip: trip,
+            drafts: drafts,
+            unreadable: result.unreadable,
+          ),
+        ),
+      );
+    }
   } catch (e) {
     if (progressShown) navigator.pop();
     messenger.showSnackBar(SnackBar(content: Text(l.receiptScanFailed('$e'))));

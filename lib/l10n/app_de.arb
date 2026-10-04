@@ -130,5 +130,13 @@
   "exportTripSheetDone": "In der Tabelle „{title}“ gespeichert",
   "receiptTotalNotFound": "Der Gesamtbetrag auf dem Beleg konnte nicht erkannt werden. Bitte Betrag und Währung selbst eingeben. Das Foto wurde nach der Analyse gelöscht.",
   "receiptCurrencyNotFound": "Die Währung auf dem Beleg konnte nicht erkannt werden. Bitte Betrag prüfen und Währung selbst wählen. Das Foto wurde nach der Analyse gelöscht.",
-  "currencyRequired": "Bitte Währung wählen"
+  "currencyRequired": "Bitte Währung wählen",
+  "batchTitle": "{count} Zahlungen erkannt",
+  "batchHint": "Wähle aus, was gespeichert wird. Tippe auf einen Betrag, um ihn zu ändern.",
+  "batchSave": "{count} ausgewählte speichern",
+  "batchSaved": "{count} Ausgaben gespeichert",
+  "batchOutsideTrip": "Außerhalb der Reisedaten",
+  "batchDuplicate": "Bereits gespeichert",
+  "batchNeedsInput": "Betrag/Währung prüfen · Betrag antippen",
+  "scanUnreadable": "Auf {count} Foto(s) wurde keine Zahlung erkannt. Bitte einzeln eingeben."
 }

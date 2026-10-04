@@ -461,4 +461,37 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get currencyRequired => 'Pilih mata wang';
+
+  @override
+  String batchTitle(int count) {
+    return '$count bayaran dibaca';
+  }
+
+  @override
+  String get batchHint =>
+      'Pilih yang hendak disimpan. Ketik amaun untuk mengubah.';
+
+  @override
+  String batchSave(int count) {
+    return 'Simpan $count yang dipilih';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count perbelanjaan disimpan';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Di luar tarikh perjalanan';
+
+  @override
+  String get batchDuplicate => 'Sudah disimpan';
+
+  @override
+  String get batchNeedsInput => 'Semak amaun/mata wang · ketik amaun';
+
+  @override
+  String scanUnreadable(int count) {
+    return 'Tiada bayaran dibaca dalam $count foto. Sila masukkan satu demi satu.';
+  }
 }

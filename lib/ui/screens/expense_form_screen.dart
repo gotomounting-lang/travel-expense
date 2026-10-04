@@ -178,7 +178,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
       memo: _memo.text,
       source: _receipt == null ? ExpenseSource.manual : widget.draftSource,
     );
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   Future<void> _delete() async {

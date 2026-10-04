@@ -130,5 +130,13 @@
   "exportTripSheetDone": "Na-save sa sheet na '{title}'",
   "receiptTotalNotFound": "Hindi makumpirma ang kabuuan sa resibo. Pakilagay mismo ang halaga at currency. Binura ang larawan pagkatapos ng pagsusuri.",
   "receiptCurrencyNotFound": "Hindi makumpirma ang currency sa resibo. Suriin ang halaga at piliin mismo ang currency. Binura ang larawan pagkatapos ng pagsusuri.",
-  "currencyRequired": "Pumili ng currency"
+  "currencyRequired": "Pumili ng currency",
+  "batchTitle": "{count} bayad ang nabasa",
+  "batchHint": "Piliin ang ise-save. I-tap ang halaga para baguhin.",
+  "batchSave": "I-save ang {count} napili",
+  "batchSaved": "Na-save ang {count} gastos",
+  "batchOutsideTrip": "Labas sa petsa ng biyahe",
+  "batchDuplicate": "Naka-save na",
+  "batchNeedsInput": "Suriin ang halaga/currency · i-tap ang halaga",
+  "scanUnreadable": "Walang nabasang bayad sa {count} larawan. Pakilagay isa-isa."
 }

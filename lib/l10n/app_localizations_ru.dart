@@ -464,4 +464,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get currencyRequired => 'Выберите валюту';
+
+  @override
+  String batchTitle(int count) {
+    return 'Найдено платежей: $count';
+  }
+
+  @override
+  String get batchHint =>
+      'Выберите, что сохранить. Нажмите на сумму, чтобы изменить.';
+
+  @override
+  String batchSave(int count) {
+    return 'Сохранить выбранные ($count)';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return 'Сохранено: $count';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Вне дат поездки';
+
+  @override
+  String get batchDuplicate => 'Уже сохранено';
+
+  @override
+  String get batchNeedsInput => 'Проверьте сумму/валюту · нажмите на сумму';
+
+  @override
+  String scanUnreadable(int count) {
+    return 'Не удалось прочитать платежи на фото: $count. Введите их по одному.';
+  }
 }

@@ -460,4 +460,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get currencyRequired => 'Hãy chọn loại tiền';
+
+  @override
+  String batchTitle(int count) {
+    return 'Đã đọc $count khoản thanh toán';
+  }
+
+  @override
+  String get batchHint => 'Chọn khoản cần lưu. Chạm vào số tiền để sửa.';
+
+  @override
+  String batchSave(int count) {
+    return 'Lưu $count khoản đã chọn';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return 'Đã lưu $count khoản';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Ngoài thời gian chuyến đi';
+
+  @override
+  String get batchDuplicate => 'Đã lưu trước đó';
+
+  @override
+  String get batchNeedsInput =>
+      'Cần kiểm tra số tiền/loại tiền · chạm vào số tiền';
+
+  @override
+  String scanUnreadable(int count) {
+    return 'Không đọc được khoản thanh toán nào trong $count ảnh. Hãy nhập từng khoản.';
+  }
 }
