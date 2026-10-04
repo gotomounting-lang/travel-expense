@@ -101,6 +101,7 @@ Available in Korean, English, Chinese and Japanese.
 | 데이터 공유 | 공유하지 않음 |
 | 전송 중 암호화 | 예 (구글 API·환율 API 모두 HTTPS) |
 | 데이터 삭제 요청 | 앱 삭제 시 기기 데이터 삭제, 시트는 사용자 드라이브에서 직접 삭제 |
+| 연락처 이메일 | gotomounting@gmail.com |
 | 개인정보처리방침 URL | https://gotomounting-lang.github.io/travel-expense/privacy.html (GitHub Pages 설정 후) |
 
 참고: 기기 안에서만 처리되고 운영자에게 전송되지 않는 데이터(영수증 사진, 알림 내용)는 Play 정책상 "수집"에 해당하지 않습니다. 사용자 계정 데이터는 사용자 본인의 Google 드라이브로만 갑니다.
