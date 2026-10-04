@@ -34,6 +34,7 @@ class ReceiptDraft {
     this.category,
     this.items = const [],
     this.paymentMethod = '',
+    this.totalByWord = false,
   });
 
   final double? amount;
@@ -47,6 +48,10 @@ class ReceiptDraft {
 
   /// 카드 알림에서 읽은 카드 이름 (영수증에서는 비어 있음).
   final String paymentMethod;
+
+  /// 합계 단어("TOTAL", "합계"...) 가 있는 줄에서 금액을 읽었는지.
+  /// 아니면 가장 큰 금액으로 짐작한 것이다.
+  final bool totalByWord;
 
   bool get isEmpty => amount == null && date == null && merchant.isEmpty;
 }
@@ -68,6 +73,11 @@ class ReceiptParser {
     final all = rows.join('\n');
 
     var currency = detectCurrency(all);
+    // 통화 표시가 하나도 없는 한글 영수증은 원화다 (한국 영수증엔 "원"이 없는 경우가 많다).
+    if (_currenciesIn(all).isEmpty &&
+        RegExp(r'[가-힣]').allMatches(all).length >= 6) {
+      currency = 'KRW';
+    }
     final decimals = Currency.byCode(currency).decimals;
     final amount = _findTotal(rows, decimals);
     // 합계 줄에 통화 표시가 있으면 그것이 실제 결제 통화다
@@ -88,6 +98,7 @@ class ReceiptParser {
       merchant: merchant,
       category: category,
       items: items,
+      totalByWord: _totalRow != null,
     );
   }
 
@@ -301,12 +312,15 @@ class ReceiptParser {
     r'(?<![\d.,])\d{1,3}(?:[ \u00a0]\d{3})+(?:[.,]\d{1,2})?(?![\d.,])',
   );
 
+  static final _hyphenNumber = RegExp(r'\d+(?:[ ]?-[ ]?\d+)+');
+
   List<double> _amountsIn(String row, int decimals, {bool spaced = false}) {
     // 날짜·시간·전화번호처럼 보이는 부분은 빼고 숫자를 찾는다.
     final cleaned = row
         .replaceAll(_dateLike, ' ')
         .replaceAll(RegExp(r'\b\d{1,2}:\d{2}(:\d{2})?\b'), ' ')
-        .replaceAll(RegExp(r'\d{2,4}-\d{3,4}-\d{4}'), ' ');
+        // 전화번호·사업자번호처럼 '-' 로 이어진 숫자 ("201-81- 21515").
+        .replaceAll(_hyphenNumber, ' ');
     if (spaced) {
       final m = _spacedNumber.allMatches(cleaned).lastOrNull;
       final v = m == null ? null : parseAmount(m[0]!, decimals: decimals);
@@ -383,10 +397,12 @@ class ReceiptParser {
     final rowsForAmounts = [
       for (final row in rows)
         if (!_hasAny(row, _notTotalWords))
-          row.replaceAll(
-            RegExp(r'[\p{L}\d]*\d[-\p{L}][\p{L}\d-]*', unicode: true),
-            ' ',
-          ),
+          row
+              .replaceAll(_hyphenNumber, ' ')
+              .replaceAll(
+                RegExp(r'[\p{L}\d]*\d[-\p{L}][\p{L}\d-]*', unicode: true),
+                ' ',
+              ),
     ];
     var candidates = [
       for (final row in rowsForAmounts) ..._amountsIn(row, decimals),

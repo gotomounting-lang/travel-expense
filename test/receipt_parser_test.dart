@@ -276,4 +276,48 @@ void main() {
       expect(d.amount, 10.1);
     });
   });
+
+  group('미국 여행 중 받은 한국 카페 전자영수증', () {
+    final parser = ReceiptParser(tripCurrency: 'USD');
+
+    test('한글을 읽으면 결제금액을 원화로', () {
+      final d = parser.parse(
+        lines([
+          '샘플커피',
+          '현금(소득공제)',
+          '샘플점 T:1500-0000',
+          '서울 샘플로 1',
+          '대표 : 홍길동 000-00-00000',
+          '[매장#0000, POS 01] 2022-01-24 08:58:59',
+          'G)바닐라콜드브루 6,300 1 6,300',
+          'G)바닐라콜드브루 6,300 1 6,300',
+          'I-G)아메리카노 5,000 1 5,000',
+          '합계 -> 17,600',
+          '결제금액 17,600',
+          '(부가세포함) (1,601)',
+          '결제 17,600',
+          '주문번호 320220124085830422',
+        ]),
+      );
+      expect(d.amount, 17600);
+      expect(d.currency, 'KRW');
+      expect(d.totalByWord, isTrue);
+    });
+
+    test('한글이 깨져도 사업자번호·전화번호를 금액으로 잡지 않는다', () {
+      final d = parser.parse(
+        lines([
+          'T:1500- 0000',
+          '20 A7c||1R 171',
+          'CHE:ot 000-00- 21515',
+          'G)HCTHE 6300 1 6300',
+          'G)HCCHR 6300 1 6300',
+          'I-G)OHO 5000 1 5000',
+          'Bt 17600',
+        ]),
+      );
+      expect(d.amount, 17600);
+      expect(d.totalByWord, isFalse);
+    });
+  });
 }

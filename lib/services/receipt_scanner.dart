@@ -38,12 +38,35 @@ class ReceiptScanner {
     if (photo == null) return null;
     onAnalyzing?.call();
 
-    final recognizer = TextRecognizer(script: scriptFor(trip.currency));
     try {
-      final text = await recognizer.processImage(
-        InputImage.fromFilePath(photo.path),
+      final image = InputImage.fromFilePath(photo.path);
+      final parser = ReceiptParser(
+        tripCurrency: trip.currency,
+        tripStart: trip.startDate,
+        tripEnd: trip.endDate,
       );
-      final lines = [
+      // 여행지 글자 모델로 먼저 읽고, 합계 단어를 못 찾으면 다른 글자 모델로
+      // 다시 읽는다 (예: 미국 여행 중 받은 한국어 영수증).
+      ReceiptDraft? first;
+      for (final script in scriptsFor(trip.currency)) {
+        final draft = parser.parse(await _read(image, script));
+        if (draft.totalByWord) return draft;
+        first ??= draft;
+      }
+      return first;
+    } finally {
+      await _deletePhoto(photo.path);
+    }
+  }
+
+  Future<List<OcrLine>> _read(
+    InputImage image,
+    TextRecognitionScript script,
+  ) async {
+    final recognizer = TextRecognizer(script: script);
+    try {
+      final text = await recognizer.processImage(image);
+      return [
         for (final block in text.blocks)
           for (final line in block.lines)
             OcrLine(
@@ -53,16 +76,19 @@ class ReceiptScanner {
               left: line.boundingBox.left,
             ),
       ];
-      return ReceiptParser(
-        tripCurrency: trip.currency,
-        tripStart: trip.startDate,
-        tripEnd: trip.endDate,
-      ).parse(lines);
     } finally {
       await recognizer.close();
-      await _deletePhoto(photo.path);
     }
   }
+
+  /// 시도할 글자 모델 순서: 여행지 글자 먼저, 그다음 한국어·일본어·중국어·영문.
+  static List<TextRecognitionScript> scriptsFor(String currency) => {
+    scriptFor(currency),
+    TextRecognitionScript.korean,
+    TextRecognitionScript.japanese,
+    TextRecognitionScript.chinese,
+    TextRecognitionScript.latin,
+  }.toList();
 
   /// 여행지 통화로 영수증 글자 종류를 고른다. 한·중·일 모델도 영문·숫자를 읽는다.
   static TextRecognitionScript scriptFor(String currency) => switch (currency) {
