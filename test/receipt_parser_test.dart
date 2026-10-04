@@ -493,6 +493,15 @@ void main() {
       expect(d.date, DateTime(2026, 10, 4, 17, 36));
     });
 
+    test('점 글씨 쉼표가 점·띄어쓰기로 읽혀도 "원" 금액', () {
+      for (final won in ['7.900원', '7, 900원']) {
+        final d = ReceiptParser(tripCurrency: 'CNY')
+            .parse(lines(['샘플 샌드위치(샘플점)', won, ...body, '포인트 적립 + 237']));
+        expect(d.amount, 7900, reason: won);
+        expect(d.currency, 'KRW', reason: won);
+      }
+    });
+
     test('"원" 금액이 서로 다르면 직접 입력', () {
       final d = parser.parse(lines(['샘플가게 메뉴', '7,900원', '8,500원']));
       expect(d.amount, isNull);

@@ -44,4 +44,16 @@ void main() {
     expect(d.amount, 10.65);
     expect(d.currency, 'USD');
   });
+
+  test('확신도: 줄 길이로 가중한 평균, 없으면 0', () {
+    expect(
+      ReceiptScanner.confidenceOf(const [
+        OcrLine('ab', confidence: 0.9),
+        OcrLine('abcd', confidence: 0.6),
+      ]),
+      closeTo(0.7, 1e-9),
+    );
+    expect(ReceiptScanner.confidenceOf(const [OcrLine('abc')]), 0);
+    expect(ReceiptScanner.confidenceOf(const []), 0);
+  });
 }

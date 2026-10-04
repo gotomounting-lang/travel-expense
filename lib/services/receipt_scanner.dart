@@ -108,6 +108,7 @@ class ReceiptScanner {
     var bestList = <ReceiptDraft>[];
     ReceiptDraft? best;
     var bestScore = -1;
+    var bestConfidence = -1.0;
     final scripts = scriptsFor(trip.currency, homeCurrency);
     for (var i = 0; i < scripts.length; i++) {
       final script = scripts[i];
@@ -127,9 +128,14 @@ class ReceiptScanner {
         homeCurrency,
       );
       final score = scoreOf(draft);
-      if (score > bestScore) {
+      // 점수가 같으면 글자 모델이 더 확신한 쪽 (예: 한글 영수증을 중국어
+      // 모델이 "元"으로 잘못 읽은 결과보다 한국어 모델 결과).
+      final confidence = confidenceOf(lines);
+      if (score > bestScore ||
+          (score == bestScore && confidence > bestConfidence)) {
         best = draft;
         bestScore = score;
+        bestConfidence = confidence;
       }
       final homeDone = homeScript == null || scripts.indexOf(homeScript) <= i;
       if (bestList.isNotEmpty && homeDone) break;
@@ -154,6 +160,7 @@ class ReceiptScanner {
               top: line.boundingBox.top,
               bottom: line.boundingBox.bottom,
               left: line.boundingBox.left,
+              confidence: line.confidence,
             ),
       ];
     } finally {
@@ -197,6 +204,18 @@ class ReceiptScanner {
   static int scoreOf(ReceiptDraft d) =>
       (d.totalByWord && d.amount != null ? 2 : 0) +
       (d.currency != null ? 1 : 0);
+
+  /// 줄 길이로 가중한 글자 모델의 평균 확신도. 확신도가 없으면(iOS) 0.
+  static double confidenceOf(List<OcrLine> lines) {
+    var sum = 0.0;
+    var chars = 0;
+    for (final line in lines) {
+      final n = line.text.trim().length;
+      sum += (line.confidence ?? 0) * n;
+      chars += n;
+    }
+    return chars == 0 ? 0 : sum / chars;
+  }
 
   /// 시도할 글자 모델 순서: 여행지 글자, 사용자 나라 글자, 그다음 한·일·중·영문.
   static List<TextRecognitionScript> scriptsFor(

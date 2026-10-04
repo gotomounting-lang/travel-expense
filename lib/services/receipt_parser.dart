@@ -3,12 +3,21 @@ import '../models/currency.dart';
 
 /// OCR 이 읽은 한 줄과 화면 위치. 같은 높이의 줄을 한 행으로 묶는 데 쓴다.
 class OcrLine {
-  const OcrLine(this.text, {this.top = 0, this.bottom = 0, this.left = 0});
+  const OcrLine(
+    this.text, {
+    this.top = 0,
+    this.bottom = 0,
+    this.left = 0,
+    this.confidence,
+  });
 
   final String text;
   final double top;
   final double bottom;
   final double left;
+
+  /// 글자 모델이 이 줄을 얼마나 확신하는지 (0~1, 안드로이드만).
+  final double? confidence;
 
   double get centerY => (top + bottom) / 2;
   double get height => (bottom - top).abs();
@@ -537,9 +546,14 @@ class ReceiptParser {
       for (final row in rows) {
         if (_hasAny(row, _notTotalWords)) continue;
         for (final m in RegExp(
-          r'(?<![\d.,])(\d{1,3}(?:,\d{3})+|\d+)[  ]?원',
+          // 감열지 점 글씨는 쉼표가 점이나 띄어쓰기로 읽히기도 한다
+          // ("7.900원", "7, 900원"). 원화는 소수점이 없다.
+          r'(?<![\d.,])(\d{1,3}(?:[.,] ?\d{3})+|\d+)[  ]?원',
         ).allMatches(row)) {
-          final v = parseAmount(m[1]!, decimals: 0);
+          final v = parseAmount(
+            m[1]!.replaceAll(RegExp(r'[., ]'), ''),
+            decimals: 0,
+          );
           if (v == null || v <= 0) continue;
           won.add(v);
           wonRow ??= row;
