@@ -26,6 +26,7 @@ class ReceiptScanner {
     Trip trip,
     ReceiptImageSource source, {
     VoidCallback? onAnalyzing,
+    String? homeCurrency,
   }) async {
     final photo = await _picker.pickImage(
       source: source == ReceiptImageSource.camera
@@ -45,15 +46,21 @@ class ReceiptScanner {
         tripStart: trip.startDate,
         tripEnd: trip.endDate,
       );
-      // 여행지 글자 모델로 먼저 읽고, 합계 단어를 못 찾으면 다른 글자 모델로
-      // 다시 읽는다 (예: 미국 여행 중 받은 한국어 영수증).
-      ReceiptDraft? first;
-      for (final script in scriptsFor(trip.currency)) {
+      // 여행지 글자 모델로 먼저 읽고, 합계와 통화를 둘 다 확인하지 못하면
+      // 사용자 나라 글자, 그다음 다른 글자 모델로 다시 읽어 가장 잘 읽힌 결과를
+      // 쓴다 (예: 미국 여행 중 받은 한국 카드전표).
+      ReceiptDraft? best;
+      var bestScore = -1;
+      for (final script in scriptsFor(trip.currency, homeCurrency)) {
         final draft = parser.parse(await _read(image, script));
-        if (draft.totalByWord) return draft;
-        first ??= draft;
+        final score = scoreOf(draft);
+        if (score > bestScore) {
+          best = draft;
+          bestScore = score;
+        }
+        if (score >= 3) break;
       }
-      return first;
+      return best;
     } finally {
       await _deletePhoto(photo.path);
     }
@@ -81,9 +88,18 @@ class ReceiptScanner {
     }
   }
 
-  /// 시도할 글자 모델 순서: 여행지 글자 먼저, 그다음 한국어·일본어·중국어·영문.
-  static List<TextRecognitionScript> scriptsFor(String currency) => {
+  /// 합계 단어 줄의 금액(2점)과 통화 표시(1점)를 읽었는지.
+  static int scoreOf(ReceiptDraft d) =>
+      (d.totalByWord && d.amount != null ? 2 : 0) +
+      (d.currency != null ? 1 : 0);
+
+  /// 시도할 글자 모델 순서: 여행지 글자, 사용자 나라 글자, 그다음 한·일·중·영문.
+  static List<TextRecognitionScript> scriptsFor(
+    String currency, [
+    String? homeCurrency,
+  ]) => {
     scriptFor(currency),
+    if (homeCurrency != null) scriptFor(homeCurrency),
     TextRecognitionScript.korean,
     TextRecognitionScript.japanese,
     TextRecognitionScript.chinese,

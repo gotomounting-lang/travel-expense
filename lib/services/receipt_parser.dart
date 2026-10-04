@@ -167,6 +167,7 @@ class ReceiptParser {
     // 한국어
     '총합계', '판매총액', '총판매금액', '총결제금액', '총결재금액', '결제금액',
     '결재금액', '결제 금액', '승인금액', '승인 금액', '청구금액', '받을금액',
+    '사용금액', '사용 금액', '이용금액', '거래금액',
     '총액', '총 금액', '총금액', '합계', '합 계',
     // 일본어
     '合計', '合 計', '総合計', '総計', 'お買上計', 'お買上げ計', 'ご請求', 'お会計',
@@ -274,6 +275,14 @@ class ReceiptParser {
     '면세',
     '거스름',
     '받은금액',
+    '승인번호',
+    '카드번호',
+    '주문번호',
+    '가맹점번호',
+    '사업자',
+    'approval',
+    'auth code',
+    'card no',
     '할인',
     '포인트',
     'tiền thừa',
@@ -324,13 +333,16 @@ class ReceiptParser {
         .replaceAll(RegExp(r'\b\d{1,2}:\d{2}(:\d{2})?\b'), ' ')
         // 전화번호·사업자번호처럼 '-' 로 이어진 숫자 ("201-81- 21515").
         .replaceAll(_hyphenNumber, ' ');
+    // 천 단위 구분 없이 7자리 넘게 이어진 숫자는 승인번호·사업자번호다
+    // (금액이면 "1,000,000" 처럼 찍힌다).
+    final noIds = cleaned.replaceAll(RegExp(r'(?<![\d.,])\d{7,}(?![\d])'), ' ');
     if (spaced) {
-      final m = _spacedNumber.allMatches(cleaned).lastOrNull;
+      final m = _spacedNumber.allMatches(noIds).lastOrNull;
       final v = m == null ? null : parseAmount(m[0]!, decimals: decimals);
       if (v != null && v > 0) return [v];
     }
     return [
-      for (final m in _number.allMatches(cleaned))
+      for (final m in _number.allMatches(noIds))
         if (parseAmount(m.group(0)!, decimals: decimals) case final v?)
           if (v > 0) v,
     ];

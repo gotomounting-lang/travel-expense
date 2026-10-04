@@ -259,6 +259,7 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
     final draft = await scanner.scan(
       trip,
       source,
+      homeCurrency: context.read<AppState>().homeCurrency(),
       // 사진을 고른 뒤 분석하는 동안만 진행 표시를 띄운다.
       onAnalyzing: () {
         progressShown = true;
