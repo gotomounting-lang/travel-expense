@@ -17,6 +17,42 @@ class CardHistoryParser {
   /// (영수증 한 장에는 보통 통화가 붙은 금액 줄이 여럿이어도 날짜는 하나다.)
   List<ReceiptDraft> parse(List<OcrLine> lines) {
     final rows = ReceiptParser.groupRows(lines);
+    final out = _parseRows(rows);
+    if (out.isEmpty) return out;
+    // 글자 모델이 통화 기호를 놓친 건 ("씨유 강동점 900" 다음 줄이 날짜)은
+    // 같은 목록의 다른 건이 모두 한 통화일 때만 그 통화로 본다.
+    final currencies = out.map((d) => d.currency).toSet();
+    if (currencies.length != 1) return out;
+    final code = currencies.single!;
+    var filled = false;
+    final fixed = [
+      for (var i = 0; i < rows.length; i++)
+        if (_unmarkedItem(rows, i))
+          (() {
+            filled = true;
+            return rows[i].replaceFirstMapped(
+              _trailingAmount,
+              (m) => ' ${m[1]} $code',
+            );
+          })()
+        else
+          rows[i],
+    ];
+    return filled ? _parseRows(fixed) : out;
+  }
+
+  static final _trailingAmount = RegExp(r'\s+(\d{1,3}(?:,\d{3})+|\d+)\s*$');
+
+  /// 통화 표시 없이 금액으로 끝나는 가맹점 줄이고, 바로 아래가 날짜 줄인지.
+  static bool _unmarkedItem(List<String> rows, int i) =>
+      i + 1 < rows.length &&
+      !CardNotificationParser.hasMarkedAmount(rows[i]) &&
+      !CardNotificationParser.isDateRow(rows[i]) &&
+      RegExp(r'\p{L}{2,}', unicode: true).hasMatch(rows[i]) &&
+      _trailingAmount.hasMatch(rows[i]) &&
+      CardNotificationParser.isDateRow(rows[i + 1]);
+
+  List<ReceiptDraft> _parseRows(List<String> rows) {
     final anchors = [
       for (var i = 0; i < rows.length; i++)
         if (CardNotificationParser.hasMarkedAmount(rows[i])) i,

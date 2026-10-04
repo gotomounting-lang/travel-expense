@@ -38,6 +38,57 @@ void main() {
     expect(drafts.last.date, DateTime(2026, 10, 1, 12));
   });
 
+  test('₩ 를 W 로 읽거나 놓쳐도 목록 전체를 원화로 읽는다', () {
+    final drafts = CardHistoryParser(homeCurrency: 'KRW', now: now).parse(
+      lines([
+        'GS25길동오네뜨점 W1,700',
+        '2026.10.4. 17:46:32',
+        '압구정샌드위치 강동사거리점 W 7,900',
+        '2026.10.4. 17:36:14',
+        '투썸플레이스 굽은다. ₩5,800',
+        '2026.10.4. 11:09:37',
+        '씨유(CU) 강동오네뜨점 900',
+        '2026.10.3. 19:25:57',
+        '선사짬뽕 W34,000',
+        '2026.10.3. 18:42:22',
+        '가락골마산아구찜 W35,000',
+        '2026.10.3. 12:24:34',
+        '커피앤 / 삼성웰스토리 W1,800',
+        '2026.10.2. 07:38:46',
+        '씨유(CU) 강동해오름점 W1,000',
+        '2026.10.2. 07:10:41',
+        '네이버파이낸셜 W20,228',
+        '2026.10.1. 20:33:16',
+        'GS25길동오네뜨점 W1,600',
+        '2026.10.1. 17:50:09',
+        '삼형제김밥 명일점 W5,500',
+        '2026.10.1. 17:45:43',
+      ]),
+    );
+    expect(drafts.map((d) => d.amount), [
+      1700,
+      7900,
+      5800,
+      900,
+      34000,
+      35000,
+      1800,
+      1000,
+      20228,
+      1600,
+      5500,
+    ]);
+    expect(drafts.every((d) => d.currency == 'KRW'), isTrue);
+    expect(drafts[3].merchant, '씨유(CU) 강동오네뜨점');
+    expect(drafts[3].date, DateTime(2026, 10, 3, 19, 25));
+  });
+
+  test('영문 W 는 한글이 없으면 원화로 바꾸지 않는다', () {
+    expect(ReceiptParser.fixWonSign('W 1700'), '₩1700');
+    expect(ReceiptParser.fixWonSignIfKorean('ROW 12 W5'), 'ROW 12 W5');
+    expect(ReceiptParser.fixWonSign('WWW 3 KW5'), 'WWW 3 KW5');
+  });
+
   test('해외 결제 내역: 원화와 외화가 함께 있으면 원화', () {
     final drafts = CardHistoryParser(homeCurrency: 'KRW', now: now).parse(
       lines([

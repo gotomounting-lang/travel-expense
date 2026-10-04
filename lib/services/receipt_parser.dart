@@ -135,13 +135,24 @@ class ReceiptParser {
       }
       rows.add([line]);
     }
-    return [
+    final joined = [
       for (final row in rows)
         (row..sort((a, b) => a.left.compareTo(b.left)))
             .map((l) => l.text.trim())
             .join(' '),
     ];
+    final hangul = RegExp(r'[가-힣]').allMatches(joined.join()).length >= 4;
+    return hangul ? joined.map(fixWonSign).toList() : joined;
   }
+
+  /// 글자 모델은 "₩1,700" 의 ₩ 를 "W" 로 읽곤 한다. 한글 화면·영수증에서
+  /// 숫자 바로 앞의 홀로 선 W 는 ₩ 로 되돌린다 ("W 1700" → "₩1700").
+  static String fixWonSign(String text) =>
+      text.replaceAllMapped(RegExp(r'(?<![A-Za-z0-9])W\s?(?=\d)'), (_) => '₩');
+
+  /// 한글이 있는 글자 전체에 [fixWonSign] 을 적용한다.
+  static String fixWonSignIfKorean(String text) =>
+      RegExp(r'[가-힣]').allMatches(text).length >= 4 ? fixWonSign(text) : text;
 
   // ---- 금액 ----
 

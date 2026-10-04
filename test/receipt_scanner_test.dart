@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:travel_expense/services/receipt_parser.dart';
 import 'package:travel_expense/services/receipt_scanner.dart';
 
@@ -55,5 +56,20 @@ void main() {
     );
     expect(ReceiptScanner.confidenceOf(const [OcrLine('abc')]), 0);
     expect(ReceiptScanner.confidenceOf(const []), 0);
+  });
+
+  test('글자 모델 순서: 한국어 먼저, 중국어는 맨 마지막', () {
+    expect(ReceiptScanner.scriptsFor('USD', 'KRW'), [
+      TextRecognitionScript.korean,
+      TextRecognitionScript.latin,
+      TextRecognitionScript.japanese,
+      TextRecognitionScript.chinese,
+    ]);
+    expect(ReceiptScanner.scriptsFor('CNY', 'KRW'), [
+      TextRecognitionScript.korean,
+      TextRecognitionScript.japanese,
+      TextRecognitionScript.latin,
+      TextRecognitionScript.chinese,
+    ]);
   });
 }

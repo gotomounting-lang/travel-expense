@@ -124,7 +124,7 @@ class ReceiptScanner {
       }
       final draft = withCardHistory(
         parser.parse(lines),
-        _lastText,
+        ReceiptParser.fixWonSignIfKorean(_lastText),
         homeCurrency,
       );
       final score = scoreOf(draft);
@@ -217,18 +217,22 @@ class ReceiptScanner {
     return chars == 0 ? 0 : sum / chars;
   }
 
-  /// 시도할 글자 모델 순서: 여행지 글자, 사용자 나라 글자, 그다음 한·일·중·영문.
+  /// 시도할 글자 모델 순서: 한국어(영문·숫자도 읽는다)를 먼저, 그다음 여행지
+  /// 글자, 사용자 나라 글자, 일본어, 영문. 중국어 모델은 한글을 한자로 잘못
+  /// 읽으므로 맨 마지막이다 (사용자 결정 2026-10-04).
   static List<TextRecognitionScript> scriptsFor(
     String currency, [
     String? homeCurrency,
-  ]) => {
-    scriptFor(currency),
-    if (homeCurrency != null) scriptFor(homeCurrency),
-    TextRecognitionScript.korean,
-    TextRecognitionScript.japanese,
-    TextRecognitionScript.chinese,
-    TextRecognitionScript.latin,
-  }.toList();
+  ]) {
+    const chinese = TextRecognitionScript.chinese;
+    return {
+      TextRecognitionScript.korean,
+      scriptFor(currency),
+      if (homeCurrency != null) scriptFor(homeCurrency),
+      TextRecognitionScript.japanese,
+      TextRecognitionScript.latin,
+    }.where((s) => s != chinese).followedBy([chinese]).toList();
+  }
 
   /// 여행지 통화로 영수증 글자 종류를 고른다. 한·중·일 모델도 영문·숫자를 읽는다.
   static TextRecognitionScript scriptFor(String currency) => switch (currency) {
