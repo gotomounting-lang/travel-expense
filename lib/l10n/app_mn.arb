@@ -127,5 +127,8 @@
   "next": "Дараах",
   "exportTripSheet": "Google Sheets-д хадгалах",
   "exportTripSheetSaving": "Google Sheets-д хадгалж байна…",
-  "exportTripSheetDone": "'{title}' хүснэгтэд хадгаллаа"
+  "exportTripSheetDone": "'{title}' хүснэгтэд хадгаллаа",
+  "receiptTotalNotFound": "Баримтын нийт дүнг тодорхойлж чадсангүй. Дүн болон валютаа өөрөө оруулна уу. Зургийг шинжилсний дараа устгасан.",
+  "receiptCurrencyNotFound": "Баримтын валютыг тодорхойлж чадсангүй. Дүнгээ шалгаад валютаа өөрөө сонгоно уу. Зургийг шинжилсний дараа устгасан.",
+  "currencyRequired": "Валют сонгоно уу"
 }

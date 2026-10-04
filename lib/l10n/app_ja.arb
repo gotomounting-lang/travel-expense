@@ -127,5 +127,8 @@
   "next": "次へ",
   "exportTripSheet": "Google スプレッドシートに保存",
   "exportTripSheetSaving": "Google スプレッドシートに保存中…",
-  "exportTripSheetDone": "「{title}」シートに保存しました"
+  "exportTripSheetDone": "「{title}」シートに保存しました",
+  "receiptTotalNotFound": "レシートの合計金額を確認できませんでした。金額と通貨を入力してください。写真は分析後に削除しました。",
+  "receiptCurrencyNotFound": "レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。",
+  "currencyRequired": "通貨を選んでください"
 }

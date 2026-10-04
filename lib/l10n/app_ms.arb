@@ -127,5 +127,8 @@
   "next": "Seterusnya",
   "exportTripSheet": "Simpan ke Google Sheets",
   "exportTripSheetSaving": "Menyimpan ke Google Sheets…",
-  "exportTripSheetDone": "Disimpan ke helaian '{title}'"
+  "exportTripSheetDone": "Disimpan ke helaian '{title}'",
+  "receiptTotalNotFound": "Jumlah keseluruhan pada resit tidak dapat disahkan. Sila masukkan amaun dan mata wang sendiri. Foto telah dipadam selepas analisis.",
+  "receiptCurrencyNotFound": "Mata wang pada resit tidak dapat disahkan. Semak amaun dan pilih mata wang sendiri. Foto telah dipadam selepas analisis.",
+  "currencyRequired": "Pilih mata wang"
 }

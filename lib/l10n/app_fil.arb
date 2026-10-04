@@ -127,5 +127,8 @@
   "next": "Susunod",
   "exportTripSheet": "I-save sa Google Sheets",
   "exportTripSheetSaving": "Sine-save sa Google Sheets…",
-  "exportTripSheetDone": "Na-save sa sheet na '{title}'"
+  "exportTripSheetDone": "Na-save sa sheet na '{title}'",
+  "receiptTotalNotFound": "Hindi makumpirma ang kabuuan sa resibo. Pakilagay mismo ang halaga at currency. Binura ang larawan pagkatapos ng pagsusuri.",
+  "receiptCurrencyNotFound": "Hindi makumpirma ang currency sa resibo. Suriin ang halaga at piliin mismo ang currency. Binura ang larawan pagkatapos ng pagsusuri.",
+  "currencyRequired": "Pumili ng currency"
 }

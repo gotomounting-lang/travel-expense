@@ -889,6 +889,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'\'{title}\' 시트에 저장했어요'**
   String exportTripSheetDone(String title);
+
+  /// No description provided for @receiptTotalNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'영수증에서 합계 금액을 확인할 수 없어요. 금액과 통화를 직접 입력해 주세요. 사진은 분석 후 삭제했습니다.'**
+  String get receiptTotalNotFound;
+
+  /// No description provided for @receiptCurrencyNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'영수증에서 통화를 확인할 수 없어요. 금액을 확인하고 통화를 직접 골라 주세요. 사진은 분석 후 삭제했습니다.'**
+  String get receiptCurrencyNotFound;
+
+  /// No description provided for @currencyRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화를 골라 주세요'**
+  String get currencyRequired;
 }
 
 class _AppLocalizationsDelegate

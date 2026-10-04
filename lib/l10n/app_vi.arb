@@ -127,5 +127,8 @@
   "next": "Tiếp",
   "exportTripSheet": "Lưu vào Google Trang tính",
   "exportTripSheetSaving": "Đang lưu vào Google Trang tính…",
-  "exportTripSheetDone": "Đã lưu vào trang tính '{title}'"
+  "exportTripSheetDone": "Đã lưu vào trang tính '{title}'",
+  "receiptTotalNotFound": "Không xác định được tổng tiền trên hóa đơn. Vui lòng tự nhập số tiền và loại tiền. Ảnh đã được xóa sau khi phân tích.",
+  "receiptCurrencyNotFound": "Không xác định được loại tiền trên hóa đơn. Hãy kiểm tra số tiền và tự chọn loại tiền. Ảnh đã được xóa sau khi phân tích.",
+  "currencyRequired": "Hãy chọn loại tiền"
 }

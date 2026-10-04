@@ -37,7 +37,10 @@ class ReceiptDraft {
     this.totalByWord = false,
   });
 
+  /// 합계 금액. 합계 단어 줄에서 읽지 못했으면 null (사용자가 직접 입력).
   final double? amount;
+
+  /// 영수증에 찍힌 통화. 통화 표시를 찾지 못했으면 null (사용자가 직접 고름).
   final String? currency;
 
   /// 날짜(와 읽을 수 있으면 시간). 못 읽으면 null.
@@ -73,10 +76,12 @@ class ReceiptParser {
     final all = rows.join('\n');
 
     var currency = detectCurrency(all);
-    // 통화 표시가 하나도 없는 한글 영수증은 원화다 (한국 영수증엔 "원"이 없는 경우가 많다).
-    if (_currenciesIn(all).isEmpty &&
-        RegExp(r'[가-힣]').allMatches(all).length >= 6) {
+    // 영수증에 통화 표시가 있어야 통화를 확인한 것으로 본다. 다만 통화 표시가
+    // 하나도 없는 한글 영수증은 원화다 (한국 영수증엔 "원"이 없는 경우가 많다).
+    var currencyFound = _currenciesIn(all).isNotEmpty;
+    if (!currencyFound && RegExp(r'[가-힣]').allMatches(all).length >= 6) {
       currency = 'KRW';
+      currencyFound = true;
     }
     final decimals = Currency.byCode(currency).decimals;
     final amount = _findTotal(rows, decimals);
@@ -91,14 +96,17 @@ class ReceiptParser {
     final items = _findItems(rows, decimals, amount);
     final category = guessCategory([merchant, ...items.map((i) => i.name)]);
 
+    // 합계 단어 줄에서 읽은 금액만 쓴다. 짐작한 금액이나 통화는 비워 두고
+    // 사용자가 직접 입력하게 한다.
+    final byWord = _totalRow != null;
     return ReceiptDraft(
-      amount: amount,
-      currency: currency,
+      amount: byWord ? amount : null,
+      currency: currencyFound ? currency : null,
       date: date,
       merchant: merchant,
       category: category,
       items: items,
-      totalByWord: _totalRow != null,
+      totalByWord: byWord,
     );
   }
 

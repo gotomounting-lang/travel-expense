@@ -62,8 +62,11 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
         widget.expense?.memo ??
         _receipt?.items.map((i) => '${i.name} ${_plain(i.price)}').join('\n'),
   );
-  late String _currency =
-      widget.expense?.currency ?? _receipt?.currency ?? widget.trip.currency;
+
+  /// 영수증에서 통화를 확인하지 못했으면 null 로 두고 사용자가 고르게 한다.
+  late String? _currency =
+      widget.expense?.currency ??
+      (_receipt != null ? _receipt.currency : widget.trip.currency);
   late ExpenseCategory _category =
       widget.expense?.category ?? _receipt?.category ?? ExpenseCategory.food;
   late DateTime _spentAt =
@@ -102,7 +105,10 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
 
   void _loadRate() {
     final state = context.read<AppState>();
-    _rate = state.rates.rate(_currency, state.homeCurrency(), _spentAt);
+    final currency = _currency;
+    _rate = currency == null
+        ? null
+        : state.rates.rate(currency, state.homeCurrency(), _spentAt);
   }
 
   @override
@@ -116,7 +122,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
 
   double? get _amountValue => ReceiptParser.parseAmount(
     _amount.text.trim(),
-    decimals: Currency.byCode(_currency).decimals,
+    decimals: Currency.byCode(_currency ?? widget.trip.currency).decimals,
   );
 
   Future<void> _pickDate() async {
@@ -165,7 +171,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
       tripId: widget.trip.id,
       spentAt: _spentAt,
       category: _category,
-      currency: _currency,
+      currency: _currency!,
       amount: _amountValue!,
       merchant: _merchant.text,
       paymentMethod: _payment.text,
@@ -204,7 +210,12 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
           children: [
             if (_receipt != null)
               Card(
-                color: theme.colorScheme.secondaryContainer,
+                // 금액·통화를 확인하지 못했으면 눈에 띄게 경고 색으로.
+                color:
+                    widget.draftSource != ExpenseSource.cardNotification &&
+                        (_receipt.amount == null || _receipt.currency == null)
+                    ? theme.colorScheme.errorContainer
+                    : theme.colorScheme.secondaryContainer,
                 margin: const EdgeInsets.only(bottom: 16),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -217,7 +228,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                           widget.draftSource == ExpenseSource.cardNotification
                               ? l.cardReadNotice
                               : _receipt.amount == null
-                              ? l.receiptNothingFound
+                              ? l.receiptTotalNotFound
+                              : _receipt.currency == null
+                              ? l.receiptCurrencyNotFound
                               : l.receiptReadNotice,
                         ),
                       ),
@@ -262,12 +275,13 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _HomePreview(
-              rate: _rate,
-              amount: _amountValue,
-              currency: _currency,
-              home: context.read<AppState>().homeCurrency(),
-            ),
+            if (_currency case final currency?)
+              _HomePreview(
+                rate: _rate,
+                amount: _amountValue,
+                currency: currency,
+                home: context.read<AppState>().homeCurrency(),
+              ),
             const SizedBox(height: 16),
             Text(l.category, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),

@@ -449,4 +449,15 @@ class AppLocalizationsFil extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Na-save sa sheet na \'$title\'';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Hindi makumpirma ang kabuuan sa resibo. Pakilagay mismo ang halaga at currency. Binura ang larawan pagkatapos ng pagsusuri.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Hindi makumpirma ang currency sa resibo. Suriin ang halaga at piliin mismo ang currency. Binura ang larawan pagkatapos ng pagsusuri.';
+
+  @override
+  String get currencyRequired => 'Pumili ng currency';
 }

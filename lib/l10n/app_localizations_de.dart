@@ -451,4 +451,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'In der Tabelle „$title“ gespeichert';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Der Gesamtbetrag auf dem Beleg konnte nicht erkannt werden. Bitte Betrag und Währung selbst eingeben. Das Foto wurde nach der Analyse gelöscht.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Die Währung auf dem Beleg konnte nicht erkannt werden. Bitte Betrag prüfen und Währung selbst wählen. Das Foto wurde nach der Analyse gelöscht.';
+
+  @override
+  String get currencyRequired => 'Bitte Währung wählen';
 }

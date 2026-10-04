@@ -127,5 +127,8 @@
   "next": "Weiter",
   "exportTripSheet": "In Google Tabellen speichern",
   "exportTripSheetSaving": "Wird in Google Tabellen gespeichert…",
-  "exportTripSheetDone": "In der Tabelle „{title}“ gespeichert"
+  "exportTripSheetDone": "In der Tabelle „{title}“ gespeichert",
+  "receiptTotalNotFound": "Der Gesamtbetrag auf dem Beleg konnte nicht erkannt werden. Bitte Betrag und Währung selbst eingeben. Das Foto wurde nach der Analyse gelöscht.",
+  "receiptCurrencyNotFound": "Die Währung auf dem Beleg konnte nicht erkannt werden. Bitte Betrag prüfen und Währung selbst wählen. Das Foto wurde nach der Analyse gelöscht.",
+  "currencyRequired": "Bitte Währung wählen"
 }

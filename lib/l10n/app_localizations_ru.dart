@@ -453,4 +453,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Сохранено в таблицу «$title»';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Не удалось определить итоговую сумму в чеке. Введите сумму и валюту вручную. Фото удалено после анализа.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Не удалось определить валюту в чеке. Проверьте сумму и выберите валюту вручную. Фото удалено после анализа.';
+
+  @override
+  String get currencyRequired => 'Выберите валюту';
 }

@@ -451,4 +451,15 @@ class AppLocalizationsMn extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return '\'$title\' хүснэгтэд хадгаллаа';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Баримтын нийт дүнг тодорхойлж чадсангүй. Дүн болон валютаа өөрөө оруулна уу. Зургийг шинжилсний дараа устгасан.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Баримтын валютыг тодорхойлж чадсангүй. Дүнгээ шалгаад валютаа өөрөө сонгоно уу. Зургийг шинжилсний дараа устгасан.';
+
+  @override
+  String get currencyRequired => 'Валют сонгоно уу';
 }

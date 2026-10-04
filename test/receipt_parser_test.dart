@@ -87,11 +87,12 @@ void main() {
     expect(draft.category, ExpenseCategory.sightseeing);
   });
 
-  test('합계 키워드가 없으면 거스름돈 행을 뺀 가장 큰 금액', () {
+  test('합계 단어가 없으면 금액을 짐작하지 않고 비워 둔다', () {
     final draft = ReceiptParser(tripCurrency: 'THB').parse(
       lines(['Taxi', '2026-10-01', 'Fare 250', 'Cash 500', 'Change 250']),
     );
-    expect(draft.amount, 250);
+    expect(draft.amount, isNull);
+    expect(draft.totalByWord, isFalse);
     expect(draft.category, ExpenseCategory.transport);
   });
 
@@ -205,15 +206,15 @@ void main() {
       expect(total('RUB', ['Кофе 250', 'Итого 520', 'Сдача 480']), 520);
     });
 
-    test('통화 표시가 없으면 여행지(현지) 통화, 합계 줄의 통화를 우선', () {
+    test('통화 표시가 없으면 통화를 비워 두고 사용자가 고른다', () {
       final local = ReceiptParser(tripCurrency: 'VND')
           .parse(lines(['Phở bò 65.000', 'Tổng cộng 130.000']));
-      expect(local.currency, 'VND');
+      expect(local.currency, isNull);
       expect(local.amount, 130000);
       // "TERMINAL" 의 RM 을 말레이시아 링깃으로 보지 않는다.
       final terminal = ReceiptParser(tripCurrency: 'GBP')
           .parse(lines(['TERMINAL 0042', 'TOTAL 12.50']));
-      expect(terminal.currency, 'GBP');
+      expect(terminal.currency, isNull);
     });
   });
 
@@ -271,9 +272,10 @@ void main() {
       expect(d.amount, 10.1);
     });
 
-    test('합계 줄을 못 읽어도 사업자번호를 금액으로 잡지 않는다', () {
+    test('합계 줄을 못 읽으면 사업자번호를 금액으로 잡지 않고 비워 둔다', () {
       final d = parser.parse(lines([...header, ...footer]));
-      expect(d.amount, 10.1);
+      expect(d.amount, isNull);
+      expect(d.currency, 'MYR');
     });
   });
 
@@ -304,7 +306,7 @@ void main() {
       expect(d.totalByWord, isTrue);
     });
 
-    test('한글이 깨져도 사업자번호·전화번호를 금액으로 잡지 않는다', () {
+    test('한글이 깨져 합계를 못 읽으면 금액·통화를 비워 둔다', () {
       final d = parser.parse(
         lines([
           'T:1500- 0000',
@@ -316,7 +318,8 @@ void main() {
           'Bt 17600',
         ]),
       );
-      expect(d.amount, 17600);
+      expect(d.amount, isNull);
+      expect(d.currency, isNull);
       expect(d.totalByWord, isFalse);
     });
   });

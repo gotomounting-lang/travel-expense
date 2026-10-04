@@ -450,4 +450,15 @@ class AppLocalizationsId extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Tersimpan di sheet \'$title\'';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Total pada struk tidak dapat dipastikan. Silakan masukkan jumlah dan mata uang sendiri. Foto sudah dihapus setelah dianalisis.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Mata uang pada struk tidak dapat dipastikan. Periksa jumlahnya dan pilih mata uang sendiri. Foto sudah dihapus setelah dianalisis.';
+
+  @override
+  String get currencyRequired => 'Pilih mata uang';
 }

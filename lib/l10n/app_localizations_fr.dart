@@ -451,4 +451,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Enregistré dans la feuille « $title »';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Impossible de confirmer le total du reçu. Saisissez vous-même le montant et la devise. La photo a été supprimée après l\'analyse.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Impossible de confirmer la devise du reçu. Vérifiez le montant et choisissez vous-même la devise. La photo a été supprimée après l\'analyse.';
+
+  @override
+  String get currencyRequired => 'Choisissez une devise';
 }

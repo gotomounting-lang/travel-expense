@@ -127,5 +127,8 @@
   "next": "Berikutnya",
   "exportTripSheet": "Simpan ke Google Spreadsheet",
   "exportTripSheetSaving": "Menyimpan ke Google Spreadsheet…",
-  "exportTripSheetDone": "Tersimpan di sheet '{title}'"
+  "exportTripSheetDone": "Tersimpan di sheet '{title}'",
+  "receiptTotalNotFound": "Total pada struk tidak dapat dipastikan. Silakan masukkan jumlah dan mata uang sendiri. Foto sudah dihapus setelah dianalisis.",
+  "receiptCurrencyNotFound": "Mata uang pada struk tidak dapat dipastikan. Periksa jumlahnya dan pilih mata uang sendiri. Foto sudah dihapus setelah dianalisis.",
+  "currencyRequired": "Pilih mata uang"
 }

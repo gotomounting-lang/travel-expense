@@ -450,4 +450,15 @@ class AppLocalizationsMy extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return '\'$title\' စာရင်းဇယားတွင် သိမ်းပြီးပါပြီ';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'ပြေစာပေါ်ရှိ စုစုပေါင်းငွေပမာဏကို အတည်မပြုနိုင်ပါ။ ငွေပမာဏနှင့် ငွေကြေးကို ကိုယ်တိုင်ထည့်ပါ။ ဓာတ်ပုံကို စစ်ဆေးပြီးနောက် ဖျက်လိုက်ပါပြီ။';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'ပြေစာပေါ်ရှိ ငွေကြေးအမျိုးအစားကို အတည်မပြုနိုင်ပါ။ ငွေပမာဏကို စစ်ဆေးပြီး ငွေကြေးကို ကိုယ်တိုင်ရွေးပါ။ ဓာတ်ပုံကို စစ်ဆေးပြီးနောက် ဖျက်လိုက်ပါပြီ။';
+
+  @override
+  String get currencyRequired => 'ငွေကြေးကို ရွေးပါ';
 }

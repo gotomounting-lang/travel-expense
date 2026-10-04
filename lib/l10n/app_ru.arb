@@ -127,5 +127,8 @@
   "next": "Далее",
   "exportTripSheet": "Сохранить в Google Таблицы",
   "exportTripSheetSaving": "Сохранение в Google Таблицы…",
-  "exportTripSheetDone": "Сохранено в таблицу «{title}»"
+  "exportTripSheetDone": "Сохранено в таблицу «{title}»",
+  "receiptTotalNotFound": "Не удалось определить итоговую сумму в чеке. Введите сумму и валюту вручную. Фото удалено после анализа.",
+  "receiptCurrencyNotFound": "Не удалось определить валюту в чеке. Проверьте сумму и выберите валюту вручную. Фото удалено после анализа.",
+  "currencyRequired": "Выберите валюту"
 }

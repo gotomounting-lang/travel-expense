@@ -429,4 +429,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return '\'$title\' 시트에 저장했어요';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      '영수증에서 합계 금액을 확인할 수 없어요. 금액과 통화를 직접 입력해 주세요. 사진은 분석 후 삭제했습니다.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      '영수증에서 통화를 확인할 수 없어요. 금액을 확인하고 통화를 직접 골라 주세요. 사진은 분석 후 삭제했습니다.';
+
+  @override
+  String get currencyRequired => '통화를 골라 주세요';
 }

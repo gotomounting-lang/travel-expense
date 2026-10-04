@@ -449,4 +449,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Đã lưu vào trang tính \'$title\'';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Không xác định được tổng tiền trên hóa đơn. Vui lòng tự nhập số tiền và loại tiền. Ảnh đã được xóa sau khi phân tích.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Không xác định được loại tiền trên hóa đơn. Hãy kiểm tra số tiền và tự chọn loại tiền. Ảnh đã được xóa sau khi phân tích.';
+
+  @override
+  String get currencyRequired => 'Hãy chọn loại tiền';
 }

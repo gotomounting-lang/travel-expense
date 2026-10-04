@@ -12,7 +12,8 @@ class CurrencyField extends StatelessWidget {
     this.label,
   });
 
-  final String value;
+  /// null 이면 아무것도 고르지 않은 상태로 두고, 고르기 전엔 저장할 수 없다.
+  final String? value;
   final ValueChanged<String> onChanged;
   final String? label;
 
@@ -21,12 +22,14 @@ class CurrencyField extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final items = [
       ...Currency.common,
-      if (!Currency.common.any((c) => c.code == value)) Currency.byCode(value),
+      if (value != null && !Currency.common.any((c) => c.code == value))
+        Currency.byCode(value!),
     ];
     return DropdownButtonFormField<String>(
       initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(labelText: label ?? l.currency),
+      validator: (v) => v == null ? l.currencyRequired : null,
       items: [
         for (final c in items)
           DropdownMenuItem(

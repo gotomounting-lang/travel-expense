@@ -450,4 +450,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return '\'$title\' शीट में सहेजा गया';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'रसीद पर कुल राशि की पुष्टि नहीं हो सकी। कृपया राशि और मुद्रा खुद दर्ज करें। विश्लेषण के बाद फ़ोटो हटा दी गई।';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'रसीद पर मुद्रा की पुष्टि नहीं हो सकी। राशि जाँचें और मुद्रा खुद चुनें। विश्लेषण के बाद फ़ोटो हटा दी गई।';
+
+  @override
+  String get currencyRequired => 'मुद्रा चुनें';
 }

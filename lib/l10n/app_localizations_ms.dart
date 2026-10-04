@@ -450,4 +450,15 @@ class AppLocalizationsMs extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Disimpan ke helaian \'$title\'';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Jumlah keseluruhan pada resit tidak dapat disahkan. Sila masukkan amaun dan mata wang sendiri. Foto telah dipadam selepas analisis.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Mata wang pada resit tidak dapat disahkan. Semak amaun dan pilih mata wang sendiri. Foto telah dipadam selepas analisis.';
+
+  @override
+  String get currencyRequired => 'Pilih mata wang';
 }

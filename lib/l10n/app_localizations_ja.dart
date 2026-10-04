@@ -428,4 +428,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return '「$title」シートに保存しました';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'レシートの合計金額を確認できませんでした。金額と通貨を入力してください。写真は分析後に削除しました。';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。';
+
+  @override
+  String get currencyRequired => '通貨を選んでください';
 }

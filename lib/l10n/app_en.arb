@@ -127,5 +127,8 @@
   "next": "Next",
   "exportTripSheet": "Save to Google Sheets",
   "exportTripSheetSaving": "Saving to Google Sheets…",
-  "exportTripSheetDone": "Saved to the '{title}' sheet"
+  "exportTripSheetDone": "Saved to the '{title}' sheet",
+  "receiptTotalNotFound": "Couldn't confirm the total on this receipt. Please enter the amount and currency yourself. The photo was deleted after analysis.",
+  "receiptCurrencyNotFound": "Couldn't confirm the currency on this receipt. Check the amount and choose the currency yourself. The photo was deleted after analysis.",
+  "currencyRequired": "Choose a currency"
 }

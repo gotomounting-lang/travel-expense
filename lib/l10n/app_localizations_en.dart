@@ -449,4 +449,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String exportTripSheetDone(String title) {
     return 'Saved to the \'$title\' sheet';
   }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Couldn\'t confirm the total on this receipt. Please enter the amount and currency yourself. The photo was deleted after analysis.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Couldn\'t confirm the currency on this receipt. Check the amount and choose the currency yourself. The photo was deleted after analysis.';
+
+  @override
+  String get currencyRequired => 'Choose a currency';
 }
