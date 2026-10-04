@@ -149,6 +149,20 @@ void main() {
     expect(draft.currency, 'USD');
   });
 
+  test('TOTAL 아래 구분선이 인식되지 않아도 아랫줄 글자 속 숫자는 합계가 아니다', () {
+    final draft = ReceiptParser(tripCurrency: 'GBP').parse(
+      lines([
+        'Claude Opus 4.5 \$10.07',
+        'Cache read 9,971,315',
+        '\$10.65',
+        'TOTAL',
+        'CASHIER: Claude Opus 4.5',
+        'Thank you for building!',
+      ]),
+    );
+    expect(draft.amount, 10.65);
+  });
+
   test('글자가 없으면 빈 결과', () {
     final draft = ReceiptParser(tripCurrency: 'USD').parse([]);
     expect(draft.isEmpty, isTrue);

@@ -253,6 +253,15 @@ class ReceiptParser {
     ];
   }
 
+  /// 금액·통화 표시 말고 다른 글자가 거의 없는 행 (예: "\$10.65", "623.00 CZK").
+  static bool _isAmountOnly(String row) {
+    final letters = row
+        .replaceAll(RegExp(r'\b[A-Z]{3}\b'), '')
+        .replaceAll(RegExp(r'Kč|zł|Ft|円|元|원', caseSensitive: false), '')
+        .replaceAll(RegExp(r'[^\p{L}]', unicode: true), '');
+    return letters.length <= 2 && RegExp(r'\d').hasMatch(row);
+  }
+
   double? _findTotal(List<String> rows, int decimals) {
     // 1) 합계 키워드가 있는 행의 마지막 금액. 아래쪽 행(최종 합계)일수록 우선.
     double? best;
@@ -260,13 +269,12 @@ class ReceiptParser {
       final row = rows[i];
       if (!_hasAny(row, _totalWords) || _hasAny(row, _notTotalWords)) continue;
       var amounts = _amountsIn(row, decimals, spaced: true);
-      // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 다음 행을 본다.
-      if (amounts.isEmpty && i + 1 < rows.length) {
-        amounts = _amountsIn(rows[i + 1], decimals, spaced: true);
-      }
-      // 금액이 키워드보다 살짝 위에 찍혀 앞 행으로 묶인 경우.
-      if (amounts.isEmpty && i > 0 && !_hasAny(rows[i - 1], _notTotalWords)) {
-        amounts = _amountsIn(rows[i - 1], decimals, spaced: true);
+      // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 아래, 그다음 바로 위 행을
+      // 본다. 다른 글자가 섞인 행("Claude Opus 4.5")은 금액만 있는 행이 아니다.
+      for (final j in [i + 1, i - 1]) {
+        if (amounts.isNotEmpty) break;
+        if (j < 0 || j >= rows.length || !_isAmountOnly(rows[j])) continue;
+        amounts = _amountsIn(rows[j], decimals, spaced: true);
       }
       if (amounts.isEmpty) continue;
       final v = amounts.last;
