@@ -306,6 +306,19 @@ void main() {
       expect(d.totalByWord, isTrue);
     });
 
+    test('₩, ￦, 원 표시는 원화', () {
+      for (final row in [
+        '합계 ₩17,600',
+        '합계 ￦17,600',
+        '합계 17,600원',
+        '합계(원) 17,600',
+      ]) {
+        final d = parser.parse(lines(['회원 샘플', row]));
+        expect(d.currency, 'KRW', reason: row);
+        expect(d.amount, 17600, reason: row);
+      }
+    });
+
     test('통화 표시가 없는 한글 영수증은 통화를 비워 둔다', () {
       final d = parser.parse(lines(['샘플커피 가산점', '합계 17,600', '결제금액 17,600']));
       expect(d.amount, 17600);

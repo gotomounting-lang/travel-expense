@@ -485,8 +485,11 @@ class ReceiptParser {
     }
     // 'RM 12.50', 'Rp 25.000' 처럼 숫자 바로 앞의 표시만 본다 ("TERMINAL" 의 RM 은 아님).
     if (RegExp(r'\bRM\s?\d').hasMatch(upper)) found.add('MYR');
-    // '원' 은 숫자 바로 뒤에 올 때만 ("17,600원"). "회원" 의 원은 아님.
-    if (RegExp(r'\d\s?원').hasMatch(text)) found.add('KRW');
+    // '원' 은 금액 단위로 쓰일 때만 ("17,600원", "금액(원)", "단위: 원").
+    // "회원", "원두" 의 원은 아님.
+    if (RegExp(r'\d\s?원|\(\s*원\s*\)|단위\s*[:：]?\s*원').hasMatch(text)) {
+      found.add('KRW');
+    }
     if (RegExp(r'\bRP\.?\s?\d').hasMatch(upper)) found.add('IDR');
     if (text.contains('¥') || text.contains('￥')) {
       found.add(tripCurrency == 'CNY' ? 'CNY' : 'JPY');
