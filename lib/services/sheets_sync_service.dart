@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import 'google_account_service.dart';
+import '../util/money.dart';
 import 'sheet_rows.dart';
 
 enum SheetsSyncError { notSignedIn, noPermission, expired }
@@ -87,6 +88,7 @@ class SheetsSyncService {
     final driveApi = drive.DriveApi(client);
     final id = await _ensureSpreadsheet(sheetsApi, driveApi, email, l);
 
+    final summary = buildSummary(l, trips, expenses);
     final values = sheetsApi.spreadsheets.values;
     await values.batchClear(
       sheets.BatchClearValuesRequest(
@@ -100,12 +102,88 @@ class SheetsSyncService {
         data: [
           _range(l, SheetTab.expenses, buildExpenseRows(l, trips, expenses)),
           _range(l, SheetTab.trips, buildTripRows(l, trips, expenses)),
-          _range(l, SheetTab.summary, buildSummaryRows(l, trips, expenses)),
+          _range(l, SheetTab.summary, summary.rows),
         ],
       ),
       id,
     );
+    await _replaceCharts(sheetsApi, id, l, summary.blocks);
     return 'https://docs.google.com/spreadsheets/d/$id';
+  }
+
+  /// 요약 탭의 파이차트를 여행마다 하나씩 다시 그린다.
+  /// (행 수가 바뀌므로 앱이 만든 요약 탭의 차트는 지우고 새로 만든다.)
+  Future<void> _replaceCharts(
+    sheets.SheetsApi api,
+    String id,
+    AppLocalizations l,
+    List<SummaryBlock> blocks,
+  ) async {
+    final sheetId = SheetTab.summary.sheetId;
+    final ss = await api.spreadsheets.get(
+      id,
+      $fields: 'sheets(properties(sheetId),charts(chartId))',
+    );
+    final existing = [
+      for (final s in ss.sheets ?? <sheets.Sheet>[])
+        if (s.properties?.sheetId == sheetId)
+          for (final c in s.charts ?? <sheets.EmbeddedChart>[])
+            if (c.chartId != null) c.chartId!,
+    ];
+    final requests = <sheets.Request>[
+      for (final chartId in existing)
+        sheets.Request(
+          deleteEmbeddedObject: sheets.DeleteEmbeddedObjectRequest(
+            objectId: chartId,
+          ),
+        ),
+      for (final (i, b) in blocks.indexed)
+        sheets.Request(addChart: sheets.AddChartRequest(chart: _pie(l, b, i))),
+    ];
+    if (requests.isEmpty) return;
+    await api.spreadsheets.batchUpdate(
+      sheets.BatchUpdateSpreadsheetRequest(requests: requests),
+      id,
+    );
+  }
+
+  sheets.EmbeddedChart _pie(AppLocalizations l, SummaryBlock b, int index) {
+    final sheetId = SheetTab.summary.sheetId;
+    sheets.ChartData column(int col) => sheets.ChartData(
+      sourceRange: sheets.ChartSourceRange(
+        sources: [
+          sheets.GridRange(
+            sheetId: sheetId,
+            startRowIndex: b.startRow,
+            endRowIndex: b.endRow,
+            startColumnIndex: col,
+            endColumnIndex: col + 1,
+          ),
+        ],
+      ),
+    );
+    return sheets.EmbeddedChart(
+      spec: sheets.ChartSpec(
+        title: '${b.title} · ${formatKrw(l, b.total)}',
+        pieChart: sheets.PieChartSpec(
+          legendPosition: 'RIGHT_LEGEND',
+          pieHole: 0.4,
+          domain: column(1), // 카테고리
+          series: column(2), // 원화 합계
+        ),
+      ),
+      position: sheets.EmbeddedObjectPosition(
+        overlayPosition: sheets.OverlayPosition(
+          anchorCell: sheets.GridCoordinate(
+            sheetId: sheetId,
+            rowIndex: index * 16,
+            columnIndex: 5,
+          ),
+          widthPixels: 480,
+          heightPixels: 300,
+        ),
+      ),
+    );
   }
 
   String _quote(String title) => "'${title.replaceAll("'", "''")}'";

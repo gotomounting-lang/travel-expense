@@ -58,12 +58,24 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           PROPS
 
-      - name: APK 빌드
+      # 빌드 번호는 실행 번호를 써서 Play 에 올릴 때마다 커지게 한다.
+      - name: APK 빌드 (기기 설치·시험용)
         run: >
           flutter build apk --release
+          --build-number=${{ github.run_number }}
+          --dart-define=GOOGLE_SERVER_CLIENT_ID=${{ vars.GOOGLE_SERVER_CLIENT_ID }}
+      - name: AAB 빌드 (Play 스토어 업로드용)
+        run: >
+          flutter build appbundle --release
+          --build-number=${{ github.run_number }}
           --dart-define=GOOGLE_SERVER_CLIENT_ID=${{ vars.GOOGLE_SERVER_CLIENT_ID }}
       - uses: actions/upload-artifact@v4
         with:
           name: travel-expense-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: travel-expense-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30

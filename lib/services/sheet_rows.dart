@@ -135,15 +135,40 @@ Map<ExpenseCategory, int> categoryTotals(Iterable<Expense> expenses) {
   );
 }
 
+/// 요약 탭에서 한 여행이 차지하는 행 범위 (0부터, 머리글 포함 기준).
+/// 시트 파이차트의 데이터 범위로 쓴다.
+class SummaryBlock {
+  const SummaryBlock(this.title, this.total, this.startRow, this.endRow);
+
+  final String title;
+  final int total;
+  final int startRow;
+
+  /// 마지막 행 다음 (끝 미포함).
+  final int endRow;
+}
+
 List<List<Object>> buildSummaryRows(
+  AppLocalizations l,
+  List<Trip> trips,
+  List<Expense> expenses,
+) => buildSummary(l, trips, expenses).rows;
+
+({List<List<Object>> rows, List<SummaryBlock> blocks}) buildSummary(
   AppLocalizations l,
   List<Trip> trips,
   List<Expense> expenses,
 ) {
   final rows = <List<Object>>[summaryHeader(l)];
+  final blocks = <SummaryBlock>[];
   for (final t in trips) {
     final totals = categoryTotals(expenses.where((e) => e.tripId == t.id));
     final sum = totals.values.fold<int>(0, (s, v) => s + v);
+    if (totals.isNotEmpty) {
+      blocks.add(
+        SummaryBlock(t.title, sum, rows.length, rows.length + totals.length),
+      );
+    }
     for (final entry in totals.entries) {
       rows.add([
         _text(t.title),
@@ -153,5 +178,5 @@ List<List<Object>> buildSummaryRows(
       ]);
     }
   }
-  return rows;
+  return (rows: rows, blocks: blocks);
 }

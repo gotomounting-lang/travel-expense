@@ -91,4 +91,19 @@ void main() {
       reason: '언어가 바뀌어도 탭은 sheetId 로 찾는다',
     );
   });
+
+  test('요약 블록: 시트 파이차트가 쓸 여행별 행 범위', () {
+    final other = Trip(
+      id: 't2',
+      title: '빈 여행',
+      currency: 'USD',
+      startDate: DateTime(2026, 11, 1),
+      endDate: DateTime(2026, 11, 2),
+    );
+    final s = buildSummary(ko, [trip, other], expenses);
+    expect(s.blocks, hasLength(1), reason: '원화 지출이 없는 여행은 차트를 만들지 않는다');
+    expect(s.blocks.single.startRow, 1);
+    expect(s.blocks.single.endRow, 3);
+    expect(s.blocks.single.total, 28200 + 11280);
+  });
 }

@@ -380,4 +380,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get read => '읽기';
+
+  @override
+  String get privacyPolicy => '개인정보처리방침';
 }

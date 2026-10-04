@@ -197,5 +197,6 @@
   "pasteCardAlertHint": "카드 앱·문자로 받은 해외 승인 알림 내용을 붙여넣으세요.",
   "pasteCardAlertFailed": "해외 결제 승인 알림으로 읽지 못했어요. 직접 입력해 주세요.",
   "cardReadNotice": "카드 알림에서 읽은 내용입니다. 확인하고 고친 뒤 저장하세요.",
-  "read": "읽기"
+  "read": "읽기",
+  "privacyPolicy": "개인정보처리방침"
 }

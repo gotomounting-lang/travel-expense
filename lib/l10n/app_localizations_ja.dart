@@ -379,4 +379,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get read => '読み取る';
+
+  @override
+  String get privacyPolicy => 'プライバシーポリシー';
 }

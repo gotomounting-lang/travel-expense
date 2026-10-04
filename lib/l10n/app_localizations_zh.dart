@@ -377,4 +377,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get read => '识别';
+
+  @override
+  String get privacyPolicy => '隐私政策';
 }

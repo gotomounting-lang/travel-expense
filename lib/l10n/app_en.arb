@@ -114,5 +114,6 @@
   "pasteCardAlertHint": "Paste the approval alert you got from your card app or SMS.",
   "pasteCardAlertFailed": "Couldn't read this as a foreign payment approval. Please enter it manually.",
   "cardReadNotice": "Filled in from your card alert. Check and fix before saving.",
-  "read": "Read"
+  "read": "Read",
+  "privacyPolicy": "Privacy policy"
 }

@@ -114,5 +114,6 @@
   "pasteCardAlertHint": "カードアプリやSMSで届いた海外承認通知を貼り付けてください。",
   "pasteCardAlertFailed": "海外決済の承認通知として読み取れませんでした。手入力してください。",
   "cardReadNotice": "カード通知から読み取りました。確認・修正してから保存してください。",
-  "read": "読み取る"
+  "read": "読み取る",
+  "privacyPolicy": "プライバシーポリシー"
 }

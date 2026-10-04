@@ -8,6 +8,10 @@ import '../../services/sheets_sync_service.dart';
 import '../../state/app_state.dart';
 import '../../state/locale_controller.dart';
 
+/// GitHub Pages 로 공개하는 개인정보처리방침 (docs/privacy.html).
+const privacyPolicyUrl =
+    'https://gotomounting-lang.github.io/travel-expense/privacy.html';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -129,6 +133,15 @@ class SettingsScreen extends StatelessWidget {
           Text(l.rateInfoTitle, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(l.rateInfoBody, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 24),
+          TextButton.icon(
+            onPressed: () => launchUrl(
+              Uri.parse('$privacyPolicyUrl#${l.localeName}'),
+              mode: LaunchMode.externalApplication,
+            ),
+            icon: const Icon(Icons.privacy_tip_outlined),
+            label: Text(l.privacyPolicy),
+          ),
         ],
       ),
     );

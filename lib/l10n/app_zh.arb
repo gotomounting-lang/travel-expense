@@ -114,5 +114,6 @@
   "pasteCardAlertHint": "粘贴银行卡应用或短信收到的境外消费通知。",
   "pasteCardAlertFailed": "无法识别为境外消费通知，请手动输入。",
   "cardReadNotice": "已根据银行卡通知填写，请检查修改后保存。",
-  "read": "识别"
+  "read": "识别",
+  "privacyPolicy": "隐私政策"
 }

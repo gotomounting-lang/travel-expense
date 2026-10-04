@@ -791,6 +791,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'읽기'**
   String get read;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인정보처리방침'**
+  String get privacyPolicy;
 }
 
 class _AppLocalizationsDelegate
