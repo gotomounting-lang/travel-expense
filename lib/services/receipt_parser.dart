@@ -67,9 +67,15 @@ class ReceiptParser {
     if (rows.isEmpty) return const ReceiptDraft();
     final all = rows.join('\n');
 
-    final currency = detectCurrency(all);
+    var currency = detectCurrency(all);
     final decimals = Currency.byCode(currency).decimals;
     final amount = _findTotal(rows, decimals);
+    // 합계 줄에 통화 표시가 있으면 그것이 실제 결제 통화다
+    // (유로 환산 금액이 함께 찍힌 체코 영수증 등).
+    final onTotal = _currenciesIn(_totalRow ?? '');
+    if (onTotal.isNotEmpty) {
+      currency = onTotal.contains(tripCurrency) ? tripCurrency : onTotal.first;
+    }
     final date = _findDate(all, currency);
     final merchant = _findMerchant(rows);
     final items = _findItems(rows, decimals, amount);
@@ -139,59 +145,100 @@ class ReceiptParser {
     return double.tryParse(s.replaceAll(RegExp(r'[.,]'), ''));
   }
 
+  /// 합계를 뜻하는 말 (나라별 영수증 표기). 앞쪽 목록일수록 최종 합계에 가깝다.
   static const _totalWords = [
-    'grand total',
-    'total due',
-    'amount due',
-    'total',
+    // 영어
+    'grand total', 'total due', 'total amount', 'amount due', 'balance due',
+    'total to pay', 'total', 'to pay',
+    // 한국어
+    '총합계', '판매총액', '총판매금액', '총결제금액', '총결재금액', '결제금액',
+    '결재금액', '결제 금액', '승인금액', '승인 금액', '청구금액', '받을금액',
+    '총액', '총 금액', '총금액', '합계', '합 계',
+    // 일본어
+    '合計', '合 計', '総合計', '総計', 'お買上計', 'お買上げ計', 'ご請求', 'お会計',
+    'お支払', '税込合計',
+    // 중국어
+    '合计', '总计', '總計', '总额', '總額', '总金额', '總金額', '应付', '應付',
+    '应收', '實付', '实付', '实收', '實收', '小票金额',
+    // 동남아
+    'tổng cộng', 'tổng tiền', 'tổng', 'thanh toán', 'thành tiền',
+    'รวมทั้งสิ้น', 'ยอดรวม', 'รวมเงิน', 'รวม', 'jumlah besar', 'jumlah',
+    'kabuuan',
+    // 유럽
+    'gesamtbetrag', 'gesamt', 'summe', 'zu zahlen', 'endbetrag',
+    'totale complessivo', 'totale', 'total ttc', 'net à payer', 'à payer',
+    'importe total', 'total a pagar', 'valor total', 'a pagar',
+    'totaal', 'te betalen', 'totalt', 'att betala', 'i alt', 'å betale',
+    'yhteensä', 'celkem', 'k úhradě', 'razem', 'do zapłaty', 'suma',
+    'összesen', 'végösszeg', 'fizetendő', 'ukupno', 'za plaćanje',
+    'total de plată', 'σύνολο', 'πληρωτέο', 'итого', 'всего', 'к оплате',
+    'toplam', 'genel toplam',
+    // 중동·남아시아
+    'الإجمالي', 'المجموع', 'סה"כ', 'कुल',
+    // 그 밖의 "금액" (합계 단어가 없을 때만 쓴다)
+    'amount', 'montant', 'importe', 'importo', 'betrag',
+  ];
+
+  /// "합계"가 아니라 그보다 약한 "금액" 단어. 진짜 합계 단어가 있으면 무시한다.
+  static const _weakTotalWords = [
     'amount',
-    'balance due',
-    'summe',
-    'gesamt',
-    'totale',
-    'celkem',
-    'k úhradě',
-    'razem',
-    'do zapłaty',
-    'összesen',
-    'importe',
     'montant',
-    '合計',
-    '合计',
-    '総計',
-    '总计',
-    'お会計',
-    'ご請求',
-    '应付',
-    '實付',
-    '实付',
-    '총액',
-    '합계',
-    '총 금액',
-    '결제금액',
-    '받을금액',
-    'tổng',
-    'thanh toán',
-    'รวม',
+    'importe',
+    'importo',
+    'betrag',
     'jumlah',
+    'รวม',
+    'tổng',
+    'suma',
+    'a pagar',
+    'to pay',
   ];
 
   static const _notTotalWords = [
     'subtotal',
     'sub total',
     'sub-total',
+    'sous-total',
+    'subtotale',
+    'zwischensumme',
+    'tussentotaal',
+    'промежуточный',
     'tax',
     'vat',
     'gst',
+    'mwst',
+    'ust',
+    'tva',
+    'iva',
+    'btw',
+    'moms',
     'dph',
     'ptu',
     'áfa',
+    'kdv',
+    'ндс',
+    'φπα',
+    'ppn',
+    'thuế',
     'change',
     'cash',
+    'tendered',
     'tip',
+    'gratuity',
     'discount',
     'points',
     'saving',
+    'saved',
+    'rückgeld',
+    'gegeben',
+    'monnaie',
+    'rendu',
+    'cambio',
+    'resto',
+    'wechselgeld',
+    'sdacha',
+    'reszta',
+    'сдача',
     '小計',
     '小计',
     '税',
@@ -199,16 +246,26 @@ class ReceiptParser {
     'おつり',
     '釣銭',
     '找零',
+    '找赎',
     '现金',
     '現金',
     '预付',
     'お預',
     '預り',
+    '소계',
     '부가세',
+    '과세',
+    '면세',
     '거스름',
     '받은금액',
     '할인',
+    '포인트',
     'tiền thừa',
+    'tiền khách đưa',
+    'เงินทอน',
+    'ภาษี',
+    'kembalian',
+    'tunai',
   ];
 
   bool _hasAny(String row, List<String> words) {
@@ -262,23 +319,38 @@ class ReceiptParser {
     return letters.length <= 2 && RegExp(r'\d').hasMatch(row);
   }
 
+  /// 합계 금액을 읽은 줄 (합계 단어 줄, 금액이 옆 줄이면 그 줄까지).
+  String? _totalRow;
+
   double? _findTotal(List<String> rows, int decimals) {
+    _totalRow = null;
     // 1) 합계 키워드가 있는 행의 마지막 금액. 아래쪽 행(최종 합계)일수록 우선.
+    // 진짜 합계 단어가 있는 행이 하나라도 있으면 "금액" 같은 약한 단어 행은 뺀다.
+    bool strong(String row) => _totalWords
+        .where((w) => !_weakTotalWords.contains(w))
+        .any((w) => containsWord(row.toLowerCase(), w));
+    final hasStrong = rows.any((r) => strong(r) && !_hasAny(r, _notTotalWords));
     double? best;
     for (var i = 0; i < rows.length; i++) {
       final row = rows[i];
       if (!_hasAny(row, _totalWords) || _hasAny(row, _notTotalWords)) continue;
+      if (hasStrong && !strong(row)) continue;
       var amounts = _amountsIn(row, decimals, spaced: true);
+      var amountRow = row;
       // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 아래, 그다음 바로 위 행을
       // 본다. 다른 글자가 섞인 행("Claude Opus 4.5")은 금액만 있는 행이 아니다.
       for (final j in [i + 1, i - 1]) {
         if (amounts.isNotEmpty) break;
         if (j < 0 || j >= rows.length || !_isAmountOnly(rows[j])) continue;
         amounts = _amountsIn(rows[j], decimals, spaced: true);
+        amountRow = '$row ${rows[j]}';
       }
       if (amounts.isEmpty) continue;
       final v = amounts.last;
-      if (best == null || v >= best) best = v;
+      if (best == null || v >= best) {
+        best = v;
+        _totalRow = amountRow;
+      }
     }
     if (best != null) return best;
 
@@ -294,52 +366,86 @@ class ReceiptParser {
 
   // ---- 통화 ----
 
+  static const _symbols = {
+    'NT\$': 'TWD',
+    'HK\$': 'HKD',
+    'S\$': 'SGD',
+    'A\$': 'AUD',
+    'NZ\$': 'NZD',
+    'US\$': 'USD',
+    'C\$': 'CAD',
+    'R\$': 'BRL',
+    'MOP\$': 'MOP',
+    'KČ': 'CZK',
+    'ZŁ': 'PLN',
+    '€': 'EUR',
+    '£': 'GBP',
+    '₩': 'KRW',
+    '฿': 'THB',
+    '₫': 'VND',
+    '₱': 'PHP',
+    '₹': 'INR',
+    '₺': 'TRY',
+    '₽': 'RUB',
+    '₮': 'MNT',
+    '₸': 'KZT',
+    '円': 'JPY',
+    '元': 'CNY',
+    '원': 'KRW',
+    'บาท': 'THB',
+    'ĐỒNG': 'VND',
+  };
+
+  /// 영수증에 찍힌 통화. 여행지(현지) 통화 표시가 있으면 그것을 먼저 고른다.
   String detectCurrency(String text) {
+    final found = _currenciesIn(text);
+    if (found.contains(tripCurrency)) return tripCurrency;
+    return found.isEmpty ? tripCurrency : found.first;
+  }
+
+  /// 글자 속 통화 코드·기호를 나온 순서대로.
+  List<String> _currenciesIn(String text) {
     final upper = text.toUpperCase();
-    final codes = RegExp(r'\b([A-Z]{3})\b').allMatches(upper).map((m) => m[1]!);
-    for (final code in codes) {
-      if (Currency.common.any((c) => c.code == code)) return code;
+    final found = <String>[];
+    for (final m in RegExp(r'\b([A-Z]{3})\b').allMatches(upper)) {
+      final code = m[1]!;
+      if (Currency.common.any((c) => c.code == code)) found.add(code);
     }
-    const symbols = {
-      'KČ': 'CZK',
-      'ZŁ': 'PLN',
-      'NT\$': 'TWD',
-      'HK\$': 'HKD',
-      'S\$': 'SGD',
-      'A\$': 'AUD',
-      'NZ\$': 'NZD',
-      'US\$': 'USD',
-      'C\$': 'CAD',
-      '€': 'EUR',
-      '£': 'GBP',
-      '₩': 'KRW',
-      '฿': 'THB',
-      '₫': 'VND',
-      '₱': 'PHP',
-      '円': 'JPY',
-      '元': 'CNY',
-      '원': 'KRW',
-      'RM': 'MYR',
-      'RP': 'IDR',
-      'บาท': 'THB',
-    };
-    for (final e in symbols.entries) {
+    for (final e in _symbols.entries) {
       if (upper.contains(e.key)) {
-        // '元' 은 대만·홍콩 영수증에도 쓰인다.
-        if (e.key == '元' && ['TWD', 'HKD'].contains(tripCurrency)) {
-          return tripCurrency;
+        // '元' 은 대만·홍콩·마카오 영수증에도 쓰인다.
+        if (e.key == '元' && ['TWD', 'HKD', 'MOP'].contains(tripCurrency)) {
+          found.add(tripCurrency);
+        } else {
+          found.add(e.value);
         }
-        return e.value;
       }
     }
+    // 'RM 12.50', 'Rp 25.000' 처럼 숫자 바로 앞의 표시만 본다 ("TERMINAL" 의 RM 은 아님).
+    if (RegExp(r'\bRM\s?\d').hasMatch(upper)) found.add('MYR');
+    if (RegExp(r'\bRP\.?\s?\d').hasMatch(upper)) found.add('IDR');
     if (text.contains('¥') || text.contains('￥')) {
-      return tripCurrency == 'CNY' ? 'CNY' : 'JPY';
+      found.add(tripCurrency == 'CNY' ? 'CNY' : 'JPY');
     }
     if (text.contains('\$')) {
-      const dollars = ['USD', 'TWD', 'HKD', 'SGD', 'AUD', 'NZD', 'CAD'];
-      return dollars.contains(tripCurrency) ? tripCurrency : 'USD';
+      // 달러·페소 나라는 모두 '\$' 를 쓴다.
+      const dollars = [
+        'USD',
+        'TWD',
+        'HKD',
+        'SGD',
+        'AUD',
+        'NZD',
+        'CAD',
+        'MXN',
+        'MOP',
+        'ARS',
+        'CLP',
+        'COP',
+      ];
+      found.add(dollars.contains(tripCurrency) ? tripCurrency : 'USD');
     }
-    return tripCurrency;
+    return found;
   }
 
   // ---- 날짜 ----

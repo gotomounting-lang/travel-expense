@@ -163,6 +163,60 @@ void main() {
     expect(draft.amount, 10.65);
   });
 
+  group('나라별 합계 단어와 현지 통화', () {
+    double? total(String trip, List<String> rows) =>
+        ReceiptParser(tripCurrency: trip).parse(lines(rows)).amount;
+
+    test('한국: 판매총액·총합계·결재금액·승인금액, 할인·부가세·받은금액은 아님', () {
+      for (final word in ['판매총액', '총합계', '결재금액', '승인금액', '청구금액']) {
+        expect(
+          total('KRW', [
+            '아메리카노 4,500',
+            '케이크 7,000',
+            '할인 -1,000',
+            '부가세 950',
+            '$word 10,500',
+            '받은금액 20,000',
+          ]),
+          10500,
+          reason: word,
+        );
+      }
+    });
+
+    test('일본 合計, 독일 Summe, 태국 รวมทั้งสิ้น, 러시아 Итого', () {
+      expect(
+        total('JPY', ['おにぎり 150', '小計 1,180', '合計 ¥1,298', 'お預り 2,000']),
+        1298,
+      );
+      expect(
+        total('EUR', [
+          'Brezel 2,50',
+          'MwSt 0,57',
+          'Summe EUR 8,40',
+          'Gegeben 10,00',
+        ]),
+        8.4,
+      );
+      expect(
+        total('THB', ['Pad Thai 120', 'รวมทั้งสิ้น 240', 'เงินทอน 60']),
+        240,
+      );
+      expect(total('RUB', ['Кофе 250', 'Итого 520', 'Сдача 480']), 520);
+    });
+
+    test('통화 표시가 없으면 여행지(현지) 통화, 합계 줄의 통화를 우선', () {
+      final local = ReceiptParser(tripCurrency: 'VND')
+          .parse(lines(['Phở bò 65.000', 'Tổng cộng 130.000']));
+      expect(local.currency, 'VND');
+      expect(local.amount, 130000);
+      // "TERMINAL" 의 RM 을 말레이시아 링깃으로 보지 않는다.
+      final terminal = ReceiptParser(tripCurrency: 'GBP')
+          .parse(lines(['TERMINAL 0042', 'TOTAL 12.50']));
+      expect(terminal.currency, 'GBP');
+    });
+  });
+
   test('글자가 없으면 빈 결과', () {
     final draft = ReceiptParser(tripCurrency: 'USD').parse([]);
     expect(draft.isEmpty, isTrue);
