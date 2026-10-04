@@ -149,6 +149,7 @@ class ReceiptScanner {
     'JPY' => TextRecognitionScript.japanese,
     'CNY' || 'TWD' || 'HKD' || 'MOP' => TextRecognitionScript.chinese,
     'KRW' => TextRecognitionScript.korean,
+    'INR' || 'NPR' => TextRecognitionScript.devanagiri,
     _ => TextRecognitionScript.latin,
   };
 

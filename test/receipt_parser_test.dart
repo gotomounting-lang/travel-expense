@@ -389,4 +389,49 @@ void main() {
       expect(d.amount, isNull);
     });
   });
+
+  group('나라별 카드전표 결제 금액', () {
+    test('일본 ご利用金額, 承認番号는 금액이 아니다', () {
+      final d = ReceiptParser(tripCurrency: 'JPY').parse(
+        lines([
+          'クレジット売上票',
+          'カード番号 ****-****-****-1234',
+          '承認番号 1234567',
+          'ご利用金額 ¥1,280',
+        ]),
+      );
+      expect(d.amount, 1280);
+      expect(d.currency, 'JPY');
+    });
+    test('중국 消费金额', () {
+      final d = ReceiptParser(tripCurrency: 'CNY').parse(
+        lines([
+          '签购单',
+          '卡号 6222 **** **** 1234',
+          '授权号 123456',
+          '消费金额 RMB 128.00',
+        ]),
+      );
+      expect(d.amount, 128);
+      expect(d.currency, 'CNY');
+    });
+    test('베트남 Số tiền thanh toán', () {
+      final d = ReceiptParser(tripCurrency: 'VND').parse(
+        lines([
+          'HOA DON',
+          'Số thẻ ****1234',
+          'Số tiền thanh toán 1.250.000 VND',
+        ]),
+      );
+      expect(d.amount, 1250000);
+      expect(d.currency, 'VND');
+    });
+    test('러시아 Сумма покупки', () {
+      final d = ReceiptParser(tripCurrency: 'RUB').parse(
+        lines(['ЧЕК', 'Код авторизации 123456', 'Сумма покупки 1 250,00 RUB']),
+      );
+      expect(d.amount, 1250);
+      expect(d.currency, 'RUB');
+    });
+  });
 }
