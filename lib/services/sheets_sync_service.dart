@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
@@ -57,9 +58,8 @@ class SheetsSyncService {
     final email = _account.account?.email;
     if (email == null) throw SheetsSyncException(SheetsSyncError.notSignedIn);
 
-    return _withClient(
-      interactive,
-      (client) => _syncWith(
+    return _withClient(interactive, (client) async {
+      final url = await _syncWith(
         client,
         l,
         home,
@@ -72,9 +72,37 @@ class SheetsSyncService {
           // 사용자가 바꾼 이름을 존중한다.
           renameToTitle: false,
         ),
-      ),
-    );
+      );
+      // "구글 시트로 저장"으로 한 번 만든 여행별 시트도 함께 최신으로 맞춘다.
+      final prefs = await SharedPreferences.getInstance();
+      for (final trip in trips) {
+        final target = _tripTarget(email, trip);
+        if (prefs.getString(target.prefKey) == null) continue;
+        try {
+          await _syncWith(
+            client,
+            l,
+            home,
+            [trip],
+            [
+              for (final e in expenses)
+                if (e.tripId == trip.id) e,
+            ],
+            target,
+          );
+        } catch (e) {
+          debugPrint('trip sheet sync failed (${trip.id}): $e');
+        }
+      }
+      return url;
+    });
   }
+
+  _Target _tripTarget(String email, Trip trip) => _Target(
+    prefKey: 'trip_spreadsheet_id:$email:${trip.id}',
+    appPropValue: 'trip:${trip.id}',
+    title: trip.title,
+  );
 
   /// 여행 하나의 지출을 그 여행 이름의 스프레드시트에 따로 저장한다.
   /// 같은 여행은 같은 시트를 다시 쓰고, 여행 이름이 바뀌면 시트 이름도 바꾼다.
@@ -97,11 +125,7 @@ class SheetsSyncService {
           for (final e in expenses)
             if (e.tripId == trip.id) e,
         ],
-        _Target(
-          prefKey: 'trip_spreadsheet_id:$email:${trip.id}',
-          appPropValue: 'trip:${trip.id}',
-          title: trip.title,
-        ),
+        _tripTarget(email, trip),
       ),
     );
   }
