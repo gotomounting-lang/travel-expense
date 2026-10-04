@@ -74,6 +74,12 @@ jobs:
                    com.google.android.gms.internal.mlkit_vision_common.zzmj; do
             grep -q "^$c -> $c:" $M || { echo "::error::$c 가 난독화됨"; exit 1; }
           done
+      # 글자 모델(한·중·일·데바나가리)이 APK 에 모두 들어갔는지 남긴다.
+      - name: ML Kit 글자 모델 목록
+        run: |
+          unzip -l build/app/outputs/flutter-apk/app-release.apk \
+            | grep -vE 'flutter_assets|res/|META-INF' \
+            | grep -iE 'assets/|\.so$|\.tflite|\.binarypb|\.pb' || true
       - name: AAB 빌드 (Play 스토어 업로드용)
         run: >
           flutter build appbundle --release
