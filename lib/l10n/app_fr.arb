@@ -124,5 +124,8 @@
   "welcomeTitle": "Bienvenue dans Travel Expense",
   "welcomeBody": "Connectez votre compte Google pour enregistrer automatiquement vos dépenses dans une feuille de votre propre Google Drive.",
   "skipForNow": "Plus tard",
-  "next": "Suivant"
+  "next": "Suivant",
+  "exportTripSheet": "Enregistrer dans Google Sheets",
+  "exportTripSheetSaving": "Enregistrement dans Google Sheets…",
+  "exportTripSheetDone": "Enregistré dans la feuille « {title} »"
 }

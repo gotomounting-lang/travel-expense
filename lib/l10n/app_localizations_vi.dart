@@ -438,4 +438,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get next => 'Tiếp';
+
+  @override
+  String get exportTripSheet => 'Lưu vào Google Trang tính';
+
+  @override
+  String get exportTripSheetSaving => 'Đang lưu vào Google Trang tính…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'Đã lưu vào trang tính \'$title\'';
+  }
 }

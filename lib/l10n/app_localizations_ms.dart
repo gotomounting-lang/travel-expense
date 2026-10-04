@@ -439,4 +439,15 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get next => 'Seterusnya';
+
+  @override
+  String get exportTripSheet => 'Simpan ke Google Sheets';
+
+  @override
+  String get exportTripSheetSaving => 'Menyimpan ke Google Sheets…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'Disimpan ke helaian \'$title\'';
+  }
 }

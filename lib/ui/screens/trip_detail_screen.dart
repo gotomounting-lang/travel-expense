@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/expense.dart';
@@ -8,6 +9,7 @@ import '../../models/trip.dart';
 import '../../services/card_notification_parser.dart';
 import '../../services/receipt_scanner.dart';
 import '../../services/sheet_rows.dart';
+import '../../services/sheets_sync_service.dart';
 import '../../state/app_state.dart';
 import '../../util/dates.dart';
 import '../../util/money.dart';
@@ -72,6 +74,11 @@ class TripDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(trip.title),
         actions: [
+          IconButton(
+            tooltip: l.exportTripSheet,
+            icon: const Icon(Icons.table_chart_outlined),
+            onPressed: () => _exportToSheet(context, tripId),
+          ),
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'edit') {
@@ -141,6 +148,47 @@ class TripDetailScreen extends StatelessWidget {
         label: Text(l.addExpense),
       ),
     );
+  }
+}
+
+/// 이 여행의 지출을 여행 이름의 구글 스프레드시트로 저장한다.
+Future<void> _exportToSheet(BuildContext context, String tripId) async {
+  final l = AppLocalizations.of(context);
+  final state = context.read<AppState>();
+  final trip = state.tripById(tripId)!;
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(l.exportTripSheetSaving),
+      duration: const Duration(minutes: 1),
+    ),
+  );
+  try {
+    final url = await state.exportTrip(trip.id);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l.exportTripSheetDone(trip.title)),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: l.openSheet,
+            onPressed: () =>
+                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+          ),
+        ),
+      );
+  } catch (e) {
+    final details = e is SheetsSyncException
+        ? switch (e.reason) {
+            SheetsSyncError.notSignedIn => l.syncErrorNotSignedIn,
+            SheetsSyncError.noPermission => l.syncErrorNoPermission,
+            SheetsSyncError.expired => l.syncErrorExpired,
+          }
+        : '$e';
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l.syncFailed(details))));
   }
 }
 

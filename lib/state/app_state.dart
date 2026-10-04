@@ -389,6 +389,21 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// 여행 하나를 그 여행 이름의 구글 스프레드시트로 저장하고 URL을 돌려준다.
+  /// 로그인하지 않았으면 먼저 구글 로그인을 띄운다.
+  Future<String> exportTrip(String tripId) async {
+    if (!account.isSignedIn) await account.signIn();
+    if (!account.isSignedIn) {
+      throw SheetsSyncException(SheetsSyncError.notSignedIn);
+    }
+    return sync.exportTrip(
+      strings(),
+      homeCurrency(),
+      tripById(tripId)!,
+      expensesFor(tripId),
+    );
+  }
+
   @override
   void dispose() {
     _syncDebounce?.cancel();

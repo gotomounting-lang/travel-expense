@@ -413,4 +413,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get next => '下一步';
+
+  @override
+  String get exportTripSheet => '保存到 Google 表格';
+
+  @override
+  String get exportTripSheetSaving => '正在保存到 Google 表格…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '已保存到“$title”表格';
+  }
 }

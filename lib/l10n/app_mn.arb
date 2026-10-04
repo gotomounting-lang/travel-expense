@@ -124,5 +124,8 @@
   "welcomeTitle": "Travel Expense-д тавтай морил",
   "welcomeBody": "Google бүртгэлээ холбовол зардлууд тань өөрийн Google Drive дахь хүснэгтэд автоматаар хадгалагдана.",
   "skipForNow": "Дараа",
-  "next": "Дараах"
+  "next": "Дараах",
+  "exportTripSheet": "Google Sheets-д хадгалах",
+  "exportTripSheetSaving": "Google Sheets-д хадгалж байна…",
+  "exportTripSheetDone": "'{title}' хүснэгтэд хадгаллаа"
 }

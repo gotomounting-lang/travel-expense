@@ -440,4 +440,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get next => 'Weiter';
+
+  @override
+  String get exportTripSheet => 'In Google Tabellen speichern';
+
+  @override
+  String get exportTripSheetSaving => 'Wird in Google Tabellen gespeichert…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'In der Tabelle „$title“ gespeichert';
+  }
 }

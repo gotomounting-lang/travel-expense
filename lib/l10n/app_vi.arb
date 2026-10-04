@@ -124,5 +124,8 @@
   "welcomeTitle": "Chào mừng đến với Travel Expense",
   "welcomeBody": "Kết nối tài khoản Google để tự động lưu chi tiêu vào bảng tính trong Google Drive của riêng bạn.",
   "skipForNow": "Để sau",
-  "next": "Tiếp"
+  "next": "Tiếp",
+  "exportTripSheet": "Lưu vào Google Trang tính",
+  "exportTripSheetSaving": "Đang lưu vào Google Trang tính…",
+  "exportTripSheetDone": "Đã lưu vào trang tính '{title}'"
 }

@@ -438,4 +438,15 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get next => 'Susunod';
+
+  @override
+  String get exportTripSheet => 'I-save sa Google Sheets';
+
+  @override
+  String get exportTripSheetSaving => 'Sine-save sa Google Sheets…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'Na-save sa sheet na \'$title\'';
+  }
 }

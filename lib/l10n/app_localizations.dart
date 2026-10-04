@@ -871,6 +871,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'다음'**
   String get next;
+
+  /// No description provided for @exportTripSheet.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 시트로 저장'**
+  String get exportTripSheet;
+
+  /// No description provided for @exportTripSheetSaving.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 시트에 저장하는 중…'**
+  String get exportTripSheetSaving;
+
+  /// No description provided for @exportTripSheetDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'\'{title}\' 시트에 저장했어요'**
+  String exportTripSheetDone(String title);
 }
 
 class _AppLocalizationsDelegate

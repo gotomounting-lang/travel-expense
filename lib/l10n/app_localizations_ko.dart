@@ -418,4 +418,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get next => '다음';
+
+  @override
+  String get exportTripSheet => '구글 시트로 저장';
+
+  @override
+  String get exportTripSheetSaving => '구글 시트에 저장하는 중…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '\'$title\' 시트에 저장했어요';
+  }
 }

@@ -440,4 +440,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get next => 'Suivant';
+
+  @override
+  String get exportTripSheet => 'Enregistrer dans Google Sheets';
+
+  @override
+  String get exportTripSheetSaving => 'Enregistrement dans Google Sheets…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'Enregistré dans la feuille « $title »';
+  }
 }

@@ -439,4 +439,15 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get next => 'ရှေ့ဆက်ရန်';
+
+  @override
+  String get exportTripSheet => 'Google Sheets တွင် သိမ်းရန်';
+
+  @override
+  String get exportTripSheetSaving => 'Google Sheets တွင် သိမ်းနေသည်…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '\'$title\' စာရင်းဇယားတွင် သိမ်းပြီးပါပြီ';
+  }
 }

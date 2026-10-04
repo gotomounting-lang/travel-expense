@@ -124,5 +124,8 @@
   "welcomeTitle": "Selamat datang ke Travel Expense",
   "welcomeBody": "Sambungkan akaun Google anda untuk menyimpan perbelanjaan secara automatik ke helaian dalam Google Drive anda sendiri.",
   "skipForNow": "Bukan sekarang",
-  "next": "Seterusnya"
+  "next": "Seterusnya",
+  "exportTripSheet": "Simpan ke Google Sheets",
+  "exportTripSheetSaving": "Menyimpan ke Google Sheets…",
+  "exportTripSheetDone": "Disimpan ke helaian '{title}'"
 }

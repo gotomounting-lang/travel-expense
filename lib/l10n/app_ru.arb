@@ -124,5 +124,8 @@
   "welcomeTitle": "Добро пожаловать в Travel Expense",
   "welcomeBody": "Подключите аккаунт Google, чтобы расходы автоматически сохранялись в таблицу в вашем Google Drive.",
   "skipForNow": "Не сейчас",
-  "next": "Далее"
+  "next": "Далее",
+  "exportTripSheet": "Сохранить в Google Таблицы",
+  "exportTripSheetSaving": "Сохранение в Google Таблицы…",
+  "exportTripSheetDone": "Сохранено в таблицу «{title}»"
 }

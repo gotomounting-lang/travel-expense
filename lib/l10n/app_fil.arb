@@ -124,5 +124,8 @@
   "welcomeTitle": "Maligayang pagdating sa Travel Expense",
   "welcomeBody": "Ikonekta ang iyong Google account para awtomatikong ma-save ang iyong mga gastos sa isang sheet sa sarili mong Google Drive.",
   "skipForNow": "Hindi muna",
-  "next": "Susunod"
+  "next": "Susunod",
+  "exportTripSheet": "I-save sa Google Sheets",
+  "exportTripSheetSaving": "Sine-save sa Google Sheets…",
+  "exportTripSheetDone": "Na-save sa sheet na '{title}'"
 }

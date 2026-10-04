@@ -439,4 +439,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get next => 'आगे';
+
+  @override
+  String get exportTripSheet => 'Google Sheets में सहेजें';
+
+  @override
+  String get exportTripSheetSaving => 'Google Sheets में सहेजा जा रहा है…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '\'$title\' शीट में सहेजा गया';
+  }
 }

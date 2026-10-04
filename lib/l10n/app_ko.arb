@@ -231,5 +231,15 @@
   "welcomeTitle": "여행 경비에 오신 것을 환영합니다",
   "welcomeBody": "구글 계정을 연결하면 기록한 지출이 내 구글 드라이브의 시트에 자동으로 저장됩니다.",
   "skipForNow": "나중에 하기",
-  "next": "다음"
+  "next": "다음",
+  "exportTripSheet": "구글 시트로 저장",
+  "exportTripSheetSaving": "구글 시트에 저장하는 중…",
+  "exportTripSheetDone": "'{title}' 시트에 저장했어요",
+  "@exportTripSheetDone": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

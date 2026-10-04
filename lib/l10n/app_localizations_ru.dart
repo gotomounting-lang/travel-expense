@@ -442,4 +442,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get next => 'Далее';
+
+  @override
+  String get exportTripSheet => 'Сохранить в Google Таблицы';
+
+  @override
+  String get exportTripSheetSaving => 'Сохранение в Google Таблицы…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'Сохранено в таблицу «$title»';
+  }
 }

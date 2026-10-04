@@ -124,5 +124,8 @@
   "welcomeTitle": "Travel Expense မှ ကြိုဆိုပါသည်",
   "welcomeBody": "သင့် Google အကောင့်ကို ချိတ်ဆက်ပြီး အသုံးစရိတ်များကို သင့်ကိုယ်ပိုင် Google Drive ရှိ ရှိတ်တွင် အလိုအလျောက် သိမ်းပါ။",
   "skipForNow": "နောက်မှ",
-  "next": "ရှေ့ဆက်ရန်"
+  "next": "ရှေ့ဆက်ရန်",
+  "exportTripSheet": "Google Sheets တွင် သိမ်းရန်",
+  "exportTripSheetSaving": "Google Sheets တွင် သိမ်းနေသည်…",
+  "exportTripSheetDone": "'{title}' စာရင်းဇယားတွင် သိမ်းပြီးပါပြီ"
 }

@@ -124,5 +124,8 @@
   "welcomeTitle": "旅行経費へようこそ",
   "welcomeBody": "Google アカウントを接続すると、記録した支出があなたの Google ドライブのシートに自動で保存されます。",
   "skipForNow": "あとで",
-  "next": "次へ"
+  "next": "次へ",
+  "exportTripSheet": "Google スプレッドシートに保存",
+  "exportTripSheetSaving": "Google スプレッドシートに保存中…",
+  "exportTripSheetDone": "「{title}」シートに保存しました"
 }

@@ -124,5 +124,8 @@
   "welcomeTitle": "Travel Expense में आपका स्वागत है",
   "welcomeBody": "अपना Google खाता जोड़ें ताकि आपके खर्च अपने-आप आपकी Google Drive की एक शीट में सेव हो जाएं।",
   "skipForNow": "अभी नहीं",
-  "next": "आगे"
+  "next": "आगे",
+  "exportTripSheet": "Google Sheets में सहेजें",
+  "exportTripSheetSaving": "Google Sheets में सहेजा जा रहा है…",
+  "exportTripSheetDone": "'{title}' शीट में सहेजा गया"
 }

@@ -417,4 +417,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get next => '次へ';
+
+  @override
+  String get exportTripSheet => 'Google スプレッドシートに保存';
+
+  @override
+  String get exportTripSheetSaving => 'Google スプレッドシートに保存中…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '「$title」シートに保存しました';
+  }
 }

@@ -440,4 +440,15 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get next => 'Дараах';
+
+  @override
+  String get exportTripSheet => 'Google Sheets-д хадгалах';
+
+  @override
+  String get exportTripSheetSaving => 'Google Sheets-д хадгалж байна…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '\'$title\' хүснэгтэд хадгаллаа';
+  }
 }

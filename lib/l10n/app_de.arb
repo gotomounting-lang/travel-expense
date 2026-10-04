@@ -124,5 +124,8 @@
   "welcomeTitle": "Willkommen bei Travel Expense",
   "welcomeBody": "Verbinde dein Google-Konto, um deine Ausgaben automatisch in einer Tabelle in deinem eigenen Google Drive zu speichern.",
   "skipForNow": "Später",
-  "next": "Weiter"
+  "next": "Weiter",
+  "exportTripSheet": "In Google Tabellen speichern",
+  "exportTripSheetSaving": "Wird in Google Tabellen gespeichert…",
+  "exportTripSheetDone": "In der Tabelle „{title}“ gespeichert"
 }

@@ -57,22 +57,75 @@ class SheetsSyncService {
     final email = _account.account?.email;
     if (email == null) throw SheetsSyncException(SheetsSyncError.notSignedIn);
 
+    return _withClient(
+      interactive,
+      (client) => _syncWith(
+        client,
+        l,
+        home,
+        trips,
+        expenses,
+        _Target(
+          prefKey: _prefKey(email),
+          appPropValue: _appPropValue,
+          title: l.sheetFileTitle,
+          // 사용자가 바꾼 이름을 존중한다.
+          renameToTitle: false,
+        ),
+      ),
+    );
+  }
+
+  /// 여행 하나의 지출을 그 여행 이름의 스프레드시트에 따로 저장한다.
+  /// 같은 여행은 같은 시트를 다시 쓰고, 여행 이름이 바뀌면 시트 이름도 바꾼다.
+  Future<String> exportTrip(
+    AppLocalizations l,
+    String home,
+    Trip trip,
+    List<Expense> expenses,
+  ) async {
+    final email = _account.account?.email;
+    if (email == null) throw SheetsSyncException(SheetsSyncError.notSignedIn);
+    return _withClient(
+      true,
+      (client) => _syncWith(
+        client,
+        l,
+        home,
+        [trip],
+        [
+          for (final e in expenses)
+            if (e.tripId == trip.id) e,
+        ],
+        _Target(
+          prefKey: 'trip_spreadsheet_id:$email:${trip.id}',
+          appPropValue: 'trip:${trip.id}',
+          title: trip.title,
+        ),
+      ),
+    );
+  }
+
+  /// 인증한 클라이언트로 [run] 을 실행한다. 토큰이 만료됐으면 한 번 다시 시도한다.
+  Future<String> _withClient(
+    bool interactive,
+    Future<String> Function(gapis.AuthClient client) run,
+  ) async {
     var client = await _account.authClient(interactive: interactive);
     if (client == null) {
       throw SheetsSyncException(SheetsSyncError.noPermission);
     }
     try {
-      return await _syncWith(client, email, l, home, trips, expenses);
+      return await run(client);
     } on sheets.DetailedApiRequestError catch (e) {
       if (e.status != 401) rethrow;
-      // 토큰 만료: 한 번만 새 토큰으로 다시 시도한다.
       await _account.invalidateToken(client);
       client.close();
       client = await _account.authClient(interactive: interactive);
       if (client == null) {
         throw SheetsSyncException(SheetsSyncError.expired);
       }
-      return await _syncWith(client, email, l, home, trips, expenses);
+      return await run(client);
     } finally {
       client?.close();
     }
@@ -80,15 +133,15 @@ class SheetsSyncService {
 
   Future<String> _syncWith(
     gapis.AuthClient client,
-    String email,
     AppLocalizations l,
     String home,
     List<Trip> trips,
     List<Expense> expenses,
+    _Target target,
   ) async {
     final sheetsApi = sheets.SheetsApi(client);
     final driveApi = drive.DriveApi(client);
-    final id = await _ensureSpreadsheet(sheetsApi, driveApi, email, l);
+    final id = await _ensureSpreadsheet(sheetsApi, driveApi, l, target);
 
     final summary = buildSummary(l, home, trips, expenses);
     final values = sheetsApi.spreadsheets.values;
@@ -211,34 +264,56 @@ class SheetsSyncService {
   Future<String> _ensureSpreadsheet(
     sheets.SheetsApi sheetsApi,
     drive.DriveApi driveApi,
-    String email,
     AppLocalizations l,
+    _Target target,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    var id = prefs.getString(_prefKey(email));
+    var id = prefs.getString(target.prefKey);
 
     if (id != null) {
       try {
         await _ensureTabs(sheetsApi, id, l);
+        if (target.renameToTitle) {
+          await _ensureTitle(driveApi, id, target.title);
+        }
         return id;
       } on sheets.DetailedApiRequestError catch (e) {
         // 사용자가 시트를 지웠거나 휴지통에 넣은 경우: 새로 찾거나 만든다.
         if (e.status != 404 && e.status != 403) rethrow;
-        await prefs.remove(_prefKey(email));
+        await prefs.remove(target.prefKey);
         id = null;
       }
     }
 
-    id = await _findExisting(driveApi) ?? await _create(sheetsApi, driveApi, l);
+    final existing = await _findExisting(driveApi, target.appPropValue);
+    id = existing ?? await _create(sheetsApi, driveApi, l, target);
     await _ensureTabs(sheetsApi, id, l);
-    await prefs.setString(_prefKey(email), id);
+    if (existing != null && target.renameToTitle) {
+      await _ensureTitle(driveApi, id, target.title);
+    }
+    await prefs.setString(target.prefKey, id);
     return id;
   }
 
-  Future<String?> _findExisting(drive.DriveApi driveApi) async {
+  /// 여행 이름이 바뀌었으면 시트 파일 이름도 맞춘다.
+  Future<void> _ensureTitle(
+    drive.DriveApi driveApi,
+    String id,
+    String title,
+  ) async {
+    final file = await driveApi.files.get(id, $fields: 'name') as drive.File;
+    if (file.name == title) return;
+    await driveApi.files.update(drive.File(name: title), id);
+  }
+
+  Future<String?> _findExisting(
+    drive.DriveApi driveApi,
+    String appPropValue,
+  ) async {
+    final value = appPropValue.replaceAll("'", r"\'");
     final list = await driveApi.files.list(
       q:
-          "appProperties has { key='$_appPropKey' and value='$_appPropValue' } "
+          "appProperties has { key='$_appPropKey' and value='$value' } "
           "and mimeType='application/vnd.google-apps.spreadsheet' "
           'and trashed=false',
       orderBy: 'createdTime',
@@ -252,11 +327,12 @@ class SheetsSyncService {
     sheets.SheetsApi sheetsApi,
     drive.DriveApi driveApi,
     AppLocalizations l,
+    _Target target,
   ) async {
     final created = await sheetsApi.spreadsheets.create(
       sheets.Spreadsheet(
         properties: sheets.SpreadsheetProperties(
-          title: l.sheetFileTitle,
+          title: target.title,
           locale: l.localeName,
         ),
         sheets: [
@@ -268,7 +344,7 @@ class SheetsSyncService {
     final id = created.spreadsheetId!;
     // 재설치 후에도 이 시트를 찾을 수 있도록 표시를 남긴다.
     await driveApi.files.update(
-      drive.File(appProperties: {_appPropKey: _appPropValue}),
+      drive.File(appProperties: {_appPropKey: target.appPropValue}),
       id,
     );
     return id;
@@ -348,4 +424,22 @@ class SheetsSyncService {
       id,
     );
   }
+}
+
+/// 데이터를 쓸 스프레드시트: 이 기기에 저장한 ID 키, 드라이브에서 다시 찾을
+/// 표시, 파일 이름.
+class _Target {
+  const _Target({
+    required this.prefKey,
+    required this.appPropValue,
+    required this.title,
+    this.renameToTitle = true,
+  });
+
+  final String prefKey;
+  final String appPropValue;
+  final String title;
+
+  /// 파일 이름이 [title] 과 다르면 바꾼다 (여행 이름을 바꾼 경우).
+  final bool renameToTitle;
 }
