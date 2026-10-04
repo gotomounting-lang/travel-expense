@@ -460,4 +460,42 @@ void main() {
       expect(d.totalByWord, isFalse);
     });
   });
+
+  group('한글 영수증의 원 표시 금액', () {
+    final parser = ReceiptParser(tripCurrency: 'USD');
+    const body = [
+      '결제방법 신용카드(샘플카드)',
+      '카드번호 00000000********',
+      '할부기간 일시불',
+      '부가세액 718',
+      '공급가액 7,182',
+      '승인번호 00000000',
+      '승인일시 2026-10-04 17:36:14',
+      '메뉴명 단가 수량 금액',
+      '[샘플] 샌드위치',
+      '7,900 1 7,900',
+    ];
+
+    test('흐리게 찍혀 "제금액"으로 읽혀도 결제금액', () {
+      final d = parser.parse(
+        lines(['샘플 샌드위치(샘플점)', ...body, '제금액 7,900', '포인트 적립 + 237']),
+      );
+      expect(d.amount, 7900);
+    });
+
+    test('결제금액 줄을 못 읽어도 맨 위 "7,900원"을 원화 총액으로', () {
+      final d = parser.parse(
+        lines(['샘플 샌드위치(샘플점)', '7,900원', ...body, '포인트 적립 + 237', '잔여 237']),
+      );
+      expect(d.amount, 7900);
+      expect(d.currency, 'KRW');
+      expect(d.totalByWord, isTrue);
+      expect(d.date, DateTime(2026, 10, 4, 17, 36));
+    });
+
+    test('"원" 금액이 서로 다르면 직접 입력', () {
+      final d = parser.parse(lines(['샘플가게 메뉴', '7,900원', '8,500원']));
+      expect(d.amount, isNull);
+    });
+  });
 }

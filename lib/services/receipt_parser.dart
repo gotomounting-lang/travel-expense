@@ -472,7 +472,11 @@ class ReceiptParser {
 
   /// OCR 이 자주 틀리는 합계 표기를 바로잡는다 ("Totai", "T0TAL" → total)
   /// "Incl GST" 처럼 세금 포함을 뜻하는 말은 세금 줄이 아니므로 지운다.
+  /// 한글은 글자 사이 띄어쓰기를 붙이고 ("합 계" "결 제 금 액"), 흐리게 찍혀
+  /// 앞 글자가 빠지거나 틀린 "제금액" "곁제금액" 을 결제금액으로 본다.
   static String _normalizeTotalRow(String row) => row
+      .replaceAllMapped(RegExp(r'([가-힣])[  ]+(?=[가-힣])'), (m) => m[1]!)
+      .replaceAll(RegExp(r'[결곁걸겔겸]?[제재]금액'), '결제금액')
       .replaceAll(RegExp(r'\bt[o0]ta[il1|]\b', caseSensitive: false), 'total')
       .replaceAll(
         RegExp(
@@ -525,7 +529,29 @@ class ReceiptParser {
       return pick.$1;
     }
 
-    // 2) 키워드가 없으면 (거스름돈·현금 행을 뺀) 가장 큰 금액.
+    // 2) 한글 영수증에서 "원"이 붙은 금액 ("7,900원")은 결제금액이다.
+    // 포인트·거스름돈 줄을 뺀 "원" 금액이 하나로 모일 때만 쓴다.
+    if (RegExp(r'[가-힣]').allMatches(rows.join()).length >= 4) {
+      final won = <double>{};
+      String? wonRow;
+      for (final row in rows) {
+        if (_hasAny(row, _notTotalWords)) continue;
+        for (final m in RegExp(
+          r'(?<![\d.,])(\d{1,3}(?:,\d{3})+|\d+)[  ]?원',
+        ).allMatches(row)) {
+          final v = parseAmount(m[1]!, decimals: 0);
+          if (v == null || v <= 0) continue;
+          won.add(v);
+          wonRow ??= row;
+        }
+      }
+      if (won.length == 1) {
+        _totalRow = wonRow;
+        return won.single;
+      }
+    }
+
+    // 3) 키워드가 없으면 (거스름돈·현금 행을 뺀) 가장 큰 금액.
     // 사업자번호("1088962-P") 같은 글자 붙은 숫자는 금액이 아니다.
     // 소수 통화에서 소수점 있는 금액이 있으면 그것만 본다.
     final rowsForAmounts = [
