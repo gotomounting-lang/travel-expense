@@ -5,6 +5,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image_picker/image_picker.dart';
 
 import '../models/trip.dart';
+import 'card_notification_parser.dart';
 import 'receipt_parser.dart';
 
 enum ReceiptImageSource { camera, gallery }
@@ -52,7 +53,11 @@ class ReceiptScanner {
       ReceiptDraft? best;
       var bestScore = -1;
       for (final script in scriptsFor(trip.currency, homeCurrency)) {
-        final draft = parser.parse(await _read(image, script));
+        final draft = withCardHistory(
+          parser.parse(await _read(image, script)),
+          _lastText,
+          homeCurrency,
+        );
         final score = scoreOf(draft);
         if (score > bestScore) {
           best = draft;
@@ -73,6 +78,7 @@ class ReceiptScanner {
     final recognizer = TextRecognizer(script: script);
     try {
       final text = await recognizer.processImage(image);
+      _lastText = text.text;
       return [
         for (final block in text.blocks)
           for (final line in block.lines)
@@ -86,6 +92,38 @@ class ReceiptScanner {
     } finally {
       await recognizer.close();
     }
+  }
+
+  String _lastText = '';
+
+  /// 카드 앱 이용내역을 찍은 사진 ("31,101원 (7,150HUF)") 이면 카드 알림과 같은
+  /// 규칙으로 읽는다: 내 나라 통화와 외화가 함께 있으면 내 나라 통화(실제 청구액),
+  /// 외화만 있고 영수증 합계를 못 찾았으면 외화.
+  static ReceiptDraft withCardHistory(
+    ReceiptDraft receipt,
+    String text,
+    String? homeCurrency, {
+    DateTime? now,
+  }) {
+    if (homeCurrency == null || text.trim().isEmpty) return receipt;
+    final card = CardNotificationParser(homeCurrency: homeCurrency).parse(
+      CardNotification(id: 'ocr', text: text, postedAt: now ?? DateTime.now()),
+      useTextDate: true,
+    );
+    if (card == null || !card.withForeign) return receipt;
+    final paired = card.currency == homeCurrency;
+    if (!paired && receipt.totalByWord && receipt.amount != null) {
+      return receipt;
+    }
+    return ReceiptDraft(
+      amount: card.amount,
+      currency: card.currency,
+      date: receipt.date ?? card.spentAt,
+      merchant: card.merchant.isNotEmpty ? card.merchant : receipt.merchant,
+      category: card.category ?? receipt.category,
+      paymentMethod: card.card,
+      totalByWord: true,
+    );
   }
 
   /// 합계 단어 줄의 금액(2점)과 통화 표시(1점)를 읽었는지.

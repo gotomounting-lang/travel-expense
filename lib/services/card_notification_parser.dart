@@ -40,7 +40,11 @@ class CardPayment {
     this.merchant = '',
     this.card = '',
     this.category,
+    this.withForeign = false,
   });
+
+  /// 외화 금액이 함께 찍혀 있었는지 (해외 결제).
+  final bool withForeign;
 
   final String currency;
   final double amount;
@@ -277,6 +281,7 @@ class CardNotificationParser {
       merchant: merchant,
       card: _card(text),
       category: ReceiptParser.guessCategory([merchant]),
+      withForeign: foreign != null,
     );
   }
 
