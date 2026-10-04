@@ -229,4 +229,51 @@ void main() {
     expect(ReceiptParser.containsWord('green tea', 'tea'), isTrue);
     expect(ReceiptParser.containsWord('お土産', '土産'), isTrue);
   });
+
+  group('말레이시아 카페 영수증 (화면 캡처)', () {
+    final parser = ReceiptParser(tripCurrency: 'MYR');
+    const header = [
+      'b E||O|EH1- NAVER',
+      'SAMPLE COFFEE SDN BHD (123456-A)',
+      'Lot 1-02, Level 1, Sample Mall',
+      'Kuala Lumpur',
+      '1300-00-0000',
+      'GST ID: 000000000000',
+      'Tax Invoice No: AB000X0-0000000 FOR HERE',
+      'Date: 15 Dec 17 11:35:14',
+      'Iced Caffe Americano - G 1 10.10 S',
+      'Sub-Total RM 10.10',
+    ];
+    const footer = [
+      'CASH RM 100.10',
+      'Change (CASH) RM 90.00',
+      'S=GST @6%: RM 9.53 RM 0.57',
+      'Rounding RM 0.00',
+      'SAMPLE SDN.BHD.(1234567-P)',
+      'P6.15.00, Level 6, Sample Street,',
+      '1 Jalan Contoh, 50000,',
+      'Contact: 03 0000 0000',
+    ];
+
+    test('"Totai Sales Incl 6ST" 로 잘못 읽혀도 합계', () {
+      final d = parser.parse(
+        lines([...header, 'Totai Sales Incl 6ST RM 10.1', ...footer]),
+      );
+      expect(d.amount, 10.1);
+      expect(d.currency, 'MYR');
+      expect(d.date, DateTime(2017, 12, 15, 11, 35));
+    });
+
+    test('"Total Sales Incl GST" 는 세금 줄이 아니라 합계', () {
+      final d = parser.parse(
+        lines([...header, 'Total Sales Incl GST RM 10.10', ...footer]),
+      );
+      expect(d.amount, 10.1);
+    });
+
+    test('합계 줄을 못 읽어도 사업자번호를 금액으로 잡지 않는다', () {
+      final d = parser.parse(lines([...header, ...footer]));
+      expect(d.amount, 10.1);
+    });
+  });
 }

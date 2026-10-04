@@ -170,7 +170,7 @@ class SheetsSyncService {
     return 'https://docs.google.com/spreadsheets/d/$id';
   }
 
-  /// 요약 탭의 파이차트를 여행마다 하나씩 다시 그린다.
+  /// 내역·여행 탭 행 높이를 맞추고, 요약 탭의 파이차트를 여행마다 하나씩 다시 그린다.
   /// (행 수가 바뀌므로 앱이 만든 요약 탭의 차트는 지우고 새로 만든다.)
   Future<void> _replaceCharts(
     sheets.SheetsApi api,
@@ -191,6 +191,19 @@ class SheetsSyncService {
             if (c.chartId != null) c.chartId!,
     ];
     final requests = <sheets.Request>[
+      // 예전에 여러 줄 메모로 늘어난 행 높이를 글자 한 줄 높이로 되돌린다.
+      for (final tab in [SheetTab.expenses, SheetTab.trips])
+        sheets.Request(
+          updateDimensionProperties: sheets.UpdateDimensionPropertiesRequest(
+            range: sheets.DimensionRange(
+              sheetId: tab.sheetId,
+              dimension: 'ROWS',
+              startIndex: 0,
+            ),
+            properties: sheets.DimensionProperties(pixelSize: 21),
+            fields: 'pixelSize',
+          ),
+        ),
       for (final chartId in existing)
         sheets.Request(
           deleteEmbeddedObject: sheets.DeleteEmbeddedObjectRequest(
@@ -202,7 +215,6 @@ class SheetsSyncService {
           addChart: sheets.AddChartRequest(chart: _pie(l, home, b, i)),
         ),
     ];
-    if (requests.isEmpty) return;
     await api.spreadsheets.batchUpdate(
       sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,
@@ -418,7 +430,6 @@ class SheetsSyncService {
         );
       }
     }
-    if (requests.isEmpty) return;
     await api.spreadsheets.batchUpdate(
       sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,

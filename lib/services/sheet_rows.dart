@@ -67,7 +67,12 @@ List<Object> summaryHeader(AppLocalizations l, String home) => [
 final _hm = DateFormat('HH:mm');
 
 /// USER_ENTERED 로 쓸 때 사용자가 입력한 글자가 수식으로 해석되지 않게 막는다.
-Object _text(String s) => s.isNotEmpty && '=+-@'.contains(s[0]) ? "'$s" : s;
+/// 셀에 넣을 글자. 수식으로 읽히지 않게 하고, 줄바꿈은 " / " 로 바꿔
+/// 행이 여러 줄 높이로 늘어나지 않게 한다.
+Object _text(String raw) {
+  final s = raw.trim().replaceAll(RegExp(r'\s*\n\s*'), ' / ');
+  return s.isNotEmpty && '=+-@'.contains(s[0]) ? "'$s" : s;
+}
 
 List<List<Object>> buildExpenseRows(
   AppLocalizations l,

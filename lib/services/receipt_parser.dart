@@ -331,8 +331,22 @@ class ReceiptParser {
   /// 합계 금액을 읽은 줄 (합계 단어 줄, 금액이 옆 줄이면 그 줄까지).
   String? _totalRow;
 
-  double? _findTotal(List<String> rows, int decimals) {
+  /// OCR 이 자주 틀리는 합계 표기를 바로잡는다 ("Totai", "T0TAL" → total)
+  /// "Incl GST" 처럼 세금 포함을 뜻하는 말은 세금 줄이 아니므로 지운다.
+  static String _normalizeTotalRow(String row) => row
+      .replaceAll(RegExp(r'\bt[o0]ta[il1|]\b', caseSensitive: false), 'total')
+      .replaceAll(
+        RegExp(
+          r'\b(?:incl|inkl|including|inclusive|included|incl\.)\.?\s*(?:of\s+)?'
+          r'(?:[g6]st|vat|tax|mwst|ust|tva|iva|ppn|sst|btw|moms)\b',
+          caseSensitive: false,
+        ),
+        ' ',
+      );
+
+  double? _findTotal(List<String> rawRows, int decimals) {
     _totalRow = null;
+    final rows = rawRows.map(_normalizeTotalRow).toList();
     // 1) 합계 키워드가 있는 행의 마지막 금액. 아래쪽 행(최종 합계)일수록 우선.
     // 진짜 합계 단어가 있는 행이 하나라도 있으면 "금액" 같은 약한 단어 행은 뺀다.
     bool strong(String row) => _totalWords
@@ -364,10 +378,30 @@ class ReceiptParser {
     if (best != null) return best;
 
     // 2) 키워드가 없으면 (거스름돈·현금 행을 뺀) 가장 큰 금액.
-    final candidates = [
+    // 사업자번호("1088962-P") 같은 글자 붙은 숫자는 금액이 아니다.
+    // 소수 통화에서 소수점 있는 금액이 있으면 그것만 본다.
+    final rowsForAmounts = [
       for (final row in rows)
-        if (!_hasAny(row, _notTotalWords)) ..._amountsIn(row, decimals),
+        if (!_hasAny(row, _notTotalWords))
+          row.replaceAll(
+            RegExp(r'[\p{L}\d]*\d[-\p{L}][\p{L}\d-]*', unicode: true),
+            ' ',
+          ),
+    ];
+    var candidates = [
+      for (final row in rowsForAmounts) ..._amountsIn(row, decimals),
     ].where((v) => v < 100000000).toList();
+    if (decimals > 0) {
+      final withCents = [
+        for (final row in rowsForAmounts)
+          for (final m in RegExp(
+            r'(?<![\d.,])\d[\d,.]*[.,]\d{2}(?![\d.,])',
+          ).allMatches(row))
+            if (parseAmount(m[0]!, decimals: decimals) case final v?)
+              if (v > 0 && v < 100000000) v,
+      ];
+      if (withCents.isNotEmpty) candidates = withCents;
+    }
     if (candidates.isEmpty) return null;
     candidates.sort();
     return candidates.last;
@@ -463,6 +497,27 @@ class ReceiptParser {
     r'(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?'
     r'|(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{4}|\d{2})\b',
   );
+  static const _months = {
+    'jan': 1,
+    'feb': 2,
+    'mar': 3,
+    'apr': 4,
+    'may': 5,
+    'jun': 6,
+    'jul': 7,
+    'aug': 8,
+    'sep': 9,
+    'oct': 10,
+    'nov': 11,
+    'dec': 12,
+  };
+
+  /// "15 Dec 17", "15-Dec-2017", "Dec 15, 2017" 처럼 영문 달 이름이 있는 날짜.
+  static final _namedDate = RegExp(
+    r'\b(\d{1,2})[\s\-/.]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?[\s\-/.,]*(\d{4}|\d{2})\b'
+    r'|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*(\d{1,2}),?\s*(\d{4})\b',
+    caseSensitive: false,
+  );
   static final _time = RegExp(r'\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b');
 
   DateTime? _findDate(String text, String currency) {
@@ -479,7 +534,11 @@ class ReceiptParser {
         final a = int.parse(m[4]!);
         final b = int.parse(m[5]!);
         var y = int.parse(m[6]!);
-        if (y < 100) y += 2000;
+        // "6.15.00" 같은 번호 조각은 날짜가 아니다 (두 자리 연도는 2010년 이후만).
+        if (y < 100) {
+          if (y < 10) continue;
+          y += 2000;
+        }
         // 앞 숫자가 12 보다 크면 일/월, 뒤가 크면 월/일. 애매하면 미국 달러만 월/일.
         final monthFirst = a <= 12 && (b > 12 || currency == 'USD');
         if (monthFirst) {
@@ -488,6 +547,13 @@ class ReceiptParser {
           _addDate(candidates, y, b, a);
         }
       }
+    }
+    for (final m in _namedDate.allMatches(text)) {
+      final day = int.parse(m[1] ?? m[5]!);
+      final month = _months[(m[2] ?? m[4]!).toLowerCase()]!;
+      var y = int.parse(m[3] ?? m[6]!);
+      if (y < 100) y += 2000;
+      _addDate(candidates, y, month, day, front: true);
     }
     if (candidates.isEmpty) return null;
     // 여행 기간 안의 날짜를 우선한다.
@@ -507,11 +573,12 @@ class ReceiptParser {
     return date;
   }
 
-  void _addDate(List<DateTime> out, int y, int m, int d) {
+  void _addDate(List<DateTime> out, int y, int m, int d, {bool front = false}) {
     if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return;
     final date = DateTime(y, m, d);
     if (date.month != m) return; // 2월 30일 같은 날짜
-    out.add(date);
+    // 달 이름이 쓰인 날짜는 숫자만 있는 것보다 확실하다.
+    front ? out.insert(0, date) : out.add(date);
   }
 
   bool _inTrip(DateTime d) {
