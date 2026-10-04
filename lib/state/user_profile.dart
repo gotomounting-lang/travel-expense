@@ -1,0 +1,33 @@
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/country.dart';
+
+/// 사용자 국적. 처음 실행할 때 로그인 다음 화면에서 고른다.
+/// 국적이 지출을 환산할 통화와 앱 언어를 정한다.
+class UserProfile extends ChangeNotifier {
+  UserProfile({Country? initial}) : _country = initial;
+
+  static const _prefKey = 'nationality';
+
+  Country? _country;
+  Country? get country => _country;
+
+  bool get hasNationality => _country != null;
+
+  /// 지출을 환산해 보여줄 통화. 국적을 고르기 전에는 원화.
+  String get homeCurrency => _country?.currency ?? 'KRW';
+
+  Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    _country = Country.byCode(prefs.getString(_prefKey)) ?? _country;
+    notifyListeners();
+  }
+
+  Future<void> setCountry(Country country) async {
+    _country = country;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKey, country.code);
+    notifyListeners();
+  }
+}
