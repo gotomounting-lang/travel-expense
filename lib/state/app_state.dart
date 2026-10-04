@@ -25,10 +25,12 @@ class AppState extends ChangeNotifier {
     required this.account,
     required this.sync,
     required this.strings,
+    String Function()? homeCurrency,
     CardNotificationSource? cardNotifications,
     DateTime Function()? now,
   }) : cardNotifications =
            cardNotifications ?? CardNotificationSource(supported: false),
+       homeCurrency = homeCurrency ?? (() => 'KRW'),
        _now = now ?? DateTime.now {
     account.addListener(_onAccountChanged);
   }
@@ -41,9 +43,11 @@ class AppState extends ChangeNotifier {
   /// 시트에 쓸 언어 (앱 화면 언어와 같다).
   final AppLocalizations Function() strings;
 
+  /// 사용자 국적의 통화. 모든 지출을 이 통화로 환산해 보여준다.
+  final String Function() homeCurrency;
+
   /// 안드로이드 카드 결제 알림. iOS·테스트에서는 아무것도 하지 않는다.
   final CardNotificationSource cardNotifications;
-  final _cardParser = CardNotificationParser();
   final DateTime Function() _now;
   final _uuid = const Uuid();
 
@@ -54,6 +58,14 @@ class AppState extends ChangeNotifier {
 
   List<Expense> expensesFor(String tripId) =>
       _expenses.where((e) => e.tripId == tripId).toList();
+
+  /// 지금 환산 통화로 환산이 끝난 지출 (합계·차트에 쓴다).
+  List<Expense> convertedFor(String tripId) {
+    final home = homeCurrency();
+    return expensesFor(tripId)
+        .where((e) => e.hasRate && e.homeCurrency == home)
+        .toList();
+  }
 
   Trip? tripById(String id) => _trips.where((t) => t.id == id).firstOrNull;
 
@@ -146,11 +158,13 @@ class AppState extends ChangeNotifier {
     final keepRate =
         previous != null &&
         previous.hasRate &&
+        previous.homeCurrency == homeCurrency() &&
         previous.currency == expense.currency &&
         dateOnly(previous.spentAt) == dateOnly(expense.spentAt);
     if (keepRate) {
       expense = expense.copyWith(
-        krwRate: previous.krwRate,
+        homeCurrency: previous.homeCurrency,
+        homeRate: previous.homeRate,
         rateDate: previous.rateDate,
         rateSource: previous.rateSource,
       );
@@ -172,15 +186,17 @@ class AppState extends ChangeNotifier {
 
   Future<Expense> _withRate(Expense e) async {
     try {
-      final r = await rates.krwRate(e.currency, e.spentAt);
+      final home = homeCurrency();
+      final r = await rates.rate(e.currency, home, e.spentAt);
       return e.copyWith(
-        krwRate: r.rate,
+        homeCurrency: home,
+        homeRate: r.rate,
         rateDate: r.rateDate,
         rateSource: r.source,
       );
     } catch (err) {
       debugPrint('exchange rate lookup failed: $err');
-      return e.copyWith(clearRate: true);
+      return e.copyWith(homeCurrency: homeCurrency(), clearRate: true);
     }
   }
 
@@ -203,7 +219,7 @@ class AppState extends ChangeNotifier {
   Future<void> _refreshRates() async {
     final today = dateOnly(_now());
     final targets = _expenses.where((e) {
-      if (!e.hasRate) return true;
+      if (!e.hasRate || e.homeCurrency != homeCurrency()) return true;
       final day = dateOnly(e.spentAt);
       final isWeekday = day.weekday <= DateTime.friday;
       return isWeekday &&
@@ -216,7 +232,9 @@ class AppState extends ChangeNotifier {
     var changed = false;
     for (final e in targets) {
       final updated = await _withRate(e);
-      if (updated.krwRate != e.krwRate || updated.rateDate != e.rateDate) {
+      if (updated.homeRate != e.homeRate ||
+          updated.homeCurrency != e.homeCurrency ||
+          updated.rateDate != e.rateDate) {
         if (!updated.hasRate) continue;
         await repository.saveExpense(updated);
         changed = true;
@@ -257,10 +275,11 @@ class AppState extends ChangeNotifier {
 
   Future<void> _importCardNotifications() async {
     final pending = await cardNotifications.pending();
+    final parser = CardNotificationParser(homeCurrency: homeCurrency());
     final done = <String>[];
     var waiting = 0;
     for (final n in pending) {
-      final payment = _cardParser.parse(n);
+      final payment = parser.parse(n);
       if (payment == null) {
         done.add(n.id); // 카드 결제가 아닌 알림
         continue;
@@ -353,6 +372,7 @@ class AppState extends ChangeNotifier {
     try {
       _sheetUrl = await sync.sync(
         strings(),
+        homeCurrency(),
         _trips,
         _expenses,
         interactive: interactive,

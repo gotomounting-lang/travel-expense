@@ -101,7 +101,8 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   }
 
   void _loadRate() {
-    _rate = context.read<AppState>().rates.krwRate(_currency, _spentAt);
+    final state = context.read<AppState>();
+    _rate = state.rates.rate(_currency, state.homeCurrency(), _spentAt);
   }
 
   @override
@@ -260,7 +261,12 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _KrwPreview(rate: _rate, amount: _amountValue, currency: _currency),
+            _HomePreview(
+              rate: _rate,
+              amount: _amountValue,
+              currency: _currency,
+              home: context.read<AppState>().homeCurrency(),
+            ),
             const SizedBox(height: 16),
             Text(l.category, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
@@ -332,8 +338,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   }
 }
 
-class _KrwPreview extends StatelessWidget {
-  const _KrwPreview({
+class _HomePreview extends StatelessWidget {
+  const _HomePreview({
+    required this.home,
     required this.rate,
     required this.amount,
     required this.currency,
@@ -342,6 +349,7 @@ class _KrwPreview extends StatelessWidget {
   final Future<CachedRate>? rate;
   final double? amount;
   final String currency;
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -360,10 +368,12 @@ class _KrwPreview extends StatelessWidget {
           return Text(l.rateUnavailable, style: style);
         }
         final r = snap.data!;
-        final krw = amount == null ? null : (amount! * r.rate).round();
+        final converted = amount == null
+            ? null
+            : Expense.roundTo(amount! * r.rate, Currency.byCode(home).decimals);
         return Text(
-          '${krw == null ? '' : '${l.approxKrw(formatKrw(l, krw))}  ·  '}'
-          '${l.rateInfo(currency, _rateFmt.format(r.rate), formatYmd(r.rateDate))}',
+          '${converted == null ? '' : '${l.approxAmount(formatMoney(l, converted, home))}  ·  '}'
+          '${l.rateInfo(currency, _rateFmt.format(r.rate), home, formatYmd(r.rateDate))}',
           style: style,
         );
       },

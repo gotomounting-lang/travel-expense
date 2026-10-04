@@ -7,17 +7,27 @@ import '../../util/money.dart';
 
 /// 카테고리별 원화 지출 파이차트와 범례.
 class CategoryPieChart extends StatelessWidget {
-  const CategoryPieChart({super.key, required this.totals});
+  const CategoryPieChart({
+    super.key,
+    required this.totals,
+    required this.currency,
+  });
 
   /// 금액이 큰 순서로 정렬된 카테고리별 원화 합계.
-  final Map<ExpenseCategory, int> totals;
+  final Map<ExpenseCategory, double> totals;
+
+  /// 합계 통화 (사용자 국적 통화).
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final sum = totals.values.fold<int>(0, (s, v) => s + v);
+    final sum = totals.values.fold<double>(0, (s, v) => s + v);
     if (sum == 0) {
-      return SizedBox(height: 120, child: Center(child: Text(l.noKrwYet)));
+      return SizedBox(
+        height: 120,
+        child: Center(child: Text(l.noConvertedYet)),
+      );
     }
     final theme = Theme.of(context);
     return Row(
@@ -32,7 +42,7 @@ class CategoryPieChart extends StatelessWidget {
               sections: [
                 for (final e in totals.entries)
                   PieChartSectionData(
-                    value: e.value.toDouble(),
+                    value: e.value,
                     color: e.key.color,
                     radius: 42,
                     title: e.value / sum >= 0.08
@@ -74,7 +84,7 @@ class CategoryPieChart extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        formatKrw(l, e.value),
+                        formatMoney(l, e.value, currency),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

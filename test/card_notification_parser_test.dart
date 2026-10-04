@@ -65,4 +65,28 @@ void main() {
     expect(p.merchant, 'GRAB TAXI');
     expect(p.category, ExpenseCategory.transport);
   });
+
+  test('외국인 사용자(USD)는 한국에서 쓴 원화 결제를 기록하고 자기 나라 통화 결제는 건너뛴다', () {
+    final parser = CardNotificationParser(homeCurrency: 'USD');
+    final at = DateTime(2026, 9, 2, 9);
+    final krw = parser.parse(
+      CardNotification(
+        id: '1',
+        text: 'Card approved KRW 15,000 OLIVE YOUNG',
+        postedAt: at,
+      ),
+    );
+    expect(krw?.currency, 'KRW');
+    expect(krw?.amount, 15000);
+    expect(
+      parser.parse(
+        CardNotification(
+          id: '2',
+          text: 'Card approved USD 12.50 AMAZON',
+          postedAt: at,
+        ),
+      ),
+      isNull,
+    );
+  });
 }

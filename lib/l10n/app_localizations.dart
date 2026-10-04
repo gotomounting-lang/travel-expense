@@ -303,20 +303,14 @@ abstract class AppLocalizations {
   /// No description provided for @rateUnavailable.
   ///
   /// In ko, this message translates to:
-  /// **'지금은 환율을 가져올 수 없어요. 저장해 두면 연결될 때 원화로 바꿔 드립니다.'**
+  /// **'지금은 환율을 가져올 수 없어요. 저장해 두면 연결될 때 환산해 드립니다.'**
   String get rateUnavailable;
-
-  /// No description provided for @approxKrw.
-  ///
-  /// In ko, this message translates to:
-  /// **'≈ {amount}'**
-  String approxKrw(String amount);
 
   /// No description provided for @rateInfo.
   ///
   /// In ko, this message translates to:
-  /// **'1 {currency} = {rate}원 ({date} 기준)'**
-  String rateInfo(String currency, String rate, String date);
+  /// **'1 {currency} = {rate} {home} ({date} 기준)'**
+  String rateInfo(String currency, String rate, String home, String date);
 
   /// No description provided for @expenseCount.
   ///
@@ -339,7 +333,7 @@ abstract class AppLocalizations {
   /// No description provided for @emptyBody.
   ///
   /// In ko, this message translates to:
-  /// **'해외에서 쓴 돈을 결제한 날의 환율로 원화로 바꿔\n내 구글 시트에 정리해 드립니다.'**
+  /// **'해외에서 쓴 돈을 결제한 날의 환율로 내 나라 돈으로 바꿔\n내 구글 시트에 정리해 드립니다.'**
   String get emptyBody;
 
   /// No description provided for @googleSheetsSection.
@@ -387,14 +381,8 @@ abstract class AppLocalizations {
   /// No description provided for @rateInfoBody.
   ///
   /// In ko, this message translates to:
-  /// **'결제한 날짜의 기준환율(유럽중앙은행 고시, 미지원 통화는 공개 환율 자료)로 원화를 계산합니다. 주말·공휴일은 직전 영업일 환율을 쓰며, 실제 카드 청구액은 카드사 환율과 수수료 때문에 조금 다를 수 있습니다.'**
+  /// **'결제한 날짜의 기준환율(유럽중앙은행 고시, 미지원 통화는 공개 환율 자료)로 내 나라 통화 금액을 계산합니다. 주말·공휴일은 직전 영업일 환율을 쓰며, 실제 카드 청구액은 카드사 환율과 수수료 때문에 조금 다를 수 있습니다.'**
   String get rateInfoBody;
-
-  /// No description provided for @noKrwYet.
-  ///
-  /// In ko, this message translates to:
-  /// **'원화로 환산된 지출이 아직 없습니다'**
-  String get noKrwYet;
 
   /// No description provided for @googleSignInError.
   ///
@@ -441,7 +429,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageSystem.
   ///
   /// In ko, this message translates to:
-  /// **'기기 설정 따르기'**
+  /// **'자동 (국적 기준)'**
   String get languageSystem;
 
   /// No description provided for @catFood.
@@ -576,23 +564,11 @@ abstract class AppLocalizations {
   /// **'현지금액'**
   String get colLocalAmount;
 
-  /// No description provided for @colKrwRate.
-  ///
-  /// In ko, this message translates to:
-  /// **'적용환율(원)'**
-  String get colKrwRate;
-
   /// No description provided for @colRateDate.
   ///
   /// In ko, this message translates to:
   /// **'환율기준일'**
   String get colRateDate;
-
-  /// No description provided for @colKrwAmount.
-  ///
-  /// In ko, this message translates to:
-  /// **'원화금액'**
-  String get colKrwAmount;
 
   /// No description provided for @colPayment.
   ///
@@ -635,12 +611,6 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'종료일'**
   String get colEndDate;
-
-  /// No description provided for @colKrwTotal.
-  ///
-  /// In ko, this message translates to:
-  /// **'원화합계'**
-  String get colKrwTotal;
 
   /// No description provided for @colCount.
   ///
@@ -797,6 +767,90 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'개인정보처리방침'**
   String get privacyPolicy;
+
+  /// No description provided for @colHomeRate.
+  ///
+  /// In ko, this message translates to:
+  /// **'적용환율({currency})'**
+  String colHomeRate(String currency);
+
+  /// No description provided for @colHomeAmount.
+  ///
+  /// In ko, this message translates to:
+  /// **'환산금액({currency})'**
+  String colHomeAmount(String currency);
+
+  /// No description provided for @colHomeTotal.
+  ///
+  /// In ko, this message translates to:
+  /// **'합계({currency})'**
+  String colHomeTotal(String currency);
+
+  /// No description provided for @noConvertedYet.
+  ///
+  /// In ko, this message translates to:
+  /// **'환산된 지출이 아직 없습니다'**
+  String get noConvertedYet;
+
+  /// No description provided for @approxAmount.
+  ///
+  /// In ko, this message translates to:
+  /// **'≈ {amount}'**
+  String approxAmount(String amount);
+
+  /// No description provided for @nationality.
+  ///
+  /// In ko, this message translates to:
+  /// **'국적'**
+  String get nationality;
+
+  /// No description provided for @chooseNationality.
+  ///
+  /// In ko, this message translates to:
+  /// **'국적을 선택하세요'**
+  String get chooseNationality;
+
+  /// No description provided for @nationalityBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 나라의 통화로 모든 지출을 환산하고, 앱 언어도 맞춰 드립니다. 나중에 설정에서 바꿀 수 있습니다.'**
+  String get nationalityBody;
+
+  /// No description provided for @searchCountry.
+  ///
+  /// In ko, this message translates to:
+  /// **'나라 검색'**
+  String get searchCountry;
+
+  /// No description provided for @homeCurrency.
+  ///
+  /// In ko, this message translates to:
+  /// **'환산 통화'**
+  String get homeCurrency;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'여행 경비에 오신 것을 환영합니다'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 계정을 연결하면 기록한 지출이 내 구글 드라이브의 시트에 자동으로 저장됩니다.'**
+  String get welcomeBody;
+
+  /// No description provided for @skipForNow.
+  ///
+  /// In ko, this message translates to:
+  /// **'나중에 하기'**
+  String get skipForNow;
+
+  /// No description provided for @next.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음'**
+  String get next;
 }
 
 class _AppLocalizationsDelegate

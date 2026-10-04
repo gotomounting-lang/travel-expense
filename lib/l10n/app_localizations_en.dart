@@ -113,16 +113,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateUnavailable =>
-      'Can\'t get the exchange rate right now. Save it and we\'ll convert to KRW once you\'re online.';
+      'Can\'t get the exchange rate right now. Save it and we\'ll convert it once you\'re online.';
 
   @override
-  String approxKrw(String amount) {
-    return '≈ $amount';
-  }
-
-  @override
-  String rateInfo(String currency, String rate, String date) {
-    return '1 $currency = ₩$rate (as of $date)';
+  String rateInfo(String currency, String rate, String home, String date) {
+    return '1 $currency = $rate $home (as of $date)';
   }
 
   @override
@@ -146,7 +141,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emptyBody =>
-      'We convert what you spend abroad to KRW at the rate of the payment date\nand keep it in your own Google Sheet.';
+      'We convert what you spend abroad into your home currency at the rate of the payment date\nand keep it in your own Google Sheet.';
 
   @override
   String get googleSheetsSection => 'Google Sheets';
@@ -173,10 +168,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateInfoBody =>
-      'KRW amounts use the reference rate of the payment date (European Central Bank, or public rate data for other currencies). Weekends and holidays use the previous business day. Your actual card bill may differ slightly due to the card issuer\'s rate and fees.';
-
-  @override
-  String get noKrwYet => 'No expenses converted to KRW yet';
+      'Amounts in your home currency use the reference rate of the payment date (European Central Bank, or public rate data for other currencies). Weekends and holidays use the previous business day. Your actual card bill may differ slightly due to the card issuer\'s rate and fees.';
 
   @override
   String googleSignInError(String details) {
@@ -206,7 +198,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
-  String get languageSystem => 'Use device language';
+  String get languageSystem => 'Automatic (by nationality)';
 
   @override
   String get catFood => 'Food';
@@ -275,13 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get colLocalAmount => 'Local amount';
 
   @override
-  String get colKrwRate => 'Rate (KRW)';
-
-  @override
   String get colRateDate => 'Rate date';
-
-  @override
-  String get colKrwAmount => 'Amount (KRW)';
 
   @override
   String get colPayment => 'Payment';
@@ -303,9 +289,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get colEndDate => 'End';
-
-  @override
-  String get colKrwTotal => 'Total (KRW)';
 
   @override
   String get colCount => 'Count';
@@ -403,4 +386,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String colHomeRate(String currency) {
+    return 'Rate ($currency)';
+  }
+
+  @override
+  String colHomeAmount(String currency) {
+    return 'Amount ($currency)';
+  }
+
+  @override
+  String colHomeTotal(String currency) {
+    return 'Total ($currency)';
+  }
+
+  @override
+  String get noConvertedYet => 'No converted expenses yet';
+
+  @override
+  String approxAmount(String amount) {
+    return '≈ $amount';
+  }
+
+  @override
+  String get nationality => 'Nationality';
+
+  @override
+  String get chooseNationality => 'Select your nationality';
+
+  @override
+  String get nationalityBody =>
+      'All spending will be converted into your country\'s currency, and the app language will match. You can change this later in Settings.';
+
+  @override
+  String get searchCountry => 'Search country';
+
+  @override
+  String get homeCurrency => 'Home currency';
+
+  @override
+  String get welcomeTitle => 'Welcome to Travel Expense';
+
+  @override
+  String get welcomeBody =>
+      'Connect your Google account to save your expenses automatically to a sheet in your own Google Drive.';
+
+  @override
+  String get skipForNow => 'Not now';
+
+  @override
+  String get next => 'Next';
 }

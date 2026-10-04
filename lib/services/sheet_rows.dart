@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/category.dart';
+import '../models/currency.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import '../util/dates.dart';
@@ -27,7 +28,7 @@ enum SheetTab {
   };
 }
 
-List<Object> expenseHeader(AppLocalizations l) => [
+List<Object> expenseHeader(AppLocalizations l, String home) => [
   l.colTrip,
   l.colDate,
   l.colTime,
@@ -35,9 +36,9 @@ List<Object> expenseHeader(AppLocalizations l) => [
   l.colMerchant,
   l.colCurrency,
   l.colLocalAmount,
-  l.colKrwRate,
+  l.colHomeRate(home),
   l.colRateDate,
-  l.colKrwAmount,
+  l.colHomeAmount(home),
   l.colPayment,
   l.colSource,
   l.colMemo,
@@ -45,21 +46,21 @@ List<Object> expenseHeader(AppLocalizations l) => [
   'ID',
 ];
 
-List<Object> tripHeader(AppLocalizations l) => [
+List<Object> tripHeader(AppLocalizations l, String home) => [
   l.colTrip,
   l.colCountry,
   l.colCurrency,
   l.colStartDate,
   l.colEndDate,
-  l.colKrwTotal,
+  l.colHomeTotal(home),
   l.colCount,
   'ID',
 ];
 
-List<Object> summaryHeader(AppLocalizations l) => [
+List<Object> summaryHeader(AppLocalizations l, String home) => [
   l.colTrip,
   l.colCategory,
-  l.colKrwTotal,
+  l.colHomeTotal(home),
   l.colShare,
 ];
 
@@ -70,13 +71,14 @@ Object _text(String s) => s.isNotEmpty && '=+-@'.contains(s[0]) ? "'$s" : s;
 
 List<List<Object>> buildExpenseRows(
   AppLocalizations l,
+  String home,
   List<Trip> trips,
   List<Expense> expenses,
 ) {
   final titles = {for (final t in trips) t.id: t.title};
   final sorted = [...expenses]..sort((a, b) => a.spentAt.compareTo(b.spentAt));
   return [
-    expenseHeader(l),
+    expenseHeader(l, home),
     for (final e in sorted)
       [
         _text(titles[e.tripId] ?? ''),
@@ -86,9 +88,9 @@ List<List<Object>> buildExpenseRows(
         _text(e.merchant),
         e.currency,
         e.amount,
-        e.krwRate ?? '',
+        e.homeCurrency == home ? e.homeRate ?? '' : '',
         e.rateDate == null ? '' : formatYmd(e.rateDate!),
-        e.krwAmount ?? '',
+        e.homeCurrency == home ? e.homeAmount ?? '' : '',
         _text(e.paymentMethod),
         e.source.label(l),
         _text(e.memo),
@@ -100,11 +102,12 @@ List<List<Object>> buildExpenseRows(
 
 List<List<Object>> buildTripRows(
   AppLocalizations l,
+  String home,
   List<Trip> trips,
   List<Expense> expenses,
 ) {
   return [
-    tripHeader(l),
+    tripHeader(l, home),
     for (final t in trips)
       () {
         final mine = expenses.where((e) => e.tripId == t.id);
@@ -114,7 +117,7 @@ List<List<Object>> buildTripRows(
           t.currency,
           formatYmd(t.startDate),
           formatYmd(t.endDate),
-          mine.fold<int>(0, (s, e) => s + (e.krwAmount ?? 0)),
+          categoryTotals(mine, home).values.fold<double>(0, (s, v) => s + v),
           mine.length,
           t.id,
         ];
@@ -123,12 +126,20 @@ List<List<Object>> buildTripRows(
 }
 
 /// 여행별 카테고리 원화 합계. 앱 파이차트와 같은 계산을 쓴다.
-Map<ExpenseCategory, int> categoryTotals(Iterable<Expense> expenses) {
-  final totals = <ExpenseCategory, int>{};
+/// [home] 통화로 환산이 끝난 지출만 더한다 (국적을 바꾼 직후 다시 환산 중인 것은 뺀다).
+Map<ExpenseCategory, double> categoryTotals(
+  Iterable<Expense> expenses,
+  String home,
+) {
+  final totals = <ExpenseCategory, double>{};
+  final decimals = Currency.byCode(home).decimals;
   for (final e in expenses) {
-    final krw = e.krwAmount;
-    if (krw == null) continue;
-    totals[e.category] = (totals[e.category] ?? 0) + krw;
+    final v = e.homeAmount;
+    if (v == null || e.homeCurrency != home) continue;
+    totals[e.category] = Expense.roundTo(
+      (totals[e.category] ?? 0) + v,
+      decimals,
+    );
   }
   return Map.fromEntries(
     totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value)),
@@ -141,7 +152,7 @@ class SummaryBlock {
   const SummaryBlock(this.title, this.total, this.startRow, this.endRow);
 
   final String title;
-  final int total;
+  final double total;
   final int startRow;
 
   /// 마지막 행 다음 (끝 미포함).
@@ -150,20 +161,25 @@ class SummaryBlock {
 
 List<List<Object>> buildSummaryRows(
   AppLocalizations l,
+  String home,
   List<Trip> trips,
   List<Expense> expenses,
-) => buildSummary(l, trips, expenses).rows;
+) => buildSummary(l, home, trips, expenses).rows;
 
 ({List<List<Object>> rows, List<SummaryBlock> blocks}) buildSummary(
   AppLocalizations l,
+  String home,
   List<Trip> trips,
   List<Expense> expenses,
 ) {
-  final rows = <List<Object>>[summaryHeader(l)];
+  final rows = <List<Object>>[summaryHeader(l, home)];
   final blocks = <SummaryBlock>[];
   for (final t in trips) {
-    final totals = categoryTotals(expenses.where((e) => e.tripId == t.id));
-    final sum = totals.values.fold<int>(0, (s, v) => s + v);
+    final totals = categoryTotals(
+      expenses.where((e) => e.tripId == t.id),
+      home,
+    );
+    final sum = totals.values.fold<double>(0, (s, v) => s + v);
     if (totals.isNotEmpty) {
       blocks.add(
         SummaryBlock(t.title, sum, rows.length, rows.length + totals.length),

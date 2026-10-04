@@ -12,7 +12,7 @@ class ExchangeRateException implements Exception {
   String toString() => message;
 }
 
-/// 결제한 날짜 기준 원화 환율을 가져온다.
+/// 결제한 날짜 기준 환율(결제 통화 → 사용자 국적 통화)을 가져온다.
 ///
 /// 1순위 Frankfurter(유럽중앙은행 고시, 약 30개 통화)로 조회하고,
 /// 지원하지 않는 통화(VND, TWD 등)나 실패 시 fawazahmed0 currency-api로 넘어간다.
@@ -33,51 +33,56 @@ class ExchangeRateService {
 
   static const _timeout = Duration(seconds: 10);
 
-  Future<CachedRate> krwRate(String currency, DateTime spentAt) async {
-    final code = currency.toUpperCase();
+  /// 1 [from] 이 [spentAt] 날짜에 몇 [to] 였는지.
+  Future<CachedRate> rate(String from, String to, DateTime spentAt) async {
+    final base = from.toUpperCase();
+    final quote = to.toUpperCase();
     final today = dateOnly(_now());
     var date = dateOnly(spentAt);
     if (date.isAfter(today)) date = today;
 
-    if (code == 'KRW') {
-      return CachedRate(rate: 1, rateDate: date, source: 'KRW');
+    if (base == quote) {
+      return CachedRate(rate: 1, rateDate: date, source: base);
     }
 
-    final cached = await cache?.cachedRate(code, date);
+    // 캐시 키: 예전(원화 전용) 키 "USD" 와 겹치지 않게 "USD>JPY" 형태.
+    final key = '$base>$quote';
+    final cached = await cache?.cachedRate(key, date);
     if (cached != null) return cached;
 
     final errors = <String>[];
-    CachedRate? rate;
+    CachedRate? result;
     for (final fetch in [_frankfurter, _currencyApi]) {
       try {
-        rate = await fetch(code, date, today);
-        if (rate != null) break;
+        result = await fetch(base, quote, date, today);
+        if (result != null) break;
       } catch (e) {
         errors.add(e.toString());
       }
     }
-    if (rate == null) {
+    if (result == null) {
       throw ExchangeRateException(
-        '$code 환율을 가져오지 못했습니다 (${errors.join(' / ')})',
+        '$base→$quote rate unavailable (${errors.join(' / ')})',
       );
     }
 
     // 지난 날짜의 환율은 바뀌지 않으므로 캐시한다. 오늘 환율은 아직
     // 고시 전일 수 있어서 저장하지 않는다.
     if (date.isBefore(today)) {
-      await cache?.cacheRate(code, date, rate);
+      await cache?.cacheRate(key, date, result);
     }
-    return rate;
+    return result;
   }
 
   Future<CachedRate?> _frankfurter(
-    String code,
+    String base,
+    String quote,
     DateTime date,
     DateTime today,
   ) async {
     final uri = Uri.https('api.frankfurter.dev', '/v1/${formatYmd(date)}', {
-      'base': code,
-      'symbols': 'KRW',
+      'base': base,
+      'symbols': quote,
     });
     final res = await client.get(uri).timeout(_timeout);
     if (res.statusCode == 404 || res.statusCode == 422) return null;
@@ -85,21 +90,22 @@ class ExchangeRateService {
       throw ExchangeRateException('frankfurter ${res.statusCode}');
     }
     final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final krw = (body['rates'] as Map<String, dynamic>?)?['KRW'] as num?;
-    if (krw == null) return null;
+    final value = (body['rates'] as Map<String, dynamic>?)?[quote] as num?;
+    if (value == null) return null;
     return CachedRate(
-      rate: krw.toDouble(),
+      rate: value.toDouble(),
       rateDate: DateTime.parse(body['date'] as String),
       source: 'ECB(frankfurter)',
     );
   }
 
   Future<CachedRate?> _currencyApi(
-    String code,
+    String base,
+    String quote,
     DateTime date,
     DateTime today,
   ) async {
-    final lower = code.toLowerCase();
+    final lower = base.toLowerCase();
     // 오늘·어제 자료는 아직 날짜 태그가 없을 수 있어 latest로 대신한다.
     final tags = [
       formatYmd(date),
@@ -121,10 +127,12 @@ class ExchangeRateService {
         }
         if (res.statusCode != 200) continue;
         final body = jsonDecode(res.body) as Map<String, dynamic>;
-        final krw = (body[lower] as Map<String, dynamic>?)?['krw'] as num?;
-        if (krw == null) return null;
+        final value =
+            (body[lower] as Map<String, dynamic>?)?[quote.toLowerCase()]
+                as num?;
+        if (value == null) return null;
         return CachedRate(
-          rate: krw.toDouble(),
+          rate: value.toDouble(),
           rateDate: DateTime.parse(body['date'] as String),
           source: 'currency-api',
         );

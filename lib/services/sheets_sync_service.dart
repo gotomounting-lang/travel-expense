@@ -49,6 +49,7 @@ class SheetsSyncService {
   /// [l] 은 머리글·탭 이름·카테고리를 쓸 언어.
   Future<String> sync(
     AppLocalizations l,
+    String home,
     List<Trip> trips,
     List<Expense> expenses, {
     bool interactive = false,
@@ -61,7 +62,7 @@ class SheetsSyncService {
       throw SheetsSyncException(SheetsSyncError.noPermission);
     }
     try {
-      return await _syncWith(client, email, l, trips, expenses);
+      return await _syncWith(client, email, l, home, trips, expenses);
     } on sheets.DetailedApiRequestError catch (e) {
       if (e.status != 401) rethrow;
       // 토큰 만료: 한 번만 새 토큰으로 다시 시도한다.
@@ -71,7 +72,7 @@ class SheetsSyncService {
       if (client == null) {
         throw SheetsSyncException(SheetsSyncError.expired);
       }
-      return await _syncWith(client, email, l, trips, expenses);
+      return await _syncWith(client, email, l, home, trips, expenses);
     } finally {
       client?.close();
     }
@@ -81,6 +82,7 @@ class SheetsSyncService {
     gapis.AuthClient client,
     String email,
     AppLocalizations l,
+    String home,
     List<Trip> trips,
     List<Expense> expenses,
   ) async {
@@ -88,7 +90,7 @@ class SheetsSyncService {
     final driveApi = drive.DriveApi(client);
     final id = await _ensureSpreadsheet(sheetsApi, driveApi, email, l);
 
-    final summary = buildSummary(l, trips, expenses);
+    final summary = buildSummary(l, home, trips, expenses);
     final values = sheetsApi.spreadsheets.values;
     await values.batchClear(
       sheets.BatchClearValuesRequest(
@@ -100,14 +102,18 @@ class SheetsSyncService {
       sheets.BatchUpdateValuesRequest(
         valueInputOption: 'USER_ENTERED',
         data: [
-          _range(l, SheetTab.expenses, buildExpenseRows(l, trips, expenses)),
-          _range(l, SheetTab.trips, buildTripRows(l, trips, expenses)),
+          _range(
+            l,
+            SheetTab.expenses,
+            buildExpenseRows(l, home, trips, expenses),
+          ),
+          _range(l, SheetTab.trips, buildTripRows(l, home, trips, expenses)),
           _range(l, SheetTab.summary, summary.rows),
         ],
       ),
       id,
     );
-    await _replaceCharts(sheetsApi, id, l, summary.blocks);
+    await _replaceCharts(sheetsApi, id, l, home, summary.blocks);
     return 'https://docs.google.com/spreadsheets/d/$id';
   }
 
@@ -117,6 +123,7 @@ class SheetsSyncService {
     sheets.SheetsApi api,
     String id,
     AppLocalizations l,
+    String home,
     List<SummaryBlock> blocks,
   ) async {
     final sheetId = SheetTab.summary.sheetId;
@@ -138,7 +145,9 @@ class SheetsSyncService {
           ),
         ),
       for (final (i, b) in blocks.indexed)
-        sheets.Request(addChart: sheets.AddChartRequest(chart: _pie(l, b, i))),
+        sheets.Request(
+          addChart: sheets.AddChartRequest(chart: _pie(l, home, b, i)),
+        ),
     ];
     if (requests.isEmpty) return;
     await api.spreadsheets.batchUpdate(
@@ -147,7 +156,12 @@ class SheetsSyncService {
     );
   }
 
-  sheets.EmbeddedChart _pie(AppLocalizations l, SummaryBlock b, int index) {
+  sheets.EmbeddedChart _pie(
+    AppLocalizations l,
+    String home,
+    SummaryBlock b,
+    int index,
+  ) {
     final sheetId = SheetTab.summary.sheetId;
     sheets.ChartData column(int col) => sheets.ChartData(
       sourceRange: sheets.ChartSourceRange(
@@ -164,12 +178,12 @@ class SheetsSyncService {
     );
     return sheets.EmbeddedChart(
       spec: sheets.ChartSpec(
-        title: '${b.title} · ${formatKrw(l, b.total)}',
+        title: '${b.title} · ${formatMoney(l, b.total, home)}',
         pieChart: sheets.PieChartSpec(
           legendPosition: 'RIGHT_LEGEND',
           pieHole: 0.4,
           domain: column(1), // 카테고리
-          series: column(2), // 원화 합계
+          series: column(2), // 환산 합계
         ),
       ),
       position: sheets.EmbeddedObjectPosition(

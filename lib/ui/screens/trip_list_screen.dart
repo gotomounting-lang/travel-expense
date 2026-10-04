@@ -91,7 +91,10 @@ class _TripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final expenses = state.expensesFor(trip.id);
-    final total = expenses.fold<int>(0, (s, e) => s + (e.krwAmount ?? 0));
+    final home = state.homeCurrency();
+    final total = state
+        .convertedFor(trip.id)
+        .fold<double>(0, (s, e) => s + e.homeAmount!);
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final range = DateFormat.yMd(l.localeName);
@@ -106,7 +109,7 @@ class _TripCard extends StatelessWidget {
           ' · ${l.expenseCount(expenses.length)}',
         ),
         trailing: Text(
-          formatKrw(l, total),
+          formatMoney(l, total, home),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),

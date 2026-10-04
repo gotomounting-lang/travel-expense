@@ -1,5 +1,6 @@
 import '../l10n/app_localizations.dart';
 import 'category.dart';
+import 'currency.dart';
 
 /// 지출 내역이 어디서 들어왔는지. 2·3단계에서 영수증/카드 알림이 추가된다.
 enum ExpenseSource {
@@ -35,7 +36,8 @@ class Expense {
     this.paymentMethod = '',
     this.memo = '',
     this.source = ExpenseSource.manual,
-    this.krwRate,
+    this.homeCurrency = 'KRW',
+    this.homeRate,
     this.rateDate,
     this.rateSource,
   });
@@ -53,17 +55,27 @@ class Expense {
   final String memo;
   final ExpenseSource source;
 
-  /// 1 [currency] 당 원화. 오프라인 등으로 아직 조회하지 못했으면 null.
-  final double? krwRate;
+  /// 환산 통화 (사용자 국적의 통화). 국적을 바꾸면 다시 환산한다.
+  final String homeCurrency;
+
+  /// 1 [currency] 당 [homeCurrency]. 오프라인 등으로 아직 조회하지 못했으면 null.
+  final double? homeRate;
 
   /// 실제로 적용된 환율의 기준일 (주말·공휴일이면 직전 영업일).
   final DateTime? rateDate;
   final String? rateSource;
 
-  bool get hasRate => krwRate != null;
+  bool get hasRate => homeRate != null;
 
-  /// 원화 환산 금액 (원 단위 반올림). 환율이 없으면 null.
-  int? get krwAmount => krwRate == null ? null : (amount * krwRate!).round();
+  /// 환산 금액 ([homeCurrency] 소수 자릿수로 반올림). 환율이 없으면 null.
+  double? get homeAmount => homeRate == null
+      ? null
+      : roundTo(amount * homeRate!, Currency.byCode(homeCurrency).decimals);
+
+  static double roundTo(double v, int decimals) {
+    final f = decimals == 0 ? 1 : (decimals == 1 ? 10 : 100);
+    return (v * f).round() / f;
+  }
 
   Expense copyWith({
     DateTime? spentAt,
@@ -73,7 +85,8 @@ class Expense {
     String? merchant,
     String? paymentMethod,
     String? memo,
-    double? krwRate,
+    String? homeCurrency,
+    double? homeRate,
     DateTime? rateDate,
     String? rateSource,
     bool clearRate = false,
@@ -88,7 +101,8 @@ class Expense {
     paymentMethod: paymentMethod ?? this.paymentMethod,
     memo: memo ?? this.memo,
     source: source,
-    krwRate: clearRate ? null : (krwRate ?? this.krwRate),
+    homeCurrency: homeCurrency ?? this.homeCurrency,
+    homeRate: clearRate ? null : (homeRate ?? this.homeRate),
     rateDate: clearRate ? null : (rateDate ?? this.rateDate),
     rateSource: clearRate ? null : (rateSource ?? this.rateSource),
   );
@@ -104,7 +118,9 @@ class Expense {
     'payment_method': paymentMethod,
     'memo': memo,
     'source': source.id,
-    'krw_rate': krwRate,
+    'home_currency': homeCurrency,
+    // 1.0 때는 원화만 있어서 열 이름이 krw_rate 다. 지금은 homeCurrency 기준 환율.
+    'krw_rate': homeRate,
     'rate_date': rateDate?.toIso8601String(),
     'rate_source': rateSource,
   };
@@ -120,7 +136,8 @@ class Expense {
     paymentMethod: (m['payment_method'] as String?) ?? '',
     memo: (m['memo'] as String?) ?? '',
     source: ExpenseSource.fromId((m['source'] as String?) ?? 'manual'),
-    krwRate: (m['krw_rate'] as num?)?.toDouble(),
+    homeCurrency: (m['home_currency'] as String?) ?? 'KRW',
+    homeRate: (m['krw_rate'] as num?)?.toDouble(),
     rateDate: m['rate_date'] == null
         ? null
         : DateTime.parse(m['rate_date'] as String),

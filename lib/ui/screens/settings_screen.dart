@@ -7,6 +7,8 @@ import '../../services/google_account_service.dart';
 import '../../services/sheets_sync_service.dart';
 import '../../state/app_state.dart';
 import '../../state/locale_controller.dart';
+import '../../state/user_profile.dart';
+import 'nationality_screen.dart';
 
 /// GitHub Pages 로 공개하는 개인정보처리방침 (docs/privacy.html).
 const privacyPolicyUrl =
@@ -23,12 +25,29 @@ class SettingsScreen extends StatelessWidget {
     final user = account.account;
     final l = AppLocalizations.of(context);
     final locale = context.watch<LocaleController>();
+    final country = context.watch<UserProfile>().country;
+    final lang = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
       appBar: AppBar(title: Text(l.settings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Text(l.nationality, style: theme.textTheme.titleMedium),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Text(
+              country?.flag ?? '🌐',
+              style: const TextStyle(fontSize: 28),
+            ),
+            title: Text(country?.name(lang) ?? l.chooseNationality),
+            subtitle: Text('${l.homeCurrency}: ${state.homeCurrency()}'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NationalityScreen()),
+            ),
+          ),
+          const Divider(height: 40),
           Text(l.language, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           DropdownButtonFormField<String?>(

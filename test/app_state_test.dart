@@ -39,6 +39,7 @@ void main() {
   late bool online;
   late AppState state;
   late FakeCardSource cards;
+  late String home;
 
   setUp(() async {
     repo = await ExpenseRepository.open(
@@ -46,13 +47,16 @@ void main() {
       path: inMemoryDatabasePath,
     );
     online = true;
+    home = 'KRW';
     final client = MockClient((req) async {
       if (!online) throw http.ClientException('offline');
+      final q = req.url.queryParameters;
+      const rates = {'USD>KRW': 1400.0, 'KRW>USD': 0.0007};
       return http.Response(
         jsonEncode({
-          'base': 'USD',
+          'base': q['base'],
           'date': req.url.pathSegments.last,
-          'rates': {'KRW': 1400.0},
+          'rates': {q['symbols']: rates['${q['base']}>${q['symbols']}']},
         }),
         200,
       );
@@ -66,6 +70,7 @@ void main() {
       account: account,
       sync: SheetsSyncService(account),
       strings: () => lookupAppLocalizations(const Locale('ko')),
+      homeCurrency: () => home,
     );
     await state.load();
   });
@@ -90,8 +95,8 @@ void main() {
       currency: 'USD',
       amount: 12.5,
     );
-    expect(e.krwAmount, 17500);
-    expect(state.expensesFor(trip.id).single.krwRate, 1400);
+    expect(e.homeAmount, 17500);
+    expect(state.expensesFor(trip.id).single.homeRate, 1400);
   });
 
   test('오프라인에서도 저장되고, 연결되면 환율을 채운다', () async {
@@ -111,11 +116,11 @@ void main() {
       amount: 3,
     );
     expect(e.hasRate, isFalse);
-    expect(state.expensesFor(trip.id).single.krwAmount, isNull);
+    expect(state.expensesFor(trip.id).single.homeAmount, isNull);
 
     online = true;
     await state.refreshMissingRates();
-    expect(state.expensesFor(trip.id).single.krwAmount, 4200);
+    expect(state.expensesFor(trip.id).single.homeAmount, 4200);
   });
 
   test('여행을 지우면 지출도 함께 지워진다', () async {
@@ -166,7 +171,7 @@ void main() {
     expect(saved, hasLength(1));
     expect(saved.single.source, ExpenseSource.cardNotification);
     expect(saved.single.paymentMethod, '신한카드(1234)');
-    expect(saved.single.krwAmount, 17500);
+    expect(saved.single.homeAmount, 17500);
     expect(cards.items.map((i) => i.id), ['d']);
     expect(state.waitingCardPayments, 1);
 
@@ -182,5 +187,51 @@ void main() {
     expect(state.expensesFor(paris.id).single.merchant, 'LOUVRE');
     expect(cards.items, isEmpty);
     expect(state.waitingCardPayments, 0);
+  });
+
+  test('한국에 온 외국인: 원화 지출을 내 나라 통화로 환산하고, 국적을 바꾸면 다시 환산한다', () async {
+    home = 'USD';
+    final trip = await state.saveTrip(
+      title: '서울',
+      country: '한국',
+      currency: 'KRW',
+      startDate: DateTime(2026, 9, 1),
+      endDate: DateTime(2026, 9, 7),
+    );
+    final e = await state.saveExpense(
+      tripId: trip.id,
+      spentAt: DateTime(2026, 9, 2, 12),
+      category: ExpenseCategory.food,
+      currency: 'KRW',
+      amount: 15000,
+    );
+    expect(e.homeCurrency, 'USD');
+    expect(e.homeAmount, 10.5);
+    expect(state.convertedFor(trip.id).single.id, e.id);
+
+    home = 'KRW';
+    await state.refreshMissingRates();
+    final again = state.expensesFor(trip.id).single;
+    expect(again.homeCurrency, 'KRW');
+    expect(again.homeAmount, 15000);
+  });
+
+  test('한국 국적이면 원화 카드 알림(국내 결제)은 기록하지 않는다', () async {
+    await state.saveTrip(
+      title: '서울',
+      country: '',
+      currency: 'KRW',
+      startDate: DateTime(2026, 9, 1),
+      endDate: DateTime(2026, 9, 7),
+    );
+    cards.items.add(
+      CardNotification(
+        id: 'k',
+        text: '신한카드(1234)승인 홍*동 15,000KRW 09/02 OLIVE',
+        postedAt: DateTime(2026, 9, 2, 9),
+      ),
+    );
+    await state.importCardNotifications();
+    expect(state.expensesFor(state.trips.single.id), isEmpty);
   });
 }

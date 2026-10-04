@@ -30,7 +30,7 @@
 <h3>1. 기기 안에만 저장되는 정보</h3>
 <ul>
   <li>여행과 지출 내역(금액, 통화, 날짜, 카테고리, 가맹점, 결제수단, 메모)은 휴대폰 안에 저장됩니다.</li>
-  <li>앱 언어 설정과 연결한 시트의 ID가 휴대폰 안에 저장됩니다.</li>
+  <li>선택한 국적(환산 통화와 언어를 정하는 데 사용), 앱 언어 설정, 연결한 시트의 ID가 휴대폰 안에 저장됩니다.</li>
 </ul>
 <h3>2. 구글 계정과 구글 스프레드시트</h3>
 <ul>
@@ -44,7 +44,7 @@
 <h3>4. 카드 결제 알림 (안드로이드, 사용자가 허용한 경우만)</h3>
 <p>사용자가 휴대폰 설정에서 알림 접근을 허용하면, 앱은 도착하는 알림 중 "승인" 표시와 외화 금액이 함께 있는 결제 알림만 골라 휴대폰 안에 잠시(최대 30일) 보관하고, 지출로 기록한 뒤 지웁니다. 그 밖의 알림은 저장하지 않으며, 어떤 알림 내용도 휴대폰 밖으로 보내지 않습니다. 알림 접근은 언제든 휴대폰 설정에서 끌 수 있습니다.</p>
 <h3>5. 환율 조회</h3>
-<p>원화 환산을 위해 통화 코드와 날짜만 공개 환율 서비스(Frankfurter, currency-api via jsDelivr·Cloudflare)에 요청합니다. 지출 금액이나 개인정보는 보내지 않으며, 이 서비스들은 일반적인 웹 요청처럼 IP 주소를 볼 수 있습니다.</p>
+<p>내 나라 통화로 환산하기 위해 통화 코드와 날짜만 공개 환율 서비스(Frankfurter, currency-api via jsDelivr·Cloudflare)에 요청합니다. 지출 금액이나 개인정보는 보내지 않으며, 이 서비스들은 일반적인 웹 요청처럼 IP 주소를 볼 수 있습니다.</p>
 <h3>6. 광고·분석·제3자 제공</h3>
 <p>앱에는 광고와 사용 분석 도구가 없으며, 운영자는 사용자 정보를 제3자에게 제공하거나 판매하지 않습니다.</p>
 <h3>7. 삭제와 연결 해제</h3>
@@ -66,7 +66,7 @@
 <h3>1. Data stored only on your device</h3>
 <ul>
   <li>Trips and expenses (amount, currency, date, category, merchant, payment method, note).</li>
-  <li>Your language setting and the ID of the connected sheet.</li>
+  <li>Your selected nationality (used to pick the conversion currency and language), language setting and the ID of the connected sheet.</li>
 </ul>
 <h3>2. Google account and Google Sheets</h3>
 <ul>
@@ -80,7 +80,7 @@
 <h3>4. Card payment notifications (Android, only if you allow it)</h3>
 <p>If you grant notification access in your phone settings, the app keeps only notifications that contain an approval marker and a foreign-currency amount, stores them on your device briefly (up to 30 days) and deletes them once recorded as expenses. Other notifications are not stored, and no notification content leaves your device. You can turn off notification access anytime in your phone settings.</p>
 <h3>5. Exchange rates</h3>
-<p>To convert to KRW, the app sends only a currency code and a date to public exchange-rate services (Frankfurter, currency-api via jsDelivr/Cloudflare). No amounts or personal data are sent; like any web request, these services can see your IP address.</p>
+<p>To convert spending into your home currency, the app sends only a currency code and a date to public exchange-rate services (Frankfurter, currency-api via jsDelivr/Cloudflare). No amounts or personal data are sent; like any web request, these services can see your IP address.</p>
 <h3>6. Ads, analytics, third parties</h3>
 <p>The app contains no ads or analytics, and the developer does not share or sell your information.</p>
 <h3>7. Deletion and disconnecting</h3>
@@ -99,7 +99,7 @@
 <h2>隐私政策</h2>
 <p>“旅行记账”（以下称本应用）将你的旅行支出整理到你自己的 Google 表格中。开发者不运营服务器，也不收集或接收你的支出、照片或通知内容。</p>
 <h3>1. 仅保存在设备上的数据</h3>
-<ul><li>旅行和支出记录（金额、货币、日期、类别、商户、支付方式、备注）。</li><li>语言设置及已连接表格的 ID。</li></ul>
+<ul><li>旅行和支出记录（金额、货币、日期、类别、商户、支付方式、备注）。</li><li>所选国籍（用于确定换算货币和语言）、语言设置及已连接表格的 ID。</li></ul>
 <h3>2. Google 账号与 Google 表格</h3>
 <ul>
   <li>连接 Google 账号后，本应用会在<b>你自己的 Google 云端硬盘</b>中创建“旅行记账”表格并写入支出，数据从手机直接发送到 Google，不经过开发者。</li>
@@ -112,7 +112,7 @@
 <h3>4. 银行卡消费通知（Android，仅在你允许时）</h3>
 <p>如果你在手机设置中允许通知使用权，本应用只保留同时包含“批准/承认”标记和外币金额的消费通知，在设备上短暂保存（最多 30 天），记为支出后即删除。其他通知不会保存，任何通知内容都不会离开你的设备。你可以随时在手机设置中关闭。</p>
 <h3>5. 汇率查询</h3>
-<p>为换算韩元，本应用仅向公开汇率服务（Frankfurter、经 jsDelivr/Cloudflare 的 currency-api）发送货币代码和日期，不发送金额或个人信息；与任何网络请求一样，这些服务可以看到你的 IP 地址。</p>
+<p>为换算为本国货币，本应用仅向公开汇率服务（Frankfurter、经 jsDelivr/Cloudflare 的 currency-api）发送货币代码和日期，不发送金额或个人信息；与任何网络请求一样，这些服务可以看到你的 IP 地址。</p>
 <h3>6. 广告、分析与第三方</h3>
 <p>本应用没有广告或分析工具，开发者不会向第三方提供或出售你的信息。</p>
 <h3>7. 删除与断开连接</h3>
@@ -127,7 +127,7 @@
 <h2>プライバシーポリシー</h2>
 <p>「旅行経費」（以下、本アプリ）は、海外旅行の支出をあなた自身の Google スプレッドシートに整理するアプリです。運営者はサーバーを持たず、支出・写真・通知の内容を収集または受け取ることはありません。</p>
 <h3>1. 端末内にのみ保存される情報</h3>
-<ul><li>旅行と支出の記録（金額、通貨、日付、カテゴリ、店舗、支払方法、メモ）。</li><li>言語設定と接続したシートの ID。</li></ul>
+<ul><li>旅行と支出の記録（金額、通貨、日付、カテゴリ、店舗、支払方法、メモ）。</li><li>選択した国籍（換算通貨と言語の決定に使用）、言語設定、接続したシートの ID。</li></ul>
 <h3>2. Google アカウントと Google スプレッドシート</h3>
 <ul>
   <li>Google アカウントを接続すると、本アプリは<b>あなた自身の Google ドライブ</b>に「旅行経費」シートを作成して支出を書き込みます。データは端末から Google へ直接送られ、運営者を経由しません。</li>
@@ -140,7 +140,7 @@
 <h3>4. カード決済通知（Android、許可した場合のみ）</h3>
 <p>端末の設定で通知へのアクセスを許可すると、本アプリは届いた通知のうち「承認」表示と外貨金額を含む決済通知だけを端末内に一時的に（最大 30 日）保存し、支出として記録した後に削除します。その他の通知は保存せず、通知の内容が端末の外に送られることはありません。通知へのアクセスは端末の設定でいつでもオフにできます。</p>
 <h3>5. 為替レートの取得</h3>
-<p>ウォン換算のため、通貨コードと日付だけを公開為替サービス（Frankfurter、jsDelivr/Cloudflare 経由の currency-api）に送ります。金額や個人情報は送りません。一般的なウェブ通信と同様、これらのサービスは IP アドレスを知り得ます。</p>
+<p>自国通貨への換算のため、通貨コードと日付だけを公開為替サービス（Frankfurter、jsDelivr/Cloudflare 経由の currency-api）に送ります。金額や個人情報は送りません。一般的なウェブ通信と同様、これらのサービスは IP アドレスを知り得ます。</p>
 <h3>6. 広告・分析・第三者提供</h3>
 <p>本アプリには広告や利用分析ツールはなく、運営者があなたの情報を第三者に提供・販売することはありません。</p>
 <h3>7. 削除と接続解除</h3>

@@ -12,7 +12,9 @@ import 'services/receipt_scanner.dart';
 import 'services/sheets_sync_service.dart';
 import 'state/app_state.dart';
 import 'state/locale_controller.dart';
+import 'state/user_profile.dart';
 import 'ui/screens/trip_list_screen.dart';
+import 'ui/screens/welcome_screen.dart';
 
 /// Google Cloud 콘솔에서 만든 "웹 애플리케이션" OAuth 클라이언트 ID.
 /// `flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=...` 로 넣는다. (README 참고)
@@ -22,7 +24,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
 
-  final locale = LocaleController();
+  final profile = UserProfile();
+  await profile.load();
+  final locale = LocaleController(profile: profile);
   await locale.load();
 
   final repository = await ExpenseRepository.open();
@@ -35,11 +39,14 @@ Future<void> main() async {
     account: account,
     sync: SheetsSyncService(account),
     strings: () => locale.strings,
+    homeCurrency: () => profile.homeCurrency,
     cardNotifications: CardNotificationSource(),
   );
   await state.load();
   // 언어를 바꾸면 시트 머리글·탭 이름도 그 언어로 다시 쓴다.
   locale.addListener(state.syncNow);
+  // 국적(환산 통화)을 바꾸면 모든 지출을 그 통화로 다시 환산한다.
+  profile.addListener(state.refreshMissingRates);
   // 로그인 확인은 화면을 띄운 뒤 백그라운드에서 한다.
   account.init();
 
@@ -48,7 +55,7 @@ Future<void> main() async {
   AppLifecycleListener(onResume: state.importCardNotifications);
   state.cardNotifications.onNew.listen((_) => state.importCardNotifications());
 
-  runApp(TravelExpenseApp(state: state, locale: locale));
+  runApp(TravelExpenseApp(state: state, locale: locale, profile: profile));
 }
 
 class TravelExpenseApp extends StatelessWidget {
@@ -56,11 +63,13 @@ class TravelExpenseApp extends StatelessWidget {
     super.key,
     required this.state,
     required this.locale,
+    required this.profile,
     this.scanner,
   });
 
   final AppState state;
   final LocaleController locale;
+  final UserProfile profile;
   final ReceiptScanner? scanner;
 
   @override
@@ -70,6 +79,7 @@ class TravelExpenseApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: state),
         ChangeNotifierProvider.value(value: state.account),
         ChangeNotifierProvider.value(value: locale),
+        ChangeNotifierProvider.value(value: profile),
         Provider<ReceiptScanner>(create: (_) => scanner ?? ReceiptScanner()),
       ],
       child: Consumer<LocaleController>(
@@ -91,7 +101,12 @@ class TravelExpenseApp extends StatelessWidget {
             brightness: Brightness.dark,
             useMaterial3: true,
           ),
-          home: const TripListScreen(),
+          // 처음 실행: 로그인 → 국적 선택. 국적을 고른 뒤에는 여행 목록.
+          home: Consumer<UserProfile>(
+            builder: (_, profile, _) => profile.hasNationality
+                ? const TripListScreen()
+                : const WelcomeScreen(),
+          ),
         ),
       ),
     );

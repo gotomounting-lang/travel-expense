@@ -111,16 +111,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checkingRate => '正在获取汇率…';
 
   @override
-  String get rateUnavailable => '暂时无法获取汇率。先保存，联网后会自动换算为韩元。';
+  String get rateUnavailable => '暂时无法获取汇率。先保存，联网后会自动换算。';
 
   @override
-  String approxKrw(String amount) {
-    return '≈ $amount';
-  }
-
-  @override
-  String rateInfo(String currency, String rate, String date) {
-    return '1 $currency = $rate 韩元（$date）';
+  String rateInfo(String currency, String rate, String home, String date) {
+    return '1 $currency = $rate $home（$date）';
   }
 
   @override
@@ -137,7 +132,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyTitle => '创建你的第一次旅行';
 
   @override
-  String get emptyBody => '按付款当天的汇率将境外消费换算为韩元，\n并整理到你自己的 Google 表格中。';
+  String get emptyBody => '按付款当天的汇率将境外消费换算为本国货币，\n并整理到你自己的 Google 表格中。';
 
   @override
   String get googleSheetsSection => 'Google 表格';
@@ -164,10 +159,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get rateInfoBody =>
-      '按付款当天的参考汇率（欧洲央行公布，不支持的货币使用公开汇率数据）换算韩元。周末和节假日使用前一个工作日的汇率。实际信用卡账单可能因发卡行汇率和手续费略有不同。';
-
-  @override
-  String get noKrwYet => '还没有换算成韩元的支出';
+      '按付款当天的参考汇率（欧洲央行公布，不支持的货币使用公开汇率数据）换算为本国货币。周末和节假日使用前一个工作日的汇率。实际信用卡账单可能因发卡行汇率和手续费略有不同。';
 
   @override
   String googleSignInError(String details) {
@@ -195,7 +187,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get language => '语言';
 
   @override
-  String get languageSystem => '跟随系统';
+  String get languageSystem => '自动（按国籍）';
 
   @override
   String get catFood => '餐饮';
@@ -264,13 +256,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get colLocalAmount => '当地金额';
 
   @override
-  String get colKrwRate => '汇率（韩元）';
-
-  @override
   String get colRateDate => '汇率日期';
-
-  @override
-  String get colKrwAmount => '韩元金额';
 
   @override
   String get colPayment => '支付方式';
@@ -292,9 +278,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get colEndDate => '结束日期';
-
-  @override
-  String get colKrwTotal => '韩元合计';
 
   @override
   String get colCount => '笔数';
@@ -380,4 +363,54 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get privacyPolicy => '隐私政策';
+
+  @override
+  String colHomeRate(String currency) {
+    return '汇率（$currency）';
+  }
+
+  @override
+  String colHomeAmount(String currency) {
+    return '换算金额（$currency）';
+  }
+
+  @override
+  String colHomeTotal(String currency) {
+    return '合计（$currency）';
+  }
+
+  @override
+  String get noConvertedYet => '还没有已换算的支出';
+
+  @override
+  String approxAmount(String amount) {
+    return '≈ $amount';
+  }
+
+  @override
+  String get nationality => '国籍';
+
+  @override
+  String get chooseNationality => '请选择你的国籍';
+
+  @override
+  String get nationalityBody => '所有支出都将换算为你所在国家的货币，应用语言也会随之设置。之后可在设置中更改。';
+
+  @override
+  String get searchCountry => '搜索国家';
+
+  @override
+  String get homeCurrency => '换算货币';
+
+  @override
+  String get welcomeTitle => '欢迎使用旅行记账';
+
+  @override
+  String get welcomeBody => '连接 Google 账号后，记录的支出会自动保存到你自己的 Google 云端硬盘中的表格。';
+
+  @override
+  String get skipForNow => '以后再说';
+
+  @override
+  String get next => '下一步';
 }

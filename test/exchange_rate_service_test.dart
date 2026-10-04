@@ -33,9 +33,9 @@ void main() {
     now: () => now,
   );
 
-  test('원화는 조회 없이 1', () async {
+  test('같은 통화는 조회 없이 1', () async {
     final s = service((_) async => http.Response('', 500));
-    final r = await s.krwRate('krw', DateTime(2026, 10, 1));
+    final r = await s.rate('krw', 'KRW', DateTime(2026, 10, 1));
     expect(r.rate, 1);
     expect(calls, isEmpty);
   });
@@ -56,12 +56,12 @@ void main() {
         200,
       );
     });
-    final r = await s.krwRate('JPY', DateTime(2026, 10, 3, 21, 30));
+    final r = await s.rate('JPY', 'KRW', DateTime(2026, 10, 3, 21, 30));
     expect(r.rate, 9.41);
     expect(r.rateDate, DateTime(2026, 10, 2));
     expect(r.source, contains('ECB'));
 
-    final again = await s.krwRate('JPY', DateTime(2026, 10, 3, 8));
+    final again = await s.rate('JPY', 'KRW', DateTime(2026, 10, 3, 8));
     expect(again.rate, 9.41);
     expect(calls, hasLength(1), reason: '두 번째는 캐시에서');
   });
@@ -83,7 +83,7 @@ void main() {
         200,
       );
     });
-    final r = await s.krwRate('VND', DateTime(2026, 9, 20));
+    final r = await s.rate('VND', 'KRW', DateTime(2026, 9, 20));
     expect(r.rate, 0.0531);
     expect(r.source, 'currency-api');
   });
@@ -99,17 +99,39 @@ void main() {
         200,
       ),
     );
-    await s.krwRate('USD', DateTime(2026, 12, 25));
+    await s.rate('USD', 'KRW', DateTime(2026, 12, 25));
     expect(calls.single.path, '/v1/2026-10-04');
-    await s.krwRate('USD', now);
+    await s.rate('USD', 'KRW', now);
     expect(calls, hasLength(2));
-    expect(await repo.cachedRate('USD', now), isNull);
+    expect(await repo.cachedRate('USD>KRW', now), isNull);
+  });
+
+  test('외국인 사용자: 원화를 내 나라 통화(USD)로 바꾼다', () async {
+    final s = service((req) async {
+      expect(req.url.queryParameters, {'base': 'KRW', 'symbols': 'USD'});
+      return http.Response(
+        jsonEncode({
+          'base': 'KRW',
+          'date': '2026-10-02',
+          'rates': {'USD': 0.00072},
+        }),
+        200,
+      );
+    });
+    final r = await s.rate('KRW', 'USD', DateTime(2026, 10, 2, 15));
+    expect(r.rate, 0.00072);
+    expect(await repo.cachedRate('KRW>USD', DateTime(2026, 10, 2)), isNotNull);
+    expect(
+      await repo.cachedRate('KRW>JPY', DateTime(2026, 10, 2)),
+      isNull,
+      reason: '통화 쌍별로 따로 캐시',
+    );
   });
 
   test('모든 출처가 실패하면 예외', () async {
     final s = service((_) async => throw http.ClientException('offline'));
     expect(
-      () => s.krwRate('USD', DateTime(2026, 9, 1)),
+      () => s.rate('USD', 'KRW', DateTime(2026, 9, 1)),
       throwsA(isA<ExchangeRateException>()),
     );
   });

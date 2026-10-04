@@ -12,7 +12,7 @@ class ExpenseRepository {
 
   final Database _db;
 
-  static const _version = 1;
+  static const _version = 2;
 
   static Future<ExpenseRepository> open({
     DatabaseFactory? factory,
@@ -27,6 +27,13 @@ class ExpenseRepository {
         version: _version,
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: (db, _) => _createSchema(db),
+        onUpgrade: (db, from, _) async {
+          if (from < 2) {
+            await db.execute(
+              "ALTER TABLE expenses ADD COLUMN home_currency TEXT NOT NULL DEFAULT 'KRW'",
+            );
+          }
+        },
       ),
     );
     return ExpenseRepository(db);
@@ -54,6 +61,7 @@ class ExpenseRepository {
         payment_method TEXT NOT NULL DEFAULT '',
         memo TEXT NOT NULL DEFAULT '',
         source TEXT NOT NULL DEFAULT 'manual',
+        home_currency TEXT NOT NULL DEFAULT 'KRW',
         krw_rate REAL,
         rate_date TEXT,
         rate_source TEXT

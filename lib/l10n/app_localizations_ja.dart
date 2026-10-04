@@ -111,16 +111,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkingRate => '為替レートを確認中…';
 
   @override
-  String get rateUnavailable => '現在為替レートを取得できません。保存しておけば、接続時にウォンへ換算します。';
+  String get rateUnavailable => '現在為替レートを取得できません。保存しておけば、接続時に換算します。';
 
   @override
-  String approxKrw(String amount) {
-    return '≈ $amount';
-  }
-
-  @override
-  String rateInfo(String currency, String rate, String date) {
-    return '1 $currency = $rateウォン（$date時点）';
+  String rateInfo(String currency, String rate, String home, String date) {
+    return '1 $currency = $rate $home（$date時点）';
   }
 
   @override
@@ -138,7 +133,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get emptyBody =>
-      '海外での支出を支払日のレートでウォンに換算し、\nあなたの Google スプレッドシートに整理します。';
+      '海外での支出を支払日のレートで自国通貨に換算し、\nあなたの Google スプレッドシートに整理します。';
 
   @override
   String get googleSheetsSection => 'Google スプレッドシート';
@@ -165,10 +160,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get rateInfoBody =>
-      '支払日の基準レート（欧州中央銀行、未対応通貨は公開レートデータ）でウォンを計算します。土日・祝日は直前の営業日のレートを使います。実際のカード請求額はカード会社のレートや手数料により多少異なる場合があります。';
-
-  @override
-  String get noKrwYet => 'ウォンに換算された支出はまだありません';
+      '支払日の基準レート（欧州中央銀行、未対応通貨は公開レートデータ）で自国通貨の金額を計算します。土日・祝日は直前の営業日のレートを使います。実際のカード請求額はカード会社のレートや手数料により多少異なる場合があります。';
 
   @override
   String googleSignInError(String details) {
@@ -196,7 +188,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get language => '言語';
 
   @override
-  String get languageSystem => '端末の設定に従う';
+  String get languageSystem => '自動（国籍に合わせる）';
 
   @override
   String get catFood => '食事';
@@ -265,13 +257,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get colLocalAmount => '現地金額';
 
   @override
-  String get colKrwRate => 'レート（ウォン）';
-
-  @override
   String get colRateDate => 'レート基準日';
-
-  @override
-  String get colKrwAmount => 'ウォン金額';
 
   @override
   String get colPayment => '支払方法';
@@ -293,9 +279,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get colEndDate => '終了日';
-
-  @override
-  String get colKrwTotal => 'ウォン合計';
 
   @override
   String get colCount => '件数';
@@ -382,4 +365,56 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String colHomeRate(String currency) {
+    return 'レート（$currency）';
+  }
+
+  @override
+  String colHomeAmount(String currency) {
+    return '換算額（$currency）';
+  }
+
+  @override
+  String colHomeTotal(String currency) {
+    return '合計（$currency）';
+  }
+
+  @override
+  String get noConvertedYet => '換算済みの支出はまだありません';
+
+  @override
+  String approxAmount(String amount) {
+    return '≈ $amount';
+  }
+
+  @override
+  String get nationality => '国籍';
+
+  @override
+  String get chooseNationality => '国籍を選択してください';
+
+  @override
+  String get nationalityBody =>
+      'すべての支出をあなたの国の通貨に換算し、アプリの言語も合わせます。後から設定で変更できます。';
+
+  @override
+  String get searchCountry => '国を検索';
+
+  @override
+  String get homeCurrency => '換算通貨';
+
+  @override
+  String get welcomeTitle => '旅行経費へようこそ';
+
+  @override
+  String get welcomeBody =>
+      'Google アカウントを接続すると、記録した支出があなたの Google ドライブのシートに自動で保存されます。';
+
+  @override
+  String get skipForNow => 'あとで';
+
+  @override
+  String get next => '次へ';
 }

@@ -112,16 +112,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get checkingRate => '환율 확인 중…';
 
   @override
-  String get rateUnavailable => '지금은 환율을 가져올 수 없어요. 저장해 두면 연결될 때 원화로 바꿔 드립니다.';
+  String get rateUnavailable => '지금은 환율을 가져올 수 없어요. 저장해 두면 연결될 때 환산해 드립니다.';
 
   @override
-  String approxKrw(String amount) {
-    return '≈ $amount';
-  }
-
-  @override
-  String rateInfo(String currency, String rate, String date) {
-    return '1 $currency = $rate원 ($date 기준)';
+  String rateInfo(String currency, String rate, String home, String date) {
+    return '1 $currency = $rate $home ($date 기준)';
   }
 
   @override
@@ -138,7 +133,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get emptyTitle => '첫 여행을 만들어 보세요';
 
   @override
-  String get emptyBody => '해외에서 쓴 돈을 결제한 날의 환율로 원화로 바꿔\n내 구글 시트에 정리해 드립니다.';
+  String get emptyBody =>
+      '해외에서 쓴 돈을 결제한 날의 환율로 내 나라 돈으로 바꿔\n내 구글 시트에 정리해 드립니다.';
 
   @override
   String get googleSheetsSection => '구글 스프레드시트';
@@ -165,10 +161,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get rateInfoBody =>
-      '결제한 날짜의 기준환율(유럽중앙은행 고시, 미지원 통화는 공개 환율 자료)로 원화를 계산합니다. 주말·공휴일은 직전 영업일 환율을 쓰며, 실제 카드 청구액은 카드사 환율과 수수료 때문에 조금 다를 수 있습니다.';
-
-  @override
-  String get noKrwYet => '원화로 환산된 지출이 아직 없습니다';
+      '결제한 날짜의 기준환율(유럽중앙은행 고시, 미지원 통화는 공개 환율 자료)로 내 나라 통화 금액을 계산합니다. 주말·공휴일은 직전 영업일 환율을 쓰며, 실제 카드 청구액은 카드사 환율과 수수료 때문에 조금 다를 수 있습니다.';
 
   @override
   String googleSignInError(String details) {
@@ -196,7 +189,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get language => '언어';
 
   @override
-  String get languageSystem => '기기 설정 따르기';
+  String get languageSystem => '자동 (국적 기준)';
 
   @override
   String get catFood => '음식';
@@ -265,13 +258,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get colLocalAmount => '현지금액';
 
   @override
-  String get colKrwRate => '적용환율(원)';
-
-  @override
   String get colRateDate => '환율기준일';
-
-  @override
-  String get colKrwAmount => '원화금액';
 
   @override
   String get colPayment => '결제수단';
@@ -293,9 +280,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get colEndDate => '종료일';
-
-  @override
-  String get colKrwTotal => '원화합계';
 
   @override
   String get colCount => '건수';
@@ -383,4 +367,55 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get privacyPolicy => '개인정보처리방침';
+
+  @override
+  String colHomeRate(String currency) {
+    return '적용환율($currency)';
+  }
+
+  @override
+  String colHomeAmount(String currency) {
+    return '환산금액($currency)';
+  }
+
+  @override
+  String colHomeTotal(String currency) {
+    return '합계($currency)';
+  }
+
+  @override
+  String get noConvertedYet => '환산된 지출이 아직 없습니다';
+
+  @override
+  String approxAmount(String amount) {
+    return '≈ $amount';
+  }
+
+  @override
+  String get nationality => '국적';
+
+  @override
+  String get chooseNationality => '국적을 선택하세요';
+
+  @override
+  String get nationalityBody =>
+      '선택한 나라의 통화로 모든 지출을 환산하고, 앱 언어도 맞춰 드립니다. 나중에 설정에서 바꿀 수 있습니다.';
+
+  @override
+  String get searchCountry => '나라 검색';
+
+  @override
+  String get homeCurrency => '환산 통화';
+
+  @override
+  String get welcomeTitle => '여행 경비에 오신 것을 환영합니다';
+
+  @override
+  String get welcomeBody => '구글 계정을 연결하면 기록한 지출이 내 구글 드라이브의 시트에 자동으로 저장됩니다.';
+
+  @override
+  String get skipForNow => '나중에 하기';
+
+  @override
+  String get next => '다음';
 }

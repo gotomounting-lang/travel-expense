@@ -4,13 +4,21 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
+import 'user_profile.dart';
 
-/// 앱 언어. 기본은 기기(=Google Play) 언어를 따르고, 지원하지 않는 언어면
-/// 한국어로 보여준다. 설정에서 직접 고르면 그 언어로 고정한다.
+/// 앱 언어를 정하는 순서:
+/// 1. 설정에서 직접 고른 언어
+/// 2. 국적 (한국 → 한국어, 중국·대만·홍콩·마카오 → 중국어, 일본 → 일본어, 그 외 → 영어)
+/// 3. 국적을 고르기 전(첫 화면): 기기(=Google Play) 언어, 지원하지 않으면 한국어
 class LocaleController extends ChangeNotifier {
-  LocaleController({List<Locale> Function()? deviceLocales})
+  LocaleController({List<Locale> Function()? deviceLocales, this.profile})
     : _deviceLocales =
-          deviceLocales ?? (() => PlatformDispatcher.instance.locales);
+          deviceLocales ?? (() => PlatformDispatcher.instance.locales) {
+    profile?.addListener(notifyListeners);
+  }
+
+  /// 국적. 설정에서 언어를 직접 고르지 않았으면 국적 언어를 쓴다.
+  final UserProfile? profile;
 
   static const supported = ['ko', 'en', 'zh', 'ja'];
   static const fallback = Locale('ko');
@@ -50,7 +58,10 @@ class LocaleController extends ChangeNotifier {
   }
 
   /// MaterialApp.locale 에 넣는 값. null 이면 [resolve] 가 기기 언어로 고른다.
-  Locale? get selected => _choice == null ? null : Locale(_choice!);
+  Locale? get selected {
+    final code = _choice ?? profile?.country?.language;
+    return code == null ? null : Locale(code);
+  }
 
   /// 지금 화면에 쓰는 언어.
   Locale get current => selected ?? resolve(_deviceLocales());

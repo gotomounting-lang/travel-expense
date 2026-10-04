@@ -65,8 +65,13 @@ class CardPayment {
 ///
 /// 카드사마다 문구가 조금씩 달라서 특정 형식에 묶지 않고
 /// "승인" 표시 + 외화 통화 코드와 금액을 찾는 방식으로 읽는다.
-/// 취소·거절 알림과 원화 결제는 기록하지 않는다.
+/// 취소·거절 알림과 내 나라 통화 결제는 기록하지 않는다.
 class CardNotificationParser {
+  CardNotificationParser({this.homeCurrency = 'KRW'});
+
+  /// 사용자 나라 통화. 이 통화로 결제한 알림(국내 결제)은 기록하지 않는다.
+  final String homeCurrency;
+
   static final _approved = RegExp(
     r'승인|approved|approval|承認|批准|已消费|消費',
     caseSensitive: false,
@@ -153,7 +158,7 @@ class CardNotificationParser {
     Match? amountMatch;
     for (final m in _currencyAmount.allMatches(text)) {
       final code = m[1] ?? m[4]!;
-      if (code == 'KRW' || !_isCurrency(code)) continue;
+      if (code == homeCurrency || !_isCurrency(code)) continue;
       final raw = m[2] ?? m[3]!;
       final value = double.tryParse(raw.replaceAll(',', ''));
       if (value == null || value <= 0) continue;

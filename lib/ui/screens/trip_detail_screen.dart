@@ -54,9 +54,10 @@ class TripDetailScreen extends StatelessWidget {
     if (trip == null) return const Scaffold();
 
     final expenses = state.expensesFor(tripId);
-    final totals = categoryTotals(expenses);
-    final total = totals.values.fold<int>(0, (s, v) => s + v);
-    final pending = expenses.where((e) => !e.hasRate).length;
+    final home = state.homeCurrency();
+    final totals = categoryTotals(expenses, home);
+    final total = totals.values.fold<double>(0, (s, v) => s + v);
+    final pending = expenses.length - state.convertedFor(tripId).length;
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final dayHeader = DateFormat.MMMEd(l.localeName);
@@ -98,7 +99,7 @@ class TripDetailScreen extends StatelessWidget {
           children: [
             Text(l.totalSpent, style: theme.textTheme.labelLarge),
             Text(
-              formatKrw(l, total),
+              formatMoney(l, total, home),
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -114,7 +115,7 @@ class TripDetailScreen extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 16),
-            CategoryPieChart(totals: totals),
+            CategoryPieChart(totals: totals, currency: home),
             const SizedBox(height: 16),
             if (expenses.isEmpty)
               Padding(
@@ -271,10 +272,13 @@ Future<void> _pasteCardAlert(BuildContext context, Trip trip) async {
   controller.dispose();
   if (text == null || text.trim().isEmpty || !context.mounted) return;
 
-  final payment = CardNotificationParser().parse(
-    CardNotification(id: 'paste', text: text, postedAt: DateTime.now()),
-    useTextDate: true,
-  );
+  final payment =
+      CardNotificationParser(
+        homeCurrency: context.read<AppState>().homeCurrency(),
+      ).parse(
+        CardNotification(id: 'paste', text: text, postedAt: DateTime.now()),
+        useTextDate: true,
+      );
   if (payment == null) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(l.pasteCardAlertFailed)));
@@ -302,7 +306,9 @@ class _ExpenseTile extends StatelessWidget {
     final e = expense;
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
-    final trip = context.read<AppState>().tripById(e.tripId)!;
+    final state = context.read<AppState>();
+    final trip = state.tripById(e.tripId)!;
+    final converted = e.hasRate && e.homeCurrency == state.homeCurrency();
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
@@ -316,10 +322,12 @@ class _ExpenseTile extends StatelessWidget {
         '${formatForeign(e.amount, e.currency)}',
       ),
       trailing: Text(
-        e.krwAmount == null ? l.ratePending : formatKrw(l, e.krwAmount!),
+        converted
+            ? formatMoney(l, e.homeAmount!, e.homeCurrency)
+            : l.ratePending,
         style: theme.textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
-          color: e.krwAmount == null ? theme.colorScheme.error : null,
+          color: converted ? null : theme.colorScheme.error,
         ),
       ),
       onTap: () => Navigator.of(context).push(
