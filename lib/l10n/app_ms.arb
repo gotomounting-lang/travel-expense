@@ -138,5 +138,5 @@
   "batchOutsideTrip": "Di luar tarikh perjalanan",
   "batchDuplicate": "Sudah disimpan",
   "batchNeedsInput": "Semak amaun/mata wang · ketik amaun",
-  "scanUnreadable": "Tiada bayaran dibaca dalam {count} foto. Sila masukkan satu demi satu."
+  "scanIncomplete": "Ada bayaran yang tidak dapat dibaca. Sila masukkan satu demi satu."
 }

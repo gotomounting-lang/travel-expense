@@ -491,7 +491,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get batchNeedsInput => 'Дүн/валют шалгах · дүн дээр дарна уу';
 
   @override
-  String scanUnreadable(int count) {
-    return '$count зурагнаас төлбөр уншиж чадсангүй. Нэг бүрчлэн оруулна уу.';
-  }
+  String get scanIncomplete =>
+      'Уншиж чадаагүй төлбөр байна. Нэг бүрчлэн оруулна уу.';
 }

@@ -273,12 +273,5 @@
   "batchOutsideTrip": "여행 기간 밖",
   "batchDuplicate": "이미 저장된 건",
   "batchNeedsInput": "통화·금액 확인 필요 · 금액을 눌러 입력",
-  "scanUnreadable": "사진 {count}장에서 결제 건을 읽지 못했어요. 건별로 직접 입력해 주세요.",
-  "@scanUnreadable": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  }
+  "scanIncomplete": "읽지 못한 결제 건이 있어요. 건별로 직접 입력해 주세요."
 }

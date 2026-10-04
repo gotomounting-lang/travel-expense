@@ -138,5 +138,5 @@
   "batchOutsideTrip": "Hors des dates du voyage",
   "batchDuplicate": "Déjà enregistré",
   "batchNeedsInput": "Vérifier montant/devise · touchez le montant",
-  "scanUnreadable": "Aucun paiement lu sur {count} photo(s). Saisissez-les un par un."
+  "scanIncomplete": "Certains paiements n'ont pas pu être lus. Saisissez chaque paiement un par un."
 }

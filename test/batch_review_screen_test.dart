@@ -56,7 +56,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: BatchReviewScreen(
             trip: trip,
-            unreadable: 1,
             drafts: [
               ReceiptDraft(
                 amount: 1700,
@@ -84,7 +83,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('결제 3건 읽음'), findsOneWidget);
-    expect(find.textContaining('사진 1장에서 결제 건을 읽지 못했어요'), findsOneWidget);
     expect(find.textContaining('여행 기간 밖'), findsOneWidget);
     expect(find.text('선택한 2건 저장'), findsOneWidget);
 

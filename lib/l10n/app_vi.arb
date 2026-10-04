@@ -138,5 +138,5 @@
   "batchOutsideTrip": "Ngoài thời gian chuyến đi",
   "batchDuplicate": "Đã lưu trước đó",
   "batchNeedsInput": "Cần kiểm tra số tiền/loại tiền · chạm vào số tiền",
-  "scanUnreadable": "Không đọc được khoản thanh toán nào trong {count} ảnh. Hãy nhập từng khoản."
+  "scanIncomplete": "Có khoản thanh toán không đọc được. Hãy nhập từng khoản."
 }

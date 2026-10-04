@@ -490,7 +490,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get batchNeedsInput => 'ငွေပမာဏ/ငွေကြေး စစ်ရန် · ငွေပမာဏကို နှိပ်ပါ';
 
   @override
-  String scanUnreadable(int count) {
-    return 'ဓာတ်ပုံ $count ပုံမှ ငွေပေးချေမှုကို မဖတ်နိုင်ပါ။ တစ်ခုချင်း ထည့်ပါ။';
-  }
+  String get scanIncomplete =>
+      'မဖတ်နိုင်သော ငွေပေးချေမှု ရှိပါသည်။ တစ်ခုချင်း ထည့်ပါ။';
 }

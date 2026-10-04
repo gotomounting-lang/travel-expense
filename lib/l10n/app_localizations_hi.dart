@@ -490,7 +490,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get batchNeedsInput => 'राशि/मुद्रा जाँचें · राशि पर टैप करें';
 
   @override
-  String scanUnreadable(int count) {
-    return '$count फ़ोटो में कोई भुगतान नहीं पढ़ा जा सका। कृपया एक-एक करके दर्ज करें।';
-  }
+  String get scanIncomplete =>
+      'कुछ भुगतान पढ़े नहीं जा सके। कृपया हर भुगतान अलग से दर्ज करें।';
 }

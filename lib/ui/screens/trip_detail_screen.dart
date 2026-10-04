@@ -286,35 +286,35 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
     if (progressShown) navigator.pop();
     if (result == null) return; // 사진을 고르지 않음
     final drafts = result.drafts;
-    if (drafts.isEmpty) {
-      // 결제 건을 하나도 읽지 못함: 건별로 직접 입력하도록 안내하고 입력 화면으로.
-      if (result.photoCount > 1) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l.scanUnreadable(result.unreadable))),
-        );
-      }
+    // 여러 건은 모두 읽혔을 때만 한 번에 등록한다. 한 건이라도 못 읽었으면
+    // (사진을 못 읽었거나 금액·통화가 비었으면) 건별로 직접 입력하도록 안내하고
+    // 직접 입력 화면으로 간다.
+    final incomplete =
+        result.unreadable > 0 ||
+        drafts.isEmpty ||
+        drafts.any((d) => d.amount == null || d.currency == null);
+    if (incomplete && (result.photoCount > 1 || drafts.length > 1)) {
+      messenger.showSnackBar(SnackBar(content: Text(l.scanIncomplete)));
+      navigator.push(
+        MaterialPageRoute(builder: (_) => ExpenseFormScreen(trip: trip)),
+      );
+    } else if (drafts.length <= 1) {
+      // 한 건: 읽은 만큼 채운 입력 화면 (못 읽은 칸은 비우고 안내한다).
       navigator.push(
         MaterialPageRoute(
           builder: (_) => ExpenseFormScreen(
             trip: trip,
-            receipt: result.firstFailed ?? const ReceiptDraft(),
+            receipt:
+                drafts.firstOrNull ??
+                result.firstFailed ??
+                const ReceiptDraft(),
           ),
-        ),
-      );
-    } else if (drafts.length == 1 && result.unreadable == 0) {
-      navigator.push(
-        MaterialPageRoute(
-          builder: (_) => ExpenseFormScreen(trip: trip, receipt: drafts.single),
         ),
       );
     } else {
       navigator.push(
         MaterialPageRoute(
-          builder: (_) => BatchReviewScreen(
-            trip: trip,
-            drafts: drafts,
-            unreadable: result.unreadable,
-          ),
+          builder: (_) => BatchReviewScreen(trip: trip, drafts: drafts),
         ),
       );
     }

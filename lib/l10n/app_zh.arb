@@ -138,5 +138,5 @@
   "batchOutsideTrip": "不在旅行期间",
   "batchDuplicate": "已保存过",
   "batchNeedsInput": "需确认金额/币种 · 点击金额输入",
-  "scanUnreadable": "有 {count} 张照片未能识别付款，请逐笔手动输入。"
+  "scanIncomplete": "有付款未能识别。请逐笔手动输入。"
 }

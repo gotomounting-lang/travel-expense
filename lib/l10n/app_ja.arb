@@ -138,5 +138,5 @@
   "batchOutsideTrip": "旅行期間外",
   "batchDuplicate": "保存済み",
   "batchNeedsInput": "金額・通貨の確認が必要 · 金額をタップして入力",
-  "scanUnreadable": "{count}枚の写真から支払いを読み取れませんでした。1件ずつ入力してください。"
+  "scanIncomplete": "読み取れなかった支払いがあります。1件ずつ入力してください。"
 }

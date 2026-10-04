@@ -210,6 +210,75 @@ class ReceiptParser {
     'halaga', 'дүн', 'राशि', 'ငွေပမာဏ', '金额', '金額',
   ];
 
+  /// 합계 중에서도 실제로 낸(카드로 결제한) 금액을 뜻하는 말. 할인 전 합계와
+  /// 결제금액이 다르면 이쪽을 쓴다.
+  static const _paidWords = [
+    '결제금액',
+    '결재금액',
+    '결제 금액',
+    '승인금액',
+    '승인 금액',
+    '사용금액',
+    '사용 금액',
+    '이용금액',
+    '청구금액',
+    '받을금액',
+    '총결제금액',
+    '총결재금액',
+    'amount paid',
+    'total amount paid',
+    'amount due',
+    'total due',
+    'balance due',
+    'total to pay',
+    'to pay',
+    'ご利用金額',
+    'お支払金額',
+    'お支払い金額',
+    'お支払',
+    'ご請求',
+    '決済金額',
+    '实付',
+    '實付',
+    '实收',
+    '實收',
+    '应付',
+    '應付',
+    '支付金额',
+    '消费金额',
+    '消費金額',
+    'số tiền thanh toán',
+    'tổng thanh toán',
+    'thanh toán',
+    'к оплате',
+    'сумма оплаты',
+    'сумма покупки',
+    'zu zahlen',
+    'zahlbetrag',
+    'kartenzahlung',
+    'net à payer',
+    'à payer',
+    'montant payé',
+    'total a pagar',
+    'a pagar',
+    'te betalen',
+    'att betala',
+    'å betale',
+    'k úhradě',
+    'do zapłaty',
+    'fizetendő',
+    'za plaćanje',
+    'πληρωτέο',
+    'total bayar',
+    'jumlah dibayar',
+    'jumlah bayaran',
+    'нийт төлөх',
+    'төлөх',
+    'ပေးချေငွေ',
+    'ပေးရန်',
+    'भुगतान राशि',
+  ];
+
   /// "합계"가 아니라 그보다 약한 "금액" 단어. 진짜 합계 단어가 있으면 무시한다.
   static const _weakTotalWords = [
     'amount',
@@ -423,7 +492,7 @@ class ReceiptParser {
         .where((w) => !_weakTotalWords.contains(w))
         .any((w) => containsWord(row.toLowerCase(), w));
     final hasStrong = rows.any((r) => strong(r) && !_hasAny(r, _notTotalWords));
-    double? best;
+    final found = <(double, String, bool)>[];
     for (var i = 0; i < rows.length; i++) {
       final row = rows[i];
       if (!_hasAny(row, _totalWords) || _hasAny(row, _notTotalWords)) continue;
@@ -439,13 +508,22 @@ class ReceiptParser {
         amountRow = '$row ${rows[j]}';
       }
       if (amounts.isEmpty) continue;
-      final v = amounts.last;
-      if (best == null || v >= best) {
-        best = v;
-        _totalRow = amountRow;
-      }
+      found.add((amounts.last, amountRow, _hasAny(row, _paidWords)));
     }
-    if (best != null) return best;
+    if (found.isNotEmpty) {
+      // 실제로 낸 금액(결제금액·사용금액·お支払...)이 있으면 그중 맨 아래 것.
+      // 없으면 합계 줄 금액들이 모두 같을 때만 그 금액. 서로 다르면 어느 것이
+      // 총액인지 확실하지 않으니 비워 두고 사용자가 직접 입력한다.
+      final paid = found.where((f) => f.$3);
+      final pick = paid.isNotEmpty
+          ? paid.last
+          : found.map((f) => f.$1).toSet().length == 1
+          ? found.last
+          : null;
+      if (pick == null) return null;
+      _totalRow = pick.$2;
+      return pick.$1;
+    }
 
     // 2) 키워드가 없으면 (거스름돈·현금 행을 뺀) 가장 큰 금액.
     // 사업자번호("1088962-P") 같은 글자 붙은 숫자는 금액이 아니다.

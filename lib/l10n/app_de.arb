@@ -138,5 +138,5 @@
   "batchOutsideTrip": "Außerhalb der Reisedaten",
   "batchDuplicate": "Bereits gespeichert",
   "batchNeedsInput": "Betrag/Währung prüfen · Betrag antippen",
-  "scanUnreadable": "Auf {count} Foto(s) wurde keine Zahlung erkannt. Bitte einzeln eingeben."
+  "scanIncomplete": "Einige Zahlungen konnten nicht gelesen werden. Bitte jede Zahlung einzeln eingeben."
 }

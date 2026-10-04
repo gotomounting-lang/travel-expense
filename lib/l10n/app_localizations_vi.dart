@@ -490,7 +490,6 @@ class AppLocalizationsVi extends AppLocalizations {
       'Cần kiểm tra số tiền/loại tiền · chạm vào số tiền';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Không đọc được khoản thanh toán nào trong $count ảnh. Hãy nhập từng khoản.';
-  }
+  String get scanIncomplete =>
+      'Có khoản thanh toán không đọc được. Hãy nhập từng khoản.';
 }

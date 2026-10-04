@@ -462,7 +462,5 @@ class AppLocalizationsZh extends AppLocalizations {
   String get batchNeedsInput => '需确认金额/币种 · 点击金额输入';
 
   @override
-  String scanUnreadable(int count) {
-    return '有 $count 张照片未能识别付款，请逐笔手动输入。';
-  }
+  String get scanIncomplete => '有付款未能识别。请逐笔手动输入。';
 }

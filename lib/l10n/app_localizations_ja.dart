@@ -468,7 +468,5 @@ class AppLocalizationsJa extends AppLocalizations {
   String get batchNeedsInput => '金額・通貨の確認が必要 · 金額をタップして入力';
 
   @override
-  String scanUnreadable(int count) {
-    return '$count枚の写真から支払いを読み取れませんでした。1件ずつ入力してください。';
-  }
+  String get scanIncomplete => '読み取れなかった支払いがあります。1件ずつ入力してください。';
 }

@@ -489,7 +489,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batchNeedsInput => 'Check amount/currency · tap the amount';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Couldn\'t read any payment in $count photo(s). Please enter them one by one.';
-  }
+  String get scanIncomplete =>
+      'Some payments couldn\'t be read. Please enter each payment manually.';
 }

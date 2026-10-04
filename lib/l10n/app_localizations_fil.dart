@@ -489,7 +489,6 @@ class AppLocalizationsFil extends AppLocalizations {
   String get batchNeedsInput => 'Suriin ang halaga/currency · i-tap ang halaga';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Walang nabasang bayad sa $count larawan. Pakilagay isa-isa.';
-  }
+  String get scanIncomplete =>
+      'May mga bayad na hindi nabasa. Pakilagay isa-isa.';
 }

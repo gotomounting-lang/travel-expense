@@ -469,7 +469,5 @@ class AppLocalizationsKo extends AppLocalizations {
   String get batchNeedsInput => '통화·금액 확인 필요 · 금액을 눌러 입력';
 
   @override
-  String scanUnreadable(int count) {
-    return '사진 $count장에서 결제 건을 읽지 못했어요. 건별로 직접 입력해 주세요.';
-  }
+  String get scanIncomplete => '읽지 못한 결제 건이 있어요. 건별로 직접 입력해 주세요.';
 }

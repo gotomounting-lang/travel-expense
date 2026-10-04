@@ -21,21 +21,17 @@ class _Item {
   bool selected;
 }
 
-/// 사진 여러 장이나 카드 이용내역 한 화면에서 읽은 결제 여러 건을 확인하고
+/// 사진 여러 장이나 카드 이용내역 한 화면에서 모두 읽힌 결제 여러 건을 확인하고
 /// 한 번에 저장한다. 여행 기간 밖이거나 이미 저장된 건은 처음엔 고르지 않는다.
 class BatchReviewScreen extends StatefulWidget {
   const BatchReviewScreen({
     super.key,
     required this.trip,
     required this.drafts,
-    this.unreadable = 0,
   });
 
   final Trip trip;
   final List<ReceiptDraft> drafts;
-
-  /// 결제 건을 하나도 읽지 못한 사진 수.
-  final int unreadable;
 
   @override
   State<BatchReviewScreen> createState() => _BatchReviewScreenState();
@@ -117,23 +113,6 @@ class _BatchReviewScreenState extends State<BatchReviewScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 96),
         children: [
-          if (widget.unreadable > 0)
-            Card(
-              color: theme.colorScheme.errorContainer,
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: ListTile(
-                leading: const Icon(Icons.warning_amber),
-                title: Text(l.scanUnreadable(widget.unreadable)),
-                trailing: TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ExpenseFormScreen(trip: widget.trip),
-                    ),
-                  ),
-                  child: Text(l.enterManually),
-                ),
-              ),
-            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(l.batchHint, style: theme.textTheme.bodyMedium),

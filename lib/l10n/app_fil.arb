@@ -138,5 +138,5 @@
   "batchOutsideTrip": "Labas sa petsa ng biyahe",
   "batchDuplicate": "Naka-save na",
   "batchNeedsInput": "Suriin ang halaga/currency · i-tap ang halaga",
-  "scanUnreadable": "Walang nabasang bayad sa {count} larawan. Pakilagay isa-isa."
+  "scanIncomplete": "May mga bayad na hindi nabasa. Pakilagay isa-isa."
 }

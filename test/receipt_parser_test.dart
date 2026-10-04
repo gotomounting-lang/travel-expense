@@ -434,4 +434,30 @@ void main() {
       expect(d.currency, 'RUB');
     });
   });
+
+  group('한국 카드전표 총액 고르기', () {
+    final parser = ReceiptParser(tripCurrency: 'KRW');
+
+    test('할인 전 합계와 결제금액이 다르면 결제금액', () {
+      final d = parser.parse(
+        lines(['샘플마트', '합계 20,000', '할인 -2,000', '결제금액 18,000원']),
+      );
+      expect(d.amount, 18000);
+      expect(d.currency, 'KRW');
+    });
+
+    test('원·₩ 표시가 없어도 총액은 읽고, 통화는 직접 고르게 비운다', () {
+      final d = parser.parse(
+        lines(['샘플편의점', '합 계 1,700', '신용카드 1,700', '사용금액 1,700']),
+      );
+      expect(d.amount, 1700);
+      expect(d.currency, isNull);
+    });
+
+    test('합계 줄 금액이 서로 다르고 결제금액이 없으면 직접 입력', () {
+      final d = parser.parse(lines(['샘플식당', '합계 12,000', '총액 15,000']));
+      expect(d.amount, isNull);
+      expect(d.totalByWord, isFalse);
+    });
+  });
 }

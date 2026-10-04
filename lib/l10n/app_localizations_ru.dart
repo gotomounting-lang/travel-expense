@@ -494,7 +494,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get batchNeedsInput => 'Проверьте сумму/валюту · нажмите на сумму';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Не удалось прочитать платежи на фото: $count. Введите их по одному.';
-  }
+  String get scanIncomplete =>
+      'Некоторые платежи не удалось прочитать. Введите каждый платёж вручную.';
 }

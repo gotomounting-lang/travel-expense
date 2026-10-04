@@ -950,11 +950,11 @@ abstract class AppLocalizations {
   /// **'통화·금액 확인 필요 · 금액을 눌러 입력'**
   String get batchNeedsInput;
 
-  /// No description provided for @scanUnreadable.
+  /// No description provided for @scanIncomplete.
   ///
   /// In ko, this message translates to:
-  /// **'사진 {count}장에서 결제 건을 읽지 못했어요. 건별로 직접 입력해 주세요.'**
-  String scanUnreadable(int count);
+  /// **'읽지 못한 결제 건이 있어요. 건별로 직접 입력해 주세요.'**
+  String get scanIncomplete;
 }
 
 class _AppLocalizationsDelegate

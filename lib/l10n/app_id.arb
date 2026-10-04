@@ -138,5 +138,5 @@
   "batchOutsideTrip": "Di luar tanggal perjalanan",
   "batchDuplicate": "Sudah disimpan",
   "batchNeedsInput": "Periksa jumlah/mata uang · ketuk jumlah",
-  "scanUnreadable": "Tidak ada pembayaran terbaca di {count} foto. Masukkan satu per satu."
+  "scanIncomplete": "Ada pembayaran yang tidak terbaca. Masukkan satu per satu."
 }

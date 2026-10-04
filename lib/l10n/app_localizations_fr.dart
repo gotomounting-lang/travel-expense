@@ -492,7 +492,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get batchNeedsInput => 'Vérifier montant/devise · touchez le montant';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Aucun paiement lu sur $count photo(s). Saisissez-les un par un.';
-  }
+  String get scanIncomplete =>
+      'Certains paiements n\'ont pas pu être lus. Saisissez chaque paiement un par un.';
 }

@@ -492,7 +492,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get batchNeedsInput => 'Betrag/Währung prüfen · Betrag antippen';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Auf $count Foto(s) wurde keine Zahlung erkannt. Bitte einzeln eingeben.';
-  }
+  String get scanIncomplete =>
+      'Einige Zahlungen konnten nicht gelesen werden. Bitte jede Zahlung einzeln eingeben.';
 }

@@ -491,7 +491,6 @@ class AppLocalizationsMs extends AppLocalizations {
   String get batchNeedsInput => 'Semak amaun/mata wang · ketik amaun';
 
   @override
-  String scanUnreadable(int count) {
-    return 'Tiada bayaran dibaca dalam $count foto. Sila masukkan satu demi satu.';
-  }
+  String get scanIncomplete =>
+      'Ada bayaran yang tidak dapat dibaca. Sila masukkan satu demi satu.';
 }
