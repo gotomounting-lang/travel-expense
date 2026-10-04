@@ -113,4 +113,32 @@ void main() {
     expect(parse('매입금액\n31,528원\n확정'), isNull);
     expect(paste('매입 취소 31,528원'), isNull);
   });
+
+  test('원화와 외화가 함께 있으면 실제 청구된 원화를 쓴다', () {
+    final p = parse(
+      '[Web발신] 우리카드 승인 홍*동 31,101원 (7,150HUF) 일시불 LIDL HU 357 Budapest HUN 누적 474,478원',
+    )!;
+    expect(p.currency, 'KRW');
+    expect(p.amount, 31101);
+    expect(p.merchant, contains('LIDL'));
+  });
+
+  test('붙여넣은 우리WON 이용내역: 원화 우선, 외화만 있으면 외화', () {
+    CardPayment? paste(String text) => parser.parse(
+      CardNotification(id: 'p', text: text, postedAt: DateTime(2026, 9, 23)),
+      useTextDate: true,
+    );
+    final both = paste(
+      '17:27 | 본인 | 일시불\nZDRAVI S CHUTI BRNO CZE\n6,423원\n(97.9CZK)',
+    )!;
+    expect(both.currency, 'KRW');
+    expect(both.amount, 6423);
+    expect(both.merchant, 'ZDRAVI S CHUTI BRNO CZE');
+
+    final foreignOnly = paste(
+      '17:21 일시불\nLidl dekuje za nakup Brno CZE\n156.7CZK',
+    )!;
+    expect(foreignOnly.currency, 'CZK');
+    expect(foreignOnly.amount, 156.7);
+  });
 }

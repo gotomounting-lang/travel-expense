@@ -82,8 +82,8 @@ class CardNotificationParser {
   );
 
   static final _currencyAmount = RegExp(
-    r'\b([A-Z]{3})\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)'
-    r'|(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s?([A-Z]{3})\b',
+    r'\b([A-Z]{3})[  ]?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)'
+    r'|(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)[  ]?([A-Z]{3})\b',
   );
 
   static const _issuers = [
@@ -159,6 +159,12 @@ class CardNotificationParser {
   /// 붙여넣은 이용내역에서 결제가 끝났음을 뜻하는 말.
   static final _settled = RegExp(r'매입|확정|결제완료|이용완료');
 
+  /// 바로 앞에 이 말이 있는 금액은 결제 금액이 아니다 (누적 1,234,000원 등).
+  static final _notPayment = RegExp(r'누적|잔액|한도|가능');
+
+  static int _gap(Match a, Match b) =>
+      a.start > b.end ? a.start - b.end : b.start - a.end;
+
   /// 원화 금액 (예: 31,528원). 내 나라 통화가 원화일 때 붙여넣기에서만 쓴다.
   static final _wonAmount = RegExp(r'(\d{1,3}(?:,\d{3})+|\d+)\s?원');
 
@@ -169,33 +175,55 @@ class CardNotificationParser {
   CardPayment? parse(CardNotification n, {bool useTextDate = false}) {
     final text = '${n.title}\n${n.text}'.trim();
     if (_rejected.hasMatch(text)) return null;
-    final settled = useTextDate && _settled.hasMatch(text);
-    if (!_approved.hasMatch(text) && !settled) return null;
-
     String? currency;
     double? amount;
     Match? amountMatch;
+    Match? foreign;
     for (final m in _currencyAmount.allMatches(text)) {
       final code = m[1] ?? m[4]!;
       if (code == homeCurrency || !_isCurrency(code)) continue;
-      final raw = m[2] ?? m[3]!;
-      final value = double.tryParse(raw.replaceAll(',', ''));
+      final value = double.tryParse((m[2] ?? m[3]!).replaceAll(',', ''));
       if (value == null || value <= 0) continue;
       currency = code;
       amount = value;
-      amountMatch = m;
+      amountMatch = foreign = m;
       break;
     }
-    if (currency == null && useTextDate) {
-      // 외화 금액이 없으면 내 나라 통화 금액을 쓴다 (매입금액이 있으면 그것).
-      final matches = [
-        ..._currencyAmount
-            .allMatches(text)
-            .where((m) => (m[1] ?? m[4]) == homeCurrency),
-        if (homeCurrency == 'KRW') ..._wonAmount.allMatches(text),
-      ];
+
+    // 붙여넣기는 사용자가 고른 문구라 "승인" 같은 말이 없어도 읽는다
+    // (카드 앱 이용내역 화면에는 승인 표시가 없다).
+    final settled = useTextDate && (_settled.hasMatch(text) || foreign != null);
+    if (!_approved.hasMatch(text) && !settled) return null;
+
+    // 내 나라 통화 금액 후보. 누적·잔액·한도 금액은 결제 금액이 아니다.
+    final homeMatches =
+        [
+              ..._currencyAmount
+                  .allMatches(text)
+                  .where((m) => (m[1] ?? m[4]) == homeCurrency),
+              if (homeCurrency == 'KRW') ..._wonAmount.allMatches(text),
+            ]
+            .where(
+              (m) => !_notPayment.hasMatch(
+                text.substring(m.start < 8 ? 0 : m.start - 8, m.start),
+              ),
+            )
+            .toList();
+
+    Match? home;
+    if (foreign != null) {
+      // 외화와 원화(내 나라 통화)가 함께 있으면 실제 청구된 원화를 쓴다.
+      // 여러 건이 붙어 있을 수 있어 외화 바로 옆의 금액만 짝으로 본다.
+      for (final m in homeMatches) {
+        final gap = m.start > foreign.end
+            ? m.start - foreign.end
+            : foreign.start - m.end;
+        if (gap <= 6 && (home == null || gap < _gap(home, foreign))) home = m;
+      }
+    } else if (useTextDate) {
+      // 외화가 없으면 내 나라 통화 금액 (매입금액이 있으면 그것).
       final purchase = text.indexOf('매입금액');
-      matches.sort((a, b) {
+      homeMatches.sort((a, b) {
         if (purchase >= 0) {
           final pa = a.start > purchase ? 0 : 1;
           final pb = b.start > purchase ? 0 : 1;
@@ -203,14 +231,15 @@ class CardNotificationParser {
         }
         return a.start - b.start;
       });
-      for (final m in matches) {
-        final raw = m.groupCount >= 4 ? (m[2] ?? m[3]!) : m[1]!;
-        final value = double.tryParse(raw.replaceAll(',', ''));
-        if (value == null || value <= 0) continue;
+      home = homeMatches.firstOrNull;
+    }
+    if (home != null) {
+      final raw = home.groupCount >= 4 ? (home[2] ?? home[3]!) : home[1]!;
+      final value = double.tryParse(raw.replaceAll(',', ''));
+      if (value != null && value > 0) {
         currency = homeCurrency;
         amount = value;
-        amountMatch = m;
-        break;
+        amountMatch = home;
       }
     }
     if (currency == null || amount == null) return null;
@@ -317,6 +346,7 @@ class CardNotificationParser {
   String _merchant(String text, Match amountMatch) {
     final lines = text
         .replaceRange(amountMatch.start, amountMatch.end, ' ')
+        .replaceAll(_currencyAmount, ' ')
         .split(RegExp(r'[\n|]'));
     final candidates = <String>[];
     for (var line in lines) {
