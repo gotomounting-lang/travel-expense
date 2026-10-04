@@ -308,7 +308,7 @@ class SheetsSyncService {
 
     if (id != null) {
       try {
-        await _ensureTabs(sheetsApi, id, l);
+        await ensureTabs(sheetsApi, id, l);
         if (target.renameToTitle) {
           await _ensureTitle(driveApi, id, target.title);
         }
@@ -323,7 +323,7 @@ class SheetsSyncService {
 
     final existing = await _findExisting(driveApi, target.appPropValue);
     id = existing ?? await _create(sheetsApi, driveApi, l, target);
-    await _ensureTabs(sheetsApi, id, l);
+    await ensureTabs(sheetsApi, id, l);
     if (existing != null && target.renameToTitle) {
       await _ensureTitle(driveApi, id, target.title);
     }
@@ -386,16 +386,19 @@ class SheetsSyncService {
     return id;
   }
 
-  sheets.SheetProperties _tabProperties(AppLocalizations l, SheetTab tab) =>
-      sheets.SheetProperties(
-        sheetId: tab.sheetId,
-        title: tab.title(l),
-        gridProperties: sheets.GridProperties(frozenRowCount: 1),
-      );
+  static sheets.SheetProperties _tabProperties(
+    AppLocalizations l,
+    SheetTab tab,
+  ) => sheets.SheetProperties(
+    sheetId: tab.sheetId,
+    title: tab.title(l),
+    gridProperties: sheets.GridProperties(frozenRowCount: 1),
+  );
 
   /// 탭을 sheetId 로 찾아, 사용자가 지운 탭은 다시 만들고 이름은 지금
   /// 언어에 맞춘다. 같은 이름의 다른 탭이 있으면 그 탭 이름을 피한다.
-  Future<void> _ensureTabs(
+  @visibleForTesting
+  static Future<void> ensureTabs(
     sheets.SheetsApi api,
     String id,
     AppLocalizations l,
@@ -454,6 +457,8 @@ class SheetsSyncService {
         );
       }
     }
+    // 탭이 이미 다 맞으면 보낼 것이 없다 (빈 요청은 시트 API 가 400 으로 거절한다).
+    if (requests.isEmpty) return;
     await api.spreadsheets.batchUpdate(
       sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,
