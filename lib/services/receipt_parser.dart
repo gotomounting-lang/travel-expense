@@ -149,6 +149,11 @@ class ReceiptParser {
     'summe',
     'gesamt',
     'totale',
+    'celkem',
+    'k úhradě',
+    'razem',
+    'do zapłaty',
+    'összesen',
     'importe',
     'montant',
     '合計',
@@ -178,6 +183,9 @@ class ReceiptParser {
     'tax',
     'vat',
     'gst',
+    'dph',
+    'ptu',
+    'áfa',
     'change',
     'cash',
     'tip',
@@ -222,12 +230,22 @@ class ReceiptParser {
     return re.hasMatch(lowerText);
   }
 
-  List<double> _amountsIn(String row, int decimals) {
+  /// 띄어 쓴 천 단위 금액 (체코·폴란드 등: "2 118 Kč").
+  static final _spacedNumber = RegExp(
+    r'(?<![\d.,])\d{1,3}(?:[ \u00a0]\d{3})+(?:[.,]\d{1,2})?(?![\d.,])',
+  );
+
+  List<double> _amountsIn(String row, int decimals, {bool spaced = false}) {
     // 날짜·시간·전화번호처럼 보이는 부분은 빼고 숫자를 찾는다.
     final cleaned = row
         .replaceAll(_dateLike, ' ')
         .replaceAll(RegExp(r'\b\d{1,2}:\d{2}(:\d{2})?\b'), ' ')
         .replaceAll(RegExp(r'\d{2,4}-\d{3,4}-\d{4}'), ' ');
+    if (spaced) {
+      final m = _spacedNumber.allMatches(cleaned).lastOrNull;
+      final v = m == null ? null : parseAmount(m[0]!, decimals: decimals);
+      if (v != null && v > 0) return [v];
+    }
     return [
       for (final m in _number.allMatches(cleaned))
         if (parseAmount(m.group(0)!, decimals: decimals) case final v?)
@@ -241,10 +259,14 @@ class ReceiptParser {
     for (var i = 0; i < rows.length; i++) {
       final row = rows[i];
       if (!_hasAny(row, _totalWords) || _hasAny(row, _notTotalWords)) continue;
-      var amounts = _amountsIn(row, decimals);
+      var amounts = _amountsIn(row, decimals, spaced: true);
       // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 다음 행을 본다.
       if (amounts.isEmpty && i + 1 < rows.length) {
-        amounts = _amountsIn(rows[i + 1], decimals);
+        amounts = _amountsIn(rows[i + 1], decimals, spaced: true);
+      }
+      // 금액이 키워드보다 살짝 위에 찍혀 앞 행으로 묶인 경우.
+      if (amounts.isEmpty && i > 0 && !_hasAny(rows[i - 1], _notTotalWords)) {
+        amounts = _amountsIn(rows[i - 1], decimals, spaced: true);
       }
       if (amounts.isEmpty) continue;
       final v = amounts.last;
@@ -271,6 +293,8 @@ class ReceiptParser {
       if (Currency.common.any((c) => c.code == code)) return code;
     }
     const symbols = {
+      'KČ': 'CZK',
+      'ZŁ': 'PLN',
       'NT\$': 'TWD',
       'HK\$': 'HKD',
       'S\$': 'SGD',

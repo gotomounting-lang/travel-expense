@@ -95,6 +95,60 @@ void main() {
     expect(draft.category, ExpenseCategory.transport);
   });
 
+  test('체코 영수증: Kč, 띄어 쓴 천 단위, Celkem, DPH 표는 합계가 아님', () {
+    final draft = ReceiptParser(tripCurrency: 'EUR').parse(
+      lines([
+        'Pivovar Strahov',
+        '25.6.2025 15:04:04 Stůl: 4',
+        '1 x Tatarský biftek (345 Kč) 345 Kč',
+        '2 x Vepřová žebra (425 Kč) 850 Kč',
+        'DPH Základ Daň Celkem',
+        '12% 1303,57 156,43 1460',
+        '21% 543,80 114,20 658',
+        'Celkem 2 118 Kč',
+        '88,25 €',
+      ]),
+    );
+    expect(draft.amount, 2118);
+    expect(draft.currency, 'CZK');
+    expect(draft.date, DateTime(2025, 6, 25, 15, 4));
+  });
+
+  test('체코 영수증: TOTAL CZK, 유로 환산 줄이 있어도 코루나', () {
+    final draft = ReceiptParser(tripCurrency: 'EUR').parse(
+      lines([
+        'provozovna Restaurace U Pinkasu',
+        '11.07.2019 15:38:02',
+        '2.0x Pivo Plzen 12% 0.47L 110.00',
+        'CZK 623.00',
+        'EUR 24.20',
+        'DPH CZK Zaklad Dan Celkem',
+        '15% 398.20 59.80 458.00',
+        'TOTAL CZK 623.00',
+      ]),
+    );
+    expect(draft.amount, 623);
+    expect(draft.currency, 'CZK');
+  });
+
+  test('합계 금액이 TOTAL 보다 한 줄 위에 찍힌 영수증', () {
+    final draft = ReceiptParser(tripCurrency: 'GBP').parse(
+      lines([
+        'Location: Edinburgh, Scotland',
+        '2026-02-05 17:35:07',
+        'Claude Opus 4.5 \$10.07',
+        'Output tokens 3,811',
+        'Claude Sonnet 4.5 \$0.58',
+        '\$10.65',
+        'TOTAL',
+        '==========',
+        'CASHIER: Claude Opus 4.5',
+      ]),
+    );
+    expect(draft.amount, 10.65);
+    expect(draft.currency, 'USD');
+  });
+
   test('글자가 없으면 빈 결과', () {
     final draft = ReceiptParser(tripCurrency: 'USD').parse([]);
     expect(draft.isEmpty, isTrue);
