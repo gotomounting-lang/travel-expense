@@ -3,16 +3,19 @@ import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import 'google_account_service.dart';
 import 'sheet_rows.dart';
 
+enum SheetsSyncError { notSignedIn, noPermission, expired }
+
 class SheetsSyncException implements Exception {
-  SheetsSyncException(this.message);
-  final String message;
+  SheetsSyncException(this.reason);
+  final SheetsSyncError reason;
   @override
-  String toString() => message;
+  String toString() => 'SheetsSyncException(${reason.name})';
 }
 
 /// 사용자 본인 구글 드라이브의 `여행 경비` 스프레드시트에 기기 데이터를 반영한다.
@@ -30,7 +33,6 @@ class SheetsSyncService {
 
   static const _appPropKey = 'travelExpenseApp';
   static const _appPropValue = 'v1';
-  static const spreadsheetTitle = '여행 경비';
 
   String _prefKey(String email) => 'spreadsheet_id:$email';
 
@@ -43,20 +45,22 @@ class SheetsSyncService {
   }
 
   /// 전체 데이터를 시트에 쓴다. 성공하면 시트 URL을 돌려준다.
+  /// [l] 은 머리글·탭 이름·카테고리를 쓸 언어.
   Future<String> sync(
+    AppLocalizations l,
     List<Trip> trips,
     List<Expense> expenses, {
     bool interactive = false,
   }) async {
     final email = _account.account?.email;
-    if (email == null) throw SheetsSyncException('구글 계정에 로그인되어 있지 않습니다.');
+    if (email == null) throw SheetsSyncException(SheetsSyncError.notSignedIn);
 
     var client = await _account.authClient(interactive: interactive);
     if (client == null) {
-      throw SheetsSyncException('구글 드라이브 권한이 필요합니다. 설정에서 다시 연결해 주세요.');
+      throw SheetsSyncException(SheetsSyncError.noPermission);
     }
     try {
-      return await _syncWith(client, email, trips, expenses);
+      return await _syncWith(client, email, l, trips, expenses);
     } on sheets.DetailedApiRequestError catch (e) {
       if (e.status != 401) rethrow;
       // 토큰 만료: 한 번만 새 토큰으로 다시 시도한다.
@@ -64,9 +68,9 @@ class SheetsSyncService {
       client.close();
       client = await _account.authClient(interactive: interactive);
       if (client == null) {
-        throw SheetsSyncException('구글 로그인이 만료되었습니다. 설정에서 다시 연결해 주세요.');
+        throw SheetsSyncException(SheetsSyncError.expired);
       }
-      return await _syncWith(client, email, trips, expenses);
+      return await _syncWith(client, email, l, trips, expenses);
     } finally {
       client?.close();
     }
@@ -75,17 +79,18 @@ class SheetsSyncService {
   Future<String> _syncWith(
     gapis.AuthClient client,
     String email,
+    AppLocalizations l,
     List<Trip> trips,
     List<Expense> expenses,
   ) async {
     final sheetsApi = sheets.SheetsApi(client);
     final driveApi = drive.DriveApi(client);
-    final id = await _ensureSpreadsheet(sheetsApi, driveApi, email);
+    final id = await _ensureSpreadsheet(sheetsApi, driveApi, email, l);
 
     final values = sheetsApi.spreadsheets.values;
     await values.batchClear(
       sheets.BatchClearValuesRequest(
-        ranges: SheetTabs.all.map(_tabRange).toList(),
+        ranges: [for (final tab in SheetTab.values) _quote(tab.title(l))],
       ),
       id,
     );
@@ -93,9 +98,9 @@ class SheetsSyncService {
       sheets.BatchUpdateValuesRequest(
         valueInputOption: 'USER_ENTERED',
         data: [
-          _range(SheetTabs.expenses, buildExpenseRows(trips, expenses)),
-          _range(SheetTabs.trips, buildTripRows(trips, expenses)),
-          _range(SheetTabs.summary, buildSummaryRows(trips, expenses)),
+          _range(l, SheetTab.expenses, buildExpenseRows(l, trips, expenses)),
+          _range(l, SheetTab.trips, buildTripRows(l, trips, expenses)),
+          _range(l, SheetTab.summary, buildSummaryRows(l, trips, expenses)),
         ],
       ),
       id,
@@ -103,22 +108,26 @@ class SheetsSyncService {
     return 'https://docs.google.com/spreadsheets/d/$id';
   }
 
-  String _tabRange(String tab) => "'$tab'";
+  String _quote(String title) => "'${title.replaceAll("'", "''")}'";
 
-  sheets.ValueRange _range(String tab, List<List<Object>> rows) =>
-      sheets.ValueRange(range: "'$tab'!A1", values: rows);
+  sheets.ValueRange _range(
+    AppLocalizations l,
+    SheetTab tab,
+    List<List<Object>> rows,
+  ) => sheets.ValueRange(range: '${_quote(tab.title(l))}!A1', values: rows);
 
   Future<String> _ensureSpreadsheet(
     sheets.SheetsApi sheetsApi,
     drive.DriveApi driveApi,
     String email,
+    AppLocalizations l,
   ) async {
     final prefs = await SharedPreferences.getInstance();
     var id = prefs.getString(_prefKey(email));
 
     if (id != null) {
       try {
-        await _ensureTabs(sheetsApi, id);
+        await _ensureTabs(sheetsApi, id, l);
         return id;
       } on sheets.DetailedApiRequestError catch (e) {
         // 사용자가 시트를 지웠거나 휴지통에 넣은 경우: 새로 찾거나 만든다.
@@ -128,8 +137,8 @@ class SheetsSyncService {
       }
     }
 
-    id = await _findExisting(driveApi) ?? await _create(sheetsApi, driveApi);
-    await _ensureTabs(sheetsApi, id);
+    id = await _findExisting(driveApi) ?? await _create(sheetsApi, driveApi, l);
+    await _ensureTabs(sheetsApi, id, l);
     await prefs.setString(_prefKey(email), id);
     return id;
   }
@@ -150,14 +159,18 @@ class SheetsSyncService {
   Future<String> _create(
     sheets.SheetsApi sheetsApi,
     drive.DriveApi driveApi,
+    AppLocalizations l,
   ) async {
     final created = await sheetsApi.spreadsheets.create(
       sheets.Spreadsheet(
         properties: sheets.SpreadsheetProperties(
-          title: spreadsheetTitle,
-          locale: 'ko_KR',
+          title: l.sheetFileTitle,
+          locale: l.localeName,
         ),
-        sheets: [for (final tab in SheetTabs.all) _newTab(tab)],
+        sheets: [
+          for (final tab in SheetTab.values)
+            sheets.Sheet(properties: _tabProperties(l, tab)),
+        ],
       ),
     );
     final id = created.spreadsheetId!;
@@ -169,38 +182,77 @@ class SheetsSyncService {
     return id;
   }
 
-  sheets.Sheet _newTab(String title) => sheets.Sheet(
-    properties: sheets.SheetProperties(
-      title: title,
-      gridProperties: sheets.GridProperties(frozenRowCount: 1),
-    ),
-  );
+  sheets.SheetProperties _tabProperties(AppLocalizations l, SheetTab tab) =>
+      sheets.SheetProperties(
+        sheetId: tab.sheetId,
+        title: tab.title(l),
+        gridProperties: sheets.GridProperties(frozenRowCount: 1),
+      );
 
-  /// 사용자가 탭 이름을 바꾸거나 지웠으면 빠진 탭을 다시 만든다.
-  Future<void> _ensureTabs(sheets.SheetsApi api, String id) async {
+  /// 탭을 sheetId 로 찾아, 사용자가 지운 탭은 다시 만들고 이름은 지금
+  /// 언어에 맞춘다. 같은 이름의 다른 탭이 있으면 그 탭 이름을 피한다.
+  Future<void> _ensureTabs(
+    sheets.SheetsApi api,
+    String id,
+    AppLocalizations l,
+  ) async {
     final ss = await api.spreadsheets.get(
       id,
-      $fields: 'sheets.properties.title',
+      $fields: 'sheets.properties(sheetId,title)',
     );
-    final existing =
-        ss.sheets
-            ?.map((s) => s.properties?.title)
-            .whereType<String>()
-            .toSet() ??
-        {};
-    final missing = SheetTabs.all.where((t) => !existing.contains(t)).toList();
-    if (missing.isEmpty) return;
-    await api.spreadsheets.batchUpdate(
-      sheets.BatchUpdateSpreadsheetRequest(
-        requests: [
-          for (final tab in missing)
-            sheets.Request(
-              addSheet: sheets.AddSheetRequest(
-                properties: _newTab(tab).properties,
+    final byId = {
+      for (final s in ss.sheets ?? <sheets.Sheet>[])
+        if (s.properties?.sheetId != null)
+          s.properties!.sheetId!: s.properties!,
+    };
+    final requests = <sheets.Request>[];
+    for (final tab in SheetTab.values) {
+      final want = tab.title(l);
+      final current = byId[tab.sheetId];
+      if (current?.title == want) continue;
+      // 원하는 이름을 이미 다른 탭(사용자 탭 등)이 쓰고 있으면 그 탭 이름을 바꿔 둔다.
+      final clash = byId.values.where(
+        (p) => p.title == want && p.sheetId != tab.sheetId,
+      );
+      for (final other in clash) {
+        requests.add(
+          sheets.Request(
+            updateSheetProperties: sheets.UpdateSheetPropertiesRequest(
+              properties: sheets.SheetProperties(
+                sheetId: other.sheetId,
+                title: '$want (${other.sheetId})',
               ),
+              fields: 'title',
             ),
-        ],
-      ),
+          ),
+        );
+        other.title = '$want (${other.sheetId})';
+      }
+      if (current == null) {
+        requests.add(
+          sheets.Request(
+            addSheet: sheets.AddSheetRequest(
+              properties: _tabProperties(l, tab),
+            ),
+          ),
+        );
+      } else {
+        requests.add(
+          sheets.Request(
+            updateSheetProperties: sheets.UpdateSheetPropertiesRequest(
+              properties: sheets.SheetProperties(
+                sheetId: tab.sheetId,
+                title: want,
+              ),
+              fields: 'title',
+            ),
+          ),
+        );
+      }
+    }
+    if (requests.isEmpty) return;
+    await api.spreadsheets.batchUpdate(
+      sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,
     );
   }

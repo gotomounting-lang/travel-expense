@@ -65,3 +65,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // 영수증 OCR: 라틴 문자 모델은 플러그인에 들어 있고, 한·중·일 모델은 앱에서 넣는다.
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+}

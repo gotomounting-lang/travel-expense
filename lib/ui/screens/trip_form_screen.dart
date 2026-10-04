@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/trip.dart';
 import '../../state/app_state.dart';
 import '../../util/dates.dart';
 import '../widgets/currency_field.dart';
-
-final _fmt = DateFormat('yyyy년 M월 d일 (E)', 'ko_KR');
 
 /// 새 여행 만들기 / 여행 정보 수정.
 class TripFormScreen extends StatefulWidget {
@@ -45,7 +44,7 @@ class _TripFormScreenState extends State<TripFormScreen> {
       firstDate: DateTime(2015),
       lastDate: DateTime(DateTime.now().year + 3),
       initialDateRange: _range,
-      helpText: '여행 기간',
+      helpText: AppLocalizations.of(context).tripPeriod,
     );
     if (picked != null) setState(() => _range = picked);
   }
@@ -66,8 +65,10 @@ class _TripFormScreenState extends State<TripFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final fmt = DateFormat.yMMMEd(l.localeName);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.trip == null ? '새 여행' : '여행 수정')),
+      appBar: AppBar(title: Text(widget.trip == null ? l.newTrip : l.editTrip)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -76,25 +77,25 @@ class _TripFormScreenState extends State<TripFormScreen> {
             TextFormField(
               controller: _title,
               autofocus: widget.trip == null,
-              decoration: const InputDecoration(
-                labelText: '여행 제목',
-                hintText: '예: 2026 도쿄 가족여행',
+              decoration: InputDecoration(
+                labelText: l.tripTitle,
+                hintText: l.tripTitleHint,
               ),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '여행 제목을 입력해 주세요' : null,
+                  (v == null || v.trim().isEmpty) ? l.tripTitleRequired : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _country,
-              decoration: const InputDecoration(
-                labelText: '나라/도시 (선택)',
-                hintText: '예: 일본 도쿄',
+              decoration: InputDecoration(
+                labelText: l.countryOptional,
+                hintText: l.countryHint,
               ),
             ),
             const SizedBox(height: 12),
             CurrencyField(
-              label: '현지 통화',
+              label: l.localCurrency,
               value: _currency,
               onChanged: (v) => setState(() => _currency = v),
             ),
@@ -102,16 +103,16 @@ class _TripFormScreenState extends State<TripFormScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.date_range),
-              title: const Text('여행 기간'),
+              title: Text(l.tripPeriod),
               subtitle: Text(
-                '${_fmt.format(_range.start)}\n~ ${_fmt.format(_range.end)}',
+                '${fmt.format(_range.start)}\n~ ${fmt.format(_range.end)}',
               ),
               onTap: _pickRange,
             ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _saving ? null : _save,
-              child: const Text('저장'),
+              child: Text(l.save),
             ),
           ],
         ),

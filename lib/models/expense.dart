@@ -1,15 +1,21 @@
+import '../l10n/app_localizations.dart';
 import 'category.dart';
 
 /// 지출 내역이 어디서 들어왔는지. 2·3단계에서 영수증/카드 알림이 추가된다.
 enum ExpenseSource {
-  manual('manual', '수동'),
-  receipt('receipt', '영수증'),
-  cardNotification('card', '카드 알림');
+  manual('manual'),
+  receipt('receipt'),
+  cardNotification('card');
 
-  const ExpenseSource(this.id, this.label);
+  const ExpenseSource(this.id);
 
   final String id;
-  final String label;
+
+  String label(AppLocalizations l) => switch (this) {
+    manual => l.sourceManual,
+    receipt => l.sourceReceipt,
+    cardNotification => l.sourceCard,
+  };
 
   static ExpenseSource fromId(String id) => ExpenseSource.values.firstWhere(
     (s) => s.id == id,

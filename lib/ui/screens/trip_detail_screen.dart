@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/expense.dart';
+import '../../models/trip.dart';
+import '../../services/receipt_scanner.dart';
 import '../../services/sheet_rows.dart';
 import '../../state/app_state.dart';
 import '../../util/dates.dart';
@@ -11,7 +14,6 @@ import '../widgets/category_pie_chart.dart';
 import 'expense_form_screen.dart';
 import 'trip_form_screen.dart';
 
-final _dayHeader = DateFormat('M월 d일 (E)', 'ko_KR');
 final _time = DateFormat('HH:mm');
 
 class TripDetailScreen extends StatelessWidget {
@@ -20,19 +22,20 @@ class TripDetailScreen extends StatelessWidget {
   final String tripId;
 
   Future<void> _confirmDelete(BuildContext context) async {
+    final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('여행을 삭제할까요?'),
-        content: const Text('이 여행의 모든 지출 내역이 함께 삭제되고, 다음 동기화 때 시트에서도 빠집니다.'),
+        title: Text(l.deleteTripConfirmTitle),
+        content: Text(l.deleteTripConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('삭제'),
+            child: Text(l.delete),
           ),
         ],
       ),
@@ -54,6 +57,8 @@ class TripDetailScreen extends StatelessWidget {
     final total = totals.values.fold<int>(0, (s, v) => s + v);
     final pending = expenses.where((e) => !e.hasRate).length;
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final dayHeader = DateFormat.MMMEd(l.localeName);
 
     // 날짜별로 묶어서 보여준다 (최신 날짜 먼저).
     final byDay = <DateTime, List<Expense>>{};
@@ -75,9 +80,9 @@ class TripDetailScreen extends StatelessWidget {
                 _confirmDelete(context);
               }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('여행 수정')),
-              PopupMenuItem(value: 'delete', child: Text('여행 삭제')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'edit', child: Text(l.editTrip)),
+              PopupMenuItem(value: 'delete', child: Text(l.deleteTrip)),
             ],
           ),
         ],
@@ -90,9 +95,9 @@ class TripDetailScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
           children: [
-            Text('총 지출', style: theme.textTheme.labelLarge),
+            Text(l.totalSpent, style: theme.textTheme.labelLarge),
             Text(
-              formatKrw(total),
+              formatKrw(l, total),
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -101,7 +106,7 @@ class TripDetailScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  '환율 확인 대기 $pending건 (인터넷 연결 후 아래로 당겨 새로고침)',
+                  l.pendingRates(pending),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.error,
                   ),
@@ -111,15 +116,15 @@ class TripDetailScreen extends StatelessWidget {
             CategoryPieChart(totals: totals),
             const SizedBox(height: 16),
             if (expenses.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: Text('+ 버튼으로 첫 지출을 기록하세요')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: Text(l.firstExpenseHint)),
               ),
             for (final day in byDay.keys) ...[
               Padding(
                 padding: const EdgeInsets.only(top: 12, bottom: 4),
                 child: Text(
-                  _dayHeader.format(day),
+                  dayHeader.format(day),
                   style: theme.textTheme.titleSmall,
                 ),
               ),
@@ -129,13 +134,103 @@ class TripDetailScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ExpenseFormScreen(trip: trip)),
-        ),
+        onPressed: () => _addExpense(context, trip),
         icon: const Icon(Icons.add),
-        label: const Text('지출 추가'),
+        label: Text(l.addExpense),
       ),
     );
+  }
+}
+
+enum _AddMode { camera, gallery, manual }
+
+/// 지출 추가 방법 고르기: 영수증 촬영 / 앨범 사진 / 직접 입력.
+Future<void> _addExpense(BuildContext context, Trip trip) async {
+  final l = AppLocalizations.of(context);
+  final mode = await showModalBottomSheet<_AddMode>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: Text(l.scanReceipt),
+            onTap: () => Navigator.pop(ctx, _AddMode.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: Text(l.pickReceipt),
+            onTap: () => Navigator.pop(ctx, _AddMode.gallery),
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: Text(l.enterManually),
+            onTap: () => Navigator.pop(ctx, _AddMode.manual),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Text(
+              l.photoDeletedNote,
+              style: Theme.of(ctx).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (mode == null || !context.mounted) return;
+
+  final navigator = Navigator.of(context);
+  if (mode == _AddMode.manual) {
+    navigator.push(
+      MaterialPageRoute(builder: (_) => ExpenseFormScreen(trip: trip)),
+    );
+    return;
+  }
+
+  final scanner = context.read<ReceiptScanner>();
+  final messenger = ScaffoldMessenger.of(context);
+  final source = mode == _AddMode.camera
+      ? ReceiptImageSource.camera
+      : ReceiptImageSource.gallery;
+  var progressShown = false;
+  try {
+    final draft = await scanner.scan(
+      trip,
+      source,
+      // 사진을 고른 뒤 분석하는 동안만 진행 표시를 띄운다.
+      onAnalyzing: () {
+        progressShown = true;
+        showDialog<void>(
+          context: navigator.context,
+          barrierDismissible: false,
+          builder: (_) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              content: Row(
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(width: 20),
+                  Expanded(child: Text(l.readingReceipt)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (progressShown) navigator.pop();
+    if (draft == null) return; // 사진을 고르지 않음
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) => ExpenseFormScreen(trip: trip, receipt: draft),
+      ),
+    );
+  } catch (e) {
+    if (progressShown) navigator.pop();
+    messenger.showSnackBar(SnackBar(content: Text(l.receiptScanFailed('$e'))));
   }
 }
 
@@ -148,6 +243,7 @@ class _ExpenseTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = expense;
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final trip = context.read<AppState>().tripById(e.tripId)!;
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -156,13 +252,13 @@ class _ExpenseTile extends StatelessWidget {
         foregroundColor: e.category.color,
         child: Icon(e.category.icon, size: 20),
       ),
-      title: Text(e.merchant.isEmpty ? e.category.label : e.merchant),
+      title: Text(e.merchant.isEmpty ? e.category.label(l) : e.merchant),
       subtitle: Text(
         '${_time.format(e.spentAt)} · '
         '${formatForeign(e.amount, e.currency)}',
       ),
       trailing: Text(
-        e.krwAmount == null ? '환율 대기' : formatKrw(e.krwAmount!),
+        e.krwAmount == null ? l.ratePending : formatKrw(l, e.krwAmount!),
         style: theme.textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
           color: e.krwAmount == null ? theme.colorScheme.error : null,

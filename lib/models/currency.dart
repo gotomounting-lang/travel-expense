@@ -1,36 +1,60 @@
-/// 여행지에서 자주 쓰는 통화 목록. 목록에 없는 통화도 ISO 코드로 직접 입력할 수 있다.
+/// 여행지에서 자주 쓰는 통화 목록. 목록에 없는 통화도 ISO 코드로 다룰 수 있다.
 class Currency {
-  const Currency(this.code, this.name, {this.decimals = 2});
+  const Currency(this.code, this._names, {this.decimals = 2});
 
   final String code;
-  final String name;
+
+  /// ko, en, zh, ja 순서의 통화 이름.
+  final List<String> _names;
 
   /// 소수점 자릿수 (엔화·동 등은 0).
   final int decimals;
 
-  static const krw = Currency('KRW', '대한민국 원', decimals: 0);
+  static const _langs = ['ko', 'en', 'zh', 'ja'];
+
+  String name(String languageCode) {
+    final i = _langs.indexOf(languageCode);
+    return _names.isEmpty ? code : _names[i < 0 ? 1 : i];
+  }
+
+  static const krw = Currency('KRW', [
+    '대한민국 원',
+    'South Korean won',
+    '韩元',
+    '韓国ウォン',
+  ], decimals: 0);
 
   static const common = <Currency>[
-    Currency('USD', '미국 달러'),
-    Currency('JPY', '일본 엔', decimals: 0),
-    Currency('EUR', '유로'),
-    Currency('CNY', '중국 위안'),
-    Currency('TWD', '대만 달러', decimals: 0),
-    Currency('HKD', '홍콩 달러'),
-    Currency('THB', '태국 바트'),
-    Currency('VND', '베트남 동', decimals: 0),
-    Currency('PHP', '필리핀 페소'),
-    Currency('SGD', '싱가포르 달러'),
-    Currency('MYR', '말레이시아 링깃'),
-    Currency('IDR', '인도네시아 루피아', decimals: 0),
-    Currency('GBP', '영국 파운드'),
-    Currency('CHF', '스위스 프랑'),
-    Currency('AUD', '호주 달러'),
-    Currency('NZD', '뉴질랜드 달러'),
-    Currency('CAD', '캐나다 달러'),
-    Currency('MNT', '몽골 투그릭', decimals: 0),
-    Currency('TRY', '튀르키예 리라'),
-    Currency('CZK', '체코 코루나'),
+    Currency('USD', ['미국 달러', 'US dollar', '美元', '米ドル']),
+    Currency('JPY', ['일본 엔', 'Japanese yen', '日元', '日本円'], decimals: 0),
+    Currency('EUR', ['유로', 'Euro', '欧元', 'ユーロ']),
+    Currency('CNY', ['중국 위안', 'Chinese yuan', '人民币', '人民元']),
+    Currency('TWD', ['대만 달러', 'Taiwan dollar', '新台币', '台湾ドル'], decimals: 0),
+    Currency('HKD', ['홍콩 달러', 'Hong Kong dollar', '港币', '香港ドル']),
+    Currency('THB', ['태국 바트', 'Thai baht', '泰铢', 'タイバーツ']),
+    Currency('VND', ['베트남 동', 'Vietnamese dong', '越南盾', 'ベトナムドン'], decimals: 0),
+    Currency('PHP', ['필리핀 페소', 'Philippine peso', '菲律宾比索', 'フィリピンペソ']),
+    Currency('SGD', ['싱가포르 달러', 'Singapore dollar', '新加坡元', 'シンガポールドル']),
+    Currency('MYR', ['말레이시아 링깃', 'Malaysian ringgit', '马来西亚林吉特', 'マレーシアリンギット']),
+    Currency('IDR', [
+      '인도네시아 루피아',
+      'Indonesian rupiah',
+      '印尼盾',
+      'インドネシアルピア',
+    ], decimals: 0),
+    Currency('GBP', ['영국 파운드', 'British pound', '英镑', '英ポンド']),
+    Currency('CHF', ['스위스 프랑', 'Swiss franc', '瑞士法郎', 'スイスフラン']),
+    Currency('AUD', ['호주 달러', 'Australian dollar', '澳元', '豪ドル']),
+    Currency('NZD', ['뉴질랜드 달러', 'New Zealand dollar', '新西兰元', 'NZドル']),
+    Currency('CAD', ['캐나다 달러', 'Canadian dollar', '加元', 'カナダドル']),
+    Currency('MNT', [
+      '몽골 투그릭',
+      'Mongolian tugrik',
+      '蒙古图格里克',
+      'モンゴルトゥグルグ',
+    ], decimals: 0),
+    Currency('TRY', ['튀르키예 리라', 'Turkish lira', '土耳其里拉', 'トルコリラ']),
+    Currency('CZK', ['체코 코루나', 'Czech koruna', '捷克克朗', 'チェココルナ']),
     krw,
   ];
 
@@ -38,7 +62,7 @@ class Currency {
     final upper = code.toUpperCase();
     return common.firstWhere(
       (c) => c.code == upper,
-      orElse: () => Currency(upper, upper),
+      orElse: () => Currency(upper, const []),
     );
   }
 }

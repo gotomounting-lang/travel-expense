@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:travel_expense/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -42,6 +44,7 @@ void main() {
       rates: ExchangeRateService(client: client, cache: repo),
       account: account,
       sync: SheetsSyncService(account),
+      strings: () => lookupAppLocalizations(const Locale('ko')),
     );
     await state.load();
   });

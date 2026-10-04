@@ -1,10 +1,11 @@
 import 'package:intl/intl.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/currency.dart';
 
-final _krw = NumberFormat('#,##0', 'ko_KR');
+final _krw = NumberFormat('#,##0', 'en_US');
 
-String formatKrw(num value) => '${_krw.format(value)}원';
+String formatKrw(AppLocalizations l, num value) => l.krw(_krw.format(value));
 
 String formatForeign(double amount, String currencyCode) {
   final decimals = Currency.byCode(currencyCode).decimals;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/trip.dart';
 import '../../state/app_state.dart';
 import '../../util/money.dart';
@@ -9,21 +10,20 @@ import 'settings_screen.dart';
 import 'trip_detail_screen.dart';
 import 'trip_form_screen.dart';
 
-final _range = DateFormat('yyyy.M.d');
-
 class TripListScreen extends StatelessWidget {
   const TripListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final l = AppLocalizations.of(context);
     final trips = state.trips;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('여행 경비'),
+        title: Text(l.appTitle),
         actions: [
           IconButton(
-            tooltip: '설정',
+            tooltip: l.settings,
             icon: Icon(
               state.account.isSignedIn
                   ? Icons.cloud_done_outlined
@@ -57,7 +57,7 @@ class TripListScreen extends StatelessWidget {
           }
         },
         icon: const Icon(Icons.add),
-        label: const Text('새 여행'),
+        label: Text(l.newTrip),
       ),
     );
   }
@@ -74,6 +74,8 @@ class _TripCard extends StatelessWidget {
     final expenses = state.expensesFor(trip.id);
     final total = expenses.fold<int>(0, (s, e) => s + (e.krwAmount ?? 0));
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final range = DateFormat.yMd(l.localeName);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ListTile(
@@ -81,11 +83,11 @@ class _TripCard extends StatelessWidget {
         title: Text(trip.title, style: theme.textTheme.titleMedium),
         subtitle: Text(
           '${trip.country.isEmpty ? '' : '${trip.country} · '}'
-          '${_range.format(trip.startDate)} ~ ${_range.format(trip.endDate)}'
-          ' · ${expenses.length}건',
+          '${range.format(trip.startDate)} ~ ${range.format(trip.endDate)}'
+          ' · ${l.expenseCount(expenses.length)}',
         ),
         trailing: Text(
-          formatKrw(total),
+          formatKrw(l, total),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -104,6 +106,7 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -116,11 +119,10 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.primary,
             ),
             const SizedBox(height: 16),
-            Text('첫 여행을 만들어 보세요', style: theme.textTheme.titleLarge),
+            Text(l.emptyTitle, style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              '해외에서 쓴 돈을 결제한 날의 환율로 원화로 바꿔\n'
-              '내 구글 시트에 정리해 드립니다.',
+              l.emptyBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium,
             ),

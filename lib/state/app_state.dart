@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/expense_repository.dart';
+import '../l10n/app_localizations.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
@@ -21,6 +22,7 @@ class AppState extends ChangeNotifier {
     required this.rates,
     required this.account,
     required this.sync,
+    required this.strings,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now {
     account.addListener(_onAccountChanged);
@@ -30,6 +32,9 @@ class AppState extends ChangeNotifier {
   final ExchangeRateService rates;
   final GoogleAccountService account;
   final SheetsSyncService sync;
+
+  /// 시트에 쓸 언어 (앱 화면 언어와 같다).
+  final AppLocalizations Function() strings;
   final DateTime Function() _now;
   final _uuid = const Uuid();
 
@@ -45,8 +50,10 @@ class AppState extends ChangeNotifier {
 
   SyncStatus _syncStatus = SyncStatus.idle;
   SyncStatus get syncStatus => _syncStatus;
-  String? _syncMessage;
-  String? get syncMessage => _syncMessage;
+
+  /// 마지막 동기화 실패 원인. 화면에서 언어에 맞게 보여준다.
+  Object? _syncError;
+  Object? get syncError => _syncError;
   String? _sheetUrl;
   String? get sheetUrl => _sheetUrl;
 
@@ -161,7 +168,7 @@ class AppState extends ChangeNotifier {
         rateSource: r.source,
       );
     } catch (err) {
-      debugPrint('환율 조회 실패: $err');
+      debugPrint('exchange rate lookup failed: $err');
       return e.copyWith(clearRate: true);
     }
   }
@@ -222,7 +229,7 @@ class AppState extends ChangeNotifier {
     if (!signedIn) {
       _sheetUrl = null;
       _syncStatus = SyncStatus.idle;
-      _syncMessage = null;
+      _syncError = null;
     }
     _wasSignedIn = signedIn;
     notifyListeners();
@@ -248,15 +255,19 @@ class AppState extends ChangeNotifier {
       return;
     }
     _syncStatus = SyncStatus.syncing;
-    _syncMessage = null;
+    _syncError = null;
     notifyListeners();
     try {
-      _sheetUrl = await sync.sync(_trips, _expenses, interactive: interactive);
+      _sheetUrl = await sync.sync(
+        strings(),
+        _trips,
+        _expenses,
+        interactive: interactive,
+      );
       _syncStatus = SyncStatus.ok;
-      _syncMessage = '시트에 저장됨';
     } catch (e) {
       _syncStatus = SyncStatus.failed;
-      _syncMessage = '시트 저장 실패: $e';
+      _syncError = e;
     }
     notifyListeners();
     if (_syncAgain) {

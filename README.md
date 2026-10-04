@@ -3,7 +3,7 @@
 해외여행에서 쓴 돈을 **결제한 날의 환율로 원화로 바꿔**, 사용자 **본인의 구글 스프레드시트**에 정리해 주는 Flutter 앱입니다.
 Google Play 출시를 먼저 하고, 같은 코드로 App Store 에도 출시합니다.
 
-## 주요 기능 (1단계 MVP)
+## 주요 기능
 
 - 여행 만들기: 제목, 나라/도시, 현지 통화, 기간
 - 지출 기록: 금액·통화·카테고리(음식, 간식/카페, 기념품, 쇼핑, 교통, 숙박, 관광/입장료, 기타)·날짜·시간·가맹점·결제수단·메모
@@ -11,15 +11,20 @@ Google Play 출시를 먼저 하고, 같은 코드로 App Store 에도 출시합
   - 1순위 [Frankfurter](https://frankfurter.dev) (유럽중앙은행 고시 환율), 미지원 통화(VND, TWD 등)는 [currency-api](https://github.com/fawazahmed0/exchange-api)
   - 주말·공휴일은 직전 영업일 환율, 실제 적용일을 함께 기록
   - 인터넷이 끊겨도 먼저 저장하고, 연결되면 환율을 채움
+- 영수증 촬영(또는 앨범 사진) → 기기 안 OCR(Google ML Kit)로 합계·통화·날짜·가맹점·품목·카테고리를 찾아 확인 화면에 채움
+  - 여행지 통화에 맞춰 한·중·일·라틴 문자 모델을 고름
+  - 사진은 분석 직후 삭제되며 어디에도 저장·전송되지 않음 (앨범에서 고른 경우 앱이 받은 사본만 지우고 원본은 그대로)
 - 여행별 카테고리 파이차트
+- 한국어·영어·중국어(간체)·일본어. 기기(Google Play) 언어를 따르고, 지원하지 않는 언어면 한국어. 설정에서 직접 바꿀 수 있음
 - 사용자 본인 구글 드라이브의 `여행 경비` 시트에 자동 저장 (`내역`, `여행`, `요약` 탭)
 
-다음 단계: 영수증 사진 인식(OCR) → 카드 앱 결제 알림 자동 기록 → 시트 안 파이차트 → 스토어 출시.
+다음 단계: 카드 앱 결제 알림 자동 기록 → 시트 안 파이차트 → 스토어 출시.
 
 ## 데이터와 개인정보
 
 - 각 사용자는 **자기 구글 계정**으로 로그인하고, 시트는 **그 사용자의 드라이브**에 만들어집니다. 운영자 계정이나 서버는 사용자 데이터를 받지 않습니다.
 - 요청하는 권한은 `drive.file` 하나뿐입니다. 앱이 직접 만든 파일에만 접근할 수 있고, 사용자의 다른 드라이브 파일은 볼 수 없습니다.
+- 시트의 머리글·탭 이름·카테고리는 앱 언어로 쓰고, 언어를 바꾸면 다음 저장 때 바뀝니다 (탭은 고정 ID 로 찾음).
 - 원본 데이터는 기기 안(SQLite)에 있고 시트는 사본입니다. 동기화할 때 각 탭을 통째로 다시 쓰므로, 시트에서 직접 고친 내용은 다음 동기화 때 덮어써집니다. 따로 정리하려면 새 탭을 만들어 쓰세요.
 
 ## 구조
@@ -34,7 +39,11 @@ lib/
     google_account_service.dart  사용자 구글 로그인 (drive.file 권한)
     sheets_sync_service.dart     사용자 시트 생성·찾기·쓰기
     sheet_rows.dart              시트에 쓸 표 만들기 (순수 함수)
+    receipt_scanner.dart         영수증 사진 → OCR → 사진 삭제
+    receipt_parser.dart          OCR 글자에서 합계·날짜·품목 찾기 (순수 함수)
+  l10n/                          화면 문구 (app_ko/en/zh/ja.arb, 생성 코드)
   state/app_state.dart           저장 → 환율 → 시트 동기화 흐름
+  state/locale_controller.dart   언어 선택
   ui/                            화면과 파이차트
 ```
 
@@ -44,6 +53,7 @@ lib/
 flutter pub get
 flutter analyze
 flutter test
+flutter gen-l10n   # 문구(arb)를 바꾼 뒤
 flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=<웹 클라이언트 ID>
 ```
 
@@ -77,4 +87,4 @@ GitHub **Secrets** 에 `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `
 
 ### iOS (App Store 단계에서)
 
-iOS 용 OAuth 클라이언트를 만들고 `ios/Runner/Info.plist` 에 `GIDClientID` 와 URL scheme(역순 클라이언트 ID)을 추가해야 합니다. iOS 는 다른 앱의 알림을 읽을 수 없어서 카드 알림 자동 기록은 안드로이드 전용이고, iOS 는 붙여넣기·공유 방식으로 대신합니다.
+iOS 는 ML Kit 때문에 최소 iOS 15.5 가 필요하고, 한·중·일 OCR 모델 Pod(GoogleMLKit/TextRecognitionChinese 등)을 Podfile 에 추가해야 합니다. iOS 용 OAuth 클라이언트를 만들고 `ios/Runner/Info.plist` 에 `GIDClientID` 와 URL scheme(역순 클라이언트 ID)을 추가해야 합니다. iOS 는 다른 앱의 알림을 읽을 수 없어서 카드 알림 자동 기록은 안드로이드 전용이고, iOS 는 붙여넣기·공유 방식으로 대신합니다.

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/category.dart';
 import '../../util/money.dart';
 
@@ -13,12 +14,10 @@ class CategoryPieChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final sum = totals.values.fold<int>(0, (s, v) => s + v);
     if (sum == 0) {
-      return const SizedBox(
-        height: 120,
-        child: Center(child: Text('원화로 환산된 지출이 아직 없습니다')),
-      );
+      return SizedBox(height: 120, child: Center(child: Text(l.noKrwYet)));
     }
     final theme = Theme.of(context);
     return Row(
@@ -70,12 +69,12 @@ class CategoryPieChart extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          e.key.label,
+                          e.key.label(l),
                           style: theme.textTheme.bodyMedium,
                         ),
                       ),
                       Text(
-                        formatKrw(e.value),
+                        formatKrw(l, e.value),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

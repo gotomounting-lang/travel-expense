@@ -112,9 +112,10 @@ class GoogleAccountService extends ChangeNotifier {
     );
   }
 
+  /// 화면에서 언어별 문구로 감싸 보여줄 오류 내용.
   String _describe(Object e) => e is GoogleSignInException
-      ? '구글 로그인 오류 (${e.code.name}): ${e.description ?? ''}'
-      : '구글 로그인 오류: $e';
+      ? '${e.code.name} ${e.description ?? ''}'.trim()
+      : '$e';
 
   @override
   void dispose() {

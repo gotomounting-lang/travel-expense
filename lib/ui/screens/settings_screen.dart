@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../services/google_account_service.dart';
+import '../../services/sheets_sync_service.dart';
 import '../../state/app_state.dart';
+import '../../state/locale_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,18 +17,34 @@ class SettingsScreen extends StatelessWidget {
     final account = context.watch<GoogleAccountService>();
     final theme = Theme.of(context);
     final user = account.account;
+    final l = AppLocalizations.of(context);
+    final locale = context.watch<LocaleController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('설정')),
+      appBar: AppBar(title: Text(l.settings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('구글 스프레드시트', style: theme.textTheme.titleMedium),
+          Text(l.language, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String?>(
+            initialValue: locale.choice,
+            isExpanded: true,
+            items: [
+              DropdownMenuItem(value: null, child: Text(l.languageSystem)),
+              for (final code in LocaleController.supported)
+                DropdownMenuItem(
+                  value: code,
+                  child: Text(LocaleController.nativeNames[code]!),
+                ),
+            ],
+            onChanged: locale.choose,
+          ),
+          const Divider(height: 40),
+          Text(l.googleSheetsSection, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
-            '내 구글 계정으로 로그인하면 내 구글 드라이브에 "여행 경비" 시트가 '
-            '만들어지고, 기록할 때마다 자동으로 저장됩니다. 이 앱은 앱이 만든 '
-            '시트에만 접근하며, 내역은 운영자 서버로 보내지 않습니다.',
+            l.googleSheetsBody(l.sheetFileTitle),
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -33,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => account.signIn(),
               icon: const Icon(Icons.login),
-              label: const Text('구글 계정으로 연결'),
+              label: Text(l.connectGoogle),
             )
           else ...[
             ListTile(
@@ -47,11 +66,11 @@ class SettingsScreen extends StatelessWidget {
               title: Text(user.displayName ?? user.email),
               subtitle: Text(user.email),
             ),
-            if (state.syncMessage != null)
+            if (_syncText(l, state) case final text?)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  state.syncMessage!,
+                  text,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: state.syncStatus == SyncStatus.failed
                         ? theme.colorScheme.error
@@ -74,7 +93,7 @@ class SettingsScreen extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.sync),
-                  label: const Text('지금 저장'),
+                  label: Text(l.syncNow),
                 ),
                 if (state.sheetUrl != null)
                   OutlinedButton.icon(
@@ -83,11 +102,11 @@ class SettingsScreen extends StatelessWidget {
                       mode: LaunchMode.externalApplication,
                     ),
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('시트 열기'),
+                    label: Text(l.openSheet),
                   ),
                 TextButton(
                   onPressed: () => account.signOut(),
-                  child: const Text('연결 해제'),
+                  child: Text(l.disconnect),
                 ),
               ],
             ),
@@ -96,23 +115,38 @@ class SettingsScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
-                account.error!,
+                l.googleSignInError(account.error!),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.error,
                 ),
               ),
             ),
           const Divider(height: 40),
-          Text('환율 안내', style: theme.textTheme.titleMedium),
+          Text(l.rateInfoTitle, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(
-            '결제한 날짜의 기준환율(유럽중앙은행 고시, 미지원 통화는 공개 환율 '
-            '자료)로 원화를 계산합니다. 주말·공휴일은 직전 영업일 환율을 쓰며, '
-            '실제 카드 청구액은 카드사 환율과 수수료 때문에 조금 다를 수 있습니다.',
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(l.rateInfoBody, style: theme.textTheme.bodyMedium),
         ],
       ),
     );
+  }
+}
+
+String? _syncText(AppLocalizations l, AppState state) {
+  switch (state.syncStatus) {
+    case SyncStatus.ok:
+      return l.syncSaved;
+    case SyncStatus.failed:
+      final e = state.syncError;
+      final details = e is SheetsSyncException
+          ? switch (e.reason) {
+              SheetsSyncError.notSignedIn => l.syncErrorNotSignedIn,
+              SheetsSyncError.noPermission => l.syncErrorNoPermission,
+              SheetsSyncError.expired => l.syncErrorExpired,
+            }
+          : '$e';
+      return l.syncFailed(details);
+    case SyncStatus.idle:
+    case SyncStatus.syncing:
+      return null;
   }
 }
