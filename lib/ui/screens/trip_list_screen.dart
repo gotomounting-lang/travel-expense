@@ -1,0 +1,132 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/trip.dart';
+import '../../state/app_state.dart';
+import '../../util/money.dart';
+import 'settings_screen.dart';
+import 'trip_detail_screen.dart';
+import 'trip_form_screen.dart';
+
+final _range = DateFormat('yyyy.M.d');
+
+class TripListScreen extends StatelessWidget {
+  const TripListScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final trips = state.trips;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('여행 경비'),
+        actions: [
+          IconButton(
+            tooltip: '설정',
+            icon: Icon(
+              state.account.isSignedIn
+                  ? Icons.cloud_done_outlined
+                  : Icons.settings_outlined,
+            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          ),
+        ],
+      ),
+      body: trips.isEmpty
+          ? const _EmptyState()
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+              itemCount: trips.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, i) => _TripCard(trip: trips[i]),
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final trip = await Navigator.of(context).push<Trip>(
+            MaterialPageRoute(builder: (_) => const TripFormScreen()),
+          );
+          if (trip != null && context.mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TripDetailScreen(tripId: trip.id),
+              ),
+            );
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('새 여행'),
+      ),
+    );
+  }
+}
+
+class _TripCard extends StatelessWidget {
+  const _TripCard({required this.trip});
+
+  final Trip trip;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final expenses = state.expensesFor(trip.id);
+    final total = expenses.fold<int>(0, (s, e) => s + (e.krwAmount ?? 0));
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        title: Text(trip.title, style: theme.textTheme.titleMedium),
+        subtitle: Text(
+          '${trip.country.isEmpty ? '' : '${trip.country} · '}'
+          '${_range.format(trip.startDate)} ~ ${_range.format(trip.endDate)}'
+          ' · ${expenses.length}건',
+        ),
+        trailing: Text(
+          formatKrw(total),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => TripDetailScreen(tripId: trip.id)),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.flight_takeoff,
+              size: 56,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text('첫 여행을 만들어 보세요', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text(
+              '해외에서 쓴 돈을 결제한 날의 환율로 원화로 바꿔\n'
+              '내 구글 시트에 정리해 드립니다.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
