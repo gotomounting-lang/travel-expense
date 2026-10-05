@@ -503,6 +503,19 @@ void main() {
       expect(suggest(['Beispiel Café', 'Summe 12,50'], trip: 'EUR'), 'EUR');
     });
 
+    test('유럽 영수증: 유로 표시를 먼저, 없으면 각국 통화 표시', () {
+      String? cur(List<String> rows, {String trip = 'USD'}) =>
+          ReceiptParser(tripCurrency: trip).parse(lines(rows)).currency;
+      expect(cur(['Minta Kávézó', 'Összesen 2 490', 'Kártya 6,50 €']), 'EUR');
+      expect(cur(['Minta Kávézó', 'Összesen 2 490 Ft']), 'HUF');
+      expect(cur(['Cafenea Exemplu', 'Total 22,00 lei']), 'RON');
+      expect(cur(['Exempelkafé', 'Att betala 45,00 kr']), 'SEK');
+      expect(cur(['Eksempel Kafé', 'Å betale 89,00 kr']), 'NOK');
+      expect(cur(['Eksempel Café', 'I alt 65,00 kr'], trip: 'DKK'), 'DKK');
+      expect(cur(['Ukázková kavárna', 'Celkem 125 Kč']), 'CZK');
+      expect(cur(['Przykładowa kawiarnia', 'Razem 18,50 zł']), 'PLN');
+    });
+
     test('짧은 낱말은 다른 낱말 안에서 찾지 않는다', () {
       expect(suggest(['ASSISTANCE CENTER', 'TOTAL 4.50'], trip: 'SGD'), 'SGD');
     });

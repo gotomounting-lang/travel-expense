@@ -771,9 +771,12 @@ class ReceiptParser {
     'ĐỒNG': 'VND',
   };
 
-  /// 영수증에 찍힌 통화. 여행지(현지) 통화 표시가 있으면 그것을 먼저 고른다.
+  /// 영수증에 찍힌 통화. 유로(€, EUR) 표시가 있으면 유로, 다음은 여행지(현지)
+  /// 통화, 그다음 처음 나온 각국 통화 표시 (사용자 결정 2026-10-05).
+  /// 합계 줄에 찍힌 표시는 이보다 우선한다 (parse 참고).
   String detectCurrency(String text) {
     final found = _currenciesIn(text);
+    if (found.contains('EUR')) return 'EUR';
     if (found.contains(tripCurrency)) return tripCurrency;
     return found.isEmpty ? tripCurrency : found.first;
   }
@@ -804,6 +807,23 @@ class ReceiptParser {
       found.add('KRW');
     }
     if (RegExp(r'\bRP\.?\s?\d').hasMatch(upper)) found.add('IDR');
+    // 유럽 각국 통화: 숫자 앞뒤의 Ft(헝가리), lei(루마니아), kr(북유럽).
+    if (RegExp(r'\d\s?FT\b|\bFT\s?\d').hasMatch(upper)) found.add('HUF');
+    if (RegExp(r'\d\s?LEI\b|\bLEI\s?\d').hasMatch(upper)) found.add('RON');
+    if (RegExp(r'\d\s?KR\b\.?|\bKR\.?\s?\d').hasMatch(upper)) {
+      const kroner = ['SEK', 'NOK', 'DKK'];
+      final lang = _europeanByLanguage(
+        text.toLowerCase(),
+        (p) => RegExp(p).allMatches(text).length,
+      );
+      found.add(
+        kroner.contains(tripCurrency)
+            ? tripCurrency
+            : kroner.contains(lang)
+            ? lang!
+            : 'SEK',
+      );
+    }
     if (text.contains('¥') || text.contains('￥')) {
       found.add(tripCurrency == 'CNY' ? 'CNY' : 'JPY');
     }
