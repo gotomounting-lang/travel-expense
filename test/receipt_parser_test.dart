@@ -486,6 +486,27 @@ void main() {
       expect(suggest(['Beispiel Café', 'Summe 12.50'], trip: 'CHF'), 'CHF');
     });
 
+    test('유로를 쓰지 않는 유럽 나라는 자국 통화', () {
+      expect(suggest(['Ukázková kavárna', 'Celkem 125,00']), 'CZK');
+      expect(suggest(['Minta Kávézó', 'Összesen 2 490']), 'HUF');
+      expect(suggest(['Przykładowa kawiarnia', 'Razem 18,50']), 'PLN');
+      expect(suggest(['Cafenea Exemplu', 'Total de plată 22,00']), 'RON');
+      expect(suggest(['Exempelkafé', 'Att betala 45,00']), 'SEK');
+      expect(suggest(['Eksempel Kafé', 'Å betale 89,00']), 'NOK');
+      expect(suggest(['Eksempel Café', 'I alt 65,00']), 'DKK');
+      expect(suggest(['Örnek Kafe', 'Toplam 120,00']), 'TRY');
+    });
+
+    test('유럽 통화로 여행 중이면 같은 말을 쓰는 여행지 통화', () {
+      expect(suggest(['Beispiel Café', 'Summe 12.50'], trip: 'CHF'), 'CHF');
+      expect(suggest(['Café Exemple', 'Total TTC 12,50'], trip: 'CHF'), 'CHF');
+      expect(suggest(['Beispiel Café', 'Summe 12,50'], trip: 'EUR'), 'EUR');
+    });
+
+    test('짧은 낱말은 다른 낱말 안에서 찾지 않는다', () {
+      expect(suggest(['ASSISTANCE CENTER', 'TOTAL 4.50'], trip: 'SGD'), 'SGD');
+    });
+
     test('인도네시아어 → IDR, 말레이어 → MYR', () {
       expect(suggest(['Toko Contoh', 'Total Bayar 25.000']), 'IDR');
       expect(suggest(['Kedai Contoh', 'Jumlah 12.50']), 'MYR');

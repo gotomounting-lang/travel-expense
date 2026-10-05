@@ -169,9 +169,8 @@ class ReceiptParser {
   static String? currencyByLanguage(String text, String tripCurrency) {
     int count(String pattern) => RegExp(pattern).allMatches(text).length;
     final lower = text.toLowerCase();
-    bool has(List<String> words) => words.any(lower.contains);
+    bool has(List<String> words) => _hasWord(lower, words);
     const chinese = ['CNY', 'TWD', 'HKD', 'MOP'];
-    const euro = 'EUR';
     if (count(r'[가-힣]') >= 4) return 'KRW';
     if (count(r'[぀-ヿ]') >= 2) return 'JPY';
     if (count(r'[฀-๿]') >= 4) return 'THB';
@@ -193,6 +192,65 @@ class ReceiptParser {
       return tripCurrency == 'MYR' ? 'MYR' : 'IDR';
     }
     if (has(['jumlah', 'sst', 'baki', 'tunai'])) return 'MYR';
+    // 유럽: 같은 말을 여러 나라가 쓰므로(스위스의 독일어·프랑스어, 오스트리아…)
+    // 유럽 통화로 여행 중이면 여행지 통화가 먼저. 아니면 말에 맞는 나라 통화.
+    // 유로를 쓰지 않는 체코·헝가리·폴란드·루마니아·북유럽은 자국 통화.
+    final european = _europeanByLanguage(lower, count);
+    if (european != null) {
+      return _europeanCurrencies.contains(tripCurrency)
+          ? tripCurrency
+          : european;
+    }
+    return RegExp(r'[A-Za-z]{3}').hasMatch(text) ? tripCurrency : null;
+  }
+
+  /// 낱말 단위로 포함됐는지 ("sst" 가 "assistance" 안에 있는 것은 아님).
+  static bool _hasWord(String lower, List<String> words) => words.any(
+    (w) => RegExp(
+      '(?<![\\p{L}])${RegExp.escape(w)}(?![\\p{L}])',
+      unicode: true,
+    ).hasMatch(lower),
+  );
+
+  static const _europeanCurrencies = [
+    'EUR',
+    'GBP',
+    'CHF',
+    'CZK',
+    'HUF',
+    'PLN',
+    'RON',
+    'SEK',
+    'DKK',
+    'NOK',
+    'TRY',
+  ];
+
+  /// 유럽 언어 영수증의 그 나라 통화. 유럽 말이 아니면 null.
+  static String? _europeanByLanguage(String lower, int Function(String) count) {
+    bool has(List<String> words) => _hasWord(lower, words);
+    if (has(['celkem', 'k úhradě', 'dph', 'děkujeme', 'hotově']) ||
+        count(r'[ěřůĚŘŮ]') >= 2) {
+      return 'CZK';
+    }
+    if (has(['összesen', 'fizetendő', 'végösszeg', 'áfa', 'köszönjük']) ||
+        count(r'[őűŐŰ]') >= 1) {
+      return 'HUF';
+    }
+    if (has(['razem', 'do zapłaty', 'ptu', 'paragon', 'dziękujemy']) ||
+        count(r'[łąęśźżńŁĄĘŚŹŻŃ]') >= 2) {
+      return 'PLN';
+    }
+    if (has(['total de plată', 'bon fiscal', 'mulțumim']) ||
+        count(r'[țșȚȘ]') >= 2) {
+      return 'RON';
+    }
+    if (has(['toplam', 'kdv', 'teşekkür']) || count(r'[ğışĞİŞ]') >= 2) {
+      return 'TRY';
+    }
+    if (has(['att betala', 'kvitto'])) return 'SEK';
+    if (has(['å betale', 'mva', 'kvittering'])) return 'NOK';
+    if (has(['at betale', 'i alt', 'kvittering'])) return 'DKK';
     if (has([
       'summe',
       'mwst',
@@ -210,22 +268,12 @@ class ReceiptParser {
       'importe',
       'totaal',
       'btw',
+      'ukupno',
+      'σύνολο',
     ])) {
-      // 유로를 쓰지 않는 나라(스위스 등)를 여행 중이면 여행지 통화.
-      return const [
-            'CHF',
-            'GBP',
-            'CZK',
-            'PLN',
-            'HUF',
-            'DKK',
-            'SEK',
-            'NOK',
-          ].contains(tripCurrency)
-          ? tripCurrency
-          : euro;
+      return 'EUR';
     }
-    return RegExp(r'[A-Za-z]{3}').hasMatch(text) ? tripCurrency : null;
+    return null;
   }
 
   /// 한국어로 쓰인 영수증인지 (한글 10자 이상).
