@@ -459,6 +459,10 @@ class AppLocalizationsVi extends AppLocalizations {
       'Không xác định được loại tiền trên hóa đơn. Hãy kiểm tra số tiền và tự chọn loại tiền. Ảnh đã được xóa sau khi phân tích.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Hóa đơn không ghi loại tiền nên đã chọn sẵn loại tiền theo ngôn ngữ của hóa đơn. Hãy kiểm tra số tiền và loại tiền. Ảnh đã được xóa sau khi phân tích.';
+
+  @override
   String get currencyRequired => 'Hãy chọn loại tiền';
 
   @override

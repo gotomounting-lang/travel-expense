@@ -461,6 +461,48 @@ void main() {
     });
   });
 
+  group('통화 표시가 없으면 영수증 언어로 통화 추천', () {
+    String? suggest(List<String> rows, {String trip = 'USD'}) {
+      final d = ReceiptParser(tripCurrency: trip).parse(lines(rows));
+      expect(d.currency, isNull);
+      return d.suggestedCurrency;
+    }
+
+    test('일본어 → JPY, 태국어 → THB, 베트남어 → VND', () {
+      expect(suggest(['サンプル食堂', 'ラーメン 980', '合計 980']), 'JPY');
+      expect(suggest(['ร้านตัวอย่าง', 'รวมทั้งสิ้น 120']), 'THB');
+      expect(suggest(['Quán mẫu', 'Phở bò 65.000', 'Tổng cộng 65.000']), 'VND');
+    });
+
+    test('중국어: 간체 → CNY, 번체 → TWD, 중화권 여행이면 여행지 통화', () {
+      expect(suggest(['样品餐厅', '合计 58.00']), 'CNY');
+      expect(suggest(['樣品餐廳 總計 58']), 'TWD');
+      expect(suggest(['樣品餐廳 總計 58'], trip: 'HKD'), 'HKD');
+    });
+
+    test('독일어·프랑스어 → EUR, 스위스 여행이면 CHF', () {
+      expect(suggest(['Beispiel Café', 'Summe 12,50']), 'EUR');
+      expect(suggest(['Café Exemple', 'Total TTC 12,50']), 'EUR');
+      expect(suggest(['Beispiel Café', 'Summe 12.50'], trip: 'CHF'), 'CHF');
+    });
+
+    test('인도네시아어 → IDR, 말레이어 → MYR', () {
+      expect(suggest(['Toko Contoh', 'Total Bayar 25.000']), 'IDR');
+      expect(suggest(['Kedai Contoh', 'Jumlah 12.50']), 'MYR');
+    });
+
+    test('영어처럼 여러 나라 말이면 여행지 통화', () {
+      expect(suggest(['SAMPLE CAFE', 'TOTAL 4.50'], trip: 'SGD'), 'SGD');
+    });
+
+    test('통화 표시가 있으면 추천하지 않는다', () {
+      final d = ReceiptParser(tripCurrency: 'USD')
+          .parse(lines(['Beispiel Café', 'Summe 12,50 EUR']));
+      expect(d.currency, 'EUR');
+      expect(d.suggestedCurrency, isNull);
+    });
+  });
+
   test('원·₩ 표시가 없는 한국어 영수증은 원화', () {
     final d = ReceiptParser(tripCurrency: 'USD').parse(
       lines([

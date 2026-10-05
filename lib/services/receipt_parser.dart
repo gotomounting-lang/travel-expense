@@ -44,6 +44,7 @@ class ReceiptDraft {
     this.items = const [],
     this.paymentMethod = '',
     this.totalByWord = false,
+    this.suggestedCurrency,
   });
 
   /// 합계 금액. 합계 단어 줄에서 읽지 못했으면 null (사용자가 직접 입력).
@@ -64,6 +65,10 @@ class ReceiptDraft {
   /// 합계 단어("TOTAL", "합계"...) 가 있는 줄에서 금액을 읽었는지.
   /// 아니면 가장 큰 금액으로 짐작한 것이다.
   final bool totalByWord;
+
+  /// 영수증에 통화 표시가 없을 때 영수증 언어로 미리 골라 둘 통화 (확정 아님,
+  /// 사용자가 확인한다). [currency] 가 있으면 쓰지 않는다.
+  final String? suggestedCurrency;
 
   bool get isEmpty => amount == null && date == null && merchant.isEmpty;
 }
@@ -111,6 +116,9 @@ class ReceiptParser {
     return ReceiptDraft(
       amount: byWord ? amount : null,
       currency: currencyFound ? currency : null,
+      suggestedCurrency: currencyFound
+          ? null
+          : currencyByLanguage(all, tripCurrency),
       date: date,
       merchant: merchant,
       category: category,
@@ -154,6 +162,71 @@ class ReceiptParser {
   /// 숫자 바로 앞의 홀로 선 W 는 ₩ 로 되돌린다 ("W 1700" → "₩1700").
   static String fixWonSign(String text) =>
       text.replaceAllMapped(RegExp(r'(?<![A-Za-z0-9])W\s?(?=\d)'), (_) => '₩');
+
+  /// 통화 표시가 없는 영수증에서 영수증 언어로 추천할 통화
+  /// (사용자 결정 2026-10-05). 영어처럼 여러 나라에서 쓰는 언어는 여행지
+  /// 통화를 추천한다. 한국어 영수증은 추천이 아니라 원화로 확정한다.
+  static String? currencyByLanguage(String text, String tripCurrency) {
+    int count(String pattern) => RegExp(pattern).allMatches(text).length;
+    final lower = text.toLowerCase();
+    bool has(List<String> words) => words.any(lower.contains);
+    const chinese = ['CNY', 'TWD', 'HKD', 'MOP'];
+    const euro = 'EUR';
+    if (count(r'[가-힣]') >= 4) return 'KRW';
+    if (count(r'[぀-ヿ]') >= 2) return 'JPY';
+    if (count(r'[฀-๿]') >= 4) return 'THB';
+    if (count(r'[က-႟]') >= 4) return 'MMK';
+    if (count(r'[ऀ-ॿ]') >= 4) return 'INR';
+    if (count(r'[Ѐ-ӿ]') >= 4) {
+      return count(r'[ӨөҮү]') > 0 ? 'MNT' : 'RUB';
+    }
+    if (count(r'[一-鿿]') >= 2) {
+      if (chinese.contains(tripCurrency)) return tripCurrency;
+      // 번체(臺灣·香港)면 대만 달러, 아니면 위안.
+      return count(r'[們總計價實門發這個錢員號]') > 0 ? 'TWD' : 'CNY';
+    }
+    if (count(r'[ạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹđĐ]') >= 2) {
+      return 'VND';
+    }
+    if (has(['kabuuan', 'salamat po'])) return 'PHP';
+    if (has(['total bayar', 'kembalian', 'ppn', 'terima kasih'])) {
+      return tripCurrency == 'MYR' ? 'MYR' : 'IDR';
+    }
+    if (has(['jumlah', 'sst', 'baki', 'tunai'])) return 'MYR';
+    if (has([
+      'summe',
+      'mwst',
+      'zu zahlen',
+      'gesamt',
+      'betrag',
+      'rückgeld',
+      'tva',
+      'ttc',
+      'à payer',
+      'montant',
+      'merci',
+      'totale',
+      'iva',
+      'importe',
+      'totaal',
+      'btw',
+    ])) {
+      // 유로를 쓰지 않는 나라(스위스 등)를 여행 중이면 여행지 통화.
+      return const [
+            'CHF',
+            'GBP',
+            'CZK',
+            'PLN',
+            'HUF',
+            'DKK',
+            'SEK',
+            'NOK',
+          ].contains(tripCurrency)
+          ? tripCurrency
+          : euro;
+    }
+    return RegExp(r'[A-Za-z]{3}').hasMatch(text) ? tripCurrency : null;
+  }
 
   /// 한국어로 쓰인 영수증인지 (한글 10자 이상).
   static bool isKoreanText(String text) =>

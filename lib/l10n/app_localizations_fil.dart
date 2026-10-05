@@ -459,6 +459,10 @@ class AppLocalizationsFil extends AppLocalizations {
       'Hindi makumpirma ang currency sa resibo. Suriin ang halaga at piliin mismo ang currency. Binura ang larawan pagkatapos ng pagsusuri.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Walang nakasaad na currency sa resibo kaya pinili namin ang tugma sa wika ng resibo. Suriin ang halaga at currency. Binura ang larawan pagkatapos ng pagsusuri.';
+
+  @override
   String get currencyRequired => 'Pumili ng currency';
 
   @override

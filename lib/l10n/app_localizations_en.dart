@@ -459,6 +459,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t confirm the currency on this receipt. Check the amount and choose the currency yourself. The photo was deleted after analysis.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'The receipt shows no currency, so we picked the one that matches the receipt\'s language. Check the amount and currency. The photo was deleted after analysis.';
+
+  @override
   String get currencyRequired => 'Choose a currency';
 
   @override

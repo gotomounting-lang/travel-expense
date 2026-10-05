@@ -460,6 +460,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Mata uang pada struk tidak dapat dipastikan. Periksa jumlahnya dan pilih mata uang sendiri. Foto sudah dihapus setelah dianalisis.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Struk tidak mencantumkan mata uang, jadi kami memilih mata uang sesuai bahasa struk. Periksa jumlah dan mata uangnya. Foto sudah dihapus setelah dianalisis.';
+
+  @override
   String get currencyRequired => 'Pilih mata uang';
 
   @override

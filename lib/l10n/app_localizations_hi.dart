@@ -460,6 +460,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'रसीद पर मुद्रा की पुष्टि नहीं हो सकी। राशि जाँचें और मुद्रा खुद चुनें। विश्लेषण के बाद फ़ोटो हटा दी गई।';
 
   @override
+  String get receiptCurrencySuggested =>
+      'रसीद पर मुद्रा नहीं लिखी है, इसलिए रसीद की भाषा के अनुसार मुद्रा चुनी गई है। राशि और मुद्रा जाँचें। विश्लेषण के बाद फ़ोटो हटा दी गई।';
+
+  @override
   String get currencyRequired => 'मुद्रा चुनें';
 
   @override

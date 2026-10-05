@@ -461,6 +461,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Währung auf dem Beleg konnte nicht erkannt werden. Bitte Betrag prüfen und Währung selbst wählen. Das Foto wurde nach der Analyse gelöscht.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Auf dem Beleg steht keine Währung, daher wurde die zur Sprache des Belegs passende Währung vorausgewählt. Bitte Betrag und Währung prüfen. Das Foto wurde nach der Analyse gelöscht.';
+
+  @override
   String get currencyRequired => 'Bitte Währung wählen';
 
   @override

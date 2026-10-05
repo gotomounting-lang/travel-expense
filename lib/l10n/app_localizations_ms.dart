@@ -460,6 +460,10 @@ class AppLocalizationsMs extends AppLocalizations {
       'Mata wang pada resit tidak dapat disahkan. Semak amaun dan pilih mata wang sendiri. Foto telah dipadam selepas analisis.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Resit tidak menunjukkan mata wang, jadi kami memilih mata wang mengikut bahasa resit. Semak amaun dan mata wang. Foto telah dipadam selepas analisis.';
+
+  @override
   String get currencyRequired => 'Pilih mata wang';
 
   @override

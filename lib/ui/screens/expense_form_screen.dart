@@ -66,7 +66,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   /// 영수증에서 통화를 확인하지 못했으면 null 로 두고 사용자가 고르게 한다.
   late String? _currency =
       widget.expense?.currency ??
-      (_receipt != null ? _receipt.currency : widget.trip.currency);
+      (_receipt != null
+          ? _receipt.currency ?? _receipt.suggestedCurrency
+          : widget.trip.currency);
   late ExpenseCategory _category =
       widget.expense?.category ?? _receipt?.category ?? ExpenseCategory.food;
   late DateTime _spentAt =
@@ -229,6 +231,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                               ? l.cardReadNotice
                               : _receipt.amount == null
                               ? l.receiptTotalNotFound
+                              : _receipt.currency == null &&
+                                    _receipt.suggestedCurrency != null
+                              ? l.receiptCurrencySuggested
                               : _receipt.currency == null
                               ? l.receiptCurrencyNotFound
                               : l.receiptReadNotice,

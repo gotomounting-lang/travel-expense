@@ -130,6 +130,7 @@
   "exportTripSheetDone": "已保存到“{title}”表格",
   "receiptTotalNotFound": "无法确认收据上的合计金额。请手动输入金额和币种。照片已在分析后删除。",
   "receiptCurrencyNotFound": "无法确认收据上的币种。请核对金额并手动选择币种。照片已在分析后删除。",
+  "receiptCurrencySuggested": "收据上没有币种标记，已按收据语言预选币种。请核对金额和币种。照片已在分析后删除。",
   "currencyRequired": "请选择币种",
   "batchTitle": "识别到 {count} 笔付款",
   "batchHint": "请选择要保存的记录。点击金额可修改。",

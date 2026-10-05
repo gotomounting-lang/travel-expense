@@ -130,6 +130,7 @@
   "exportTripSheetDone": "Disimpan ke helaian '{title}'",
   "receiptTotalNotFound": "Jumlah keseluruhan pada resit tidak dapat disahkan. Sila masukkan amaun dan mata wang sendiri. Foto telah dipadam selepas analisis.",
   "receiptCurrencyNotFound": "Mata wang pada resit tidak dapat disahkan. Semak amaun dan pilih mata wang sendiri. Foto telah dipadam selepas analisis.",
+  "receiptCurrencySuggested": "Resit tidak menunjukkan mata wang, jadi kami memilih mata wang mengikut bahasa resit. Semak amaun dan mata wang. Foto telah dipadam selepas analisis.",
   "currencyRequired": "Pilih mata wang",
   "batchTitle": "{count} bayaran dibaca",
   "batchHint": "Pilih yang hendak disimpan. Ketik amaun untuk mengubah.",

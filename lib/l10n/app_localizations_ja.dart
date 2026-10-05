@@ -438,6 +438,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。';
 
   @override
+  String get receiptCurrencySuggested =>
+      'レシートに通貨の表示がないため、レシートの言語に合う通貨を選んでおきました。金額と通貨を確認してください。写真は分析後に削除しました。';
+
+  @override
   String get currencyRequired => '通貨を選んでください';
 
   @override

@@ -461,6 +461,10 @@ class AppLocalizationsMn extends AppLocalizations {
       'Баримтын валютыг тодорхойлж чадсангүй. Дүнгээ шалгаад валютаа өөрөө сонгоно уу. Зургийг шинжилсний дараа устгасан.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Баримтад валют заагаагүй тул баримтын хэлэнд тохирох валютыг сонгосон. Дүн, валютаа шалгана уу. Зургийг шинжилсний дараа устгасан.';
+
+  @override
   String get currencyRequired => 'Валют сонгоно уу';
 
   @override

@@ -461,6 +461,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de confirmer la devise du reçu. Vérifiez le montant et choisissez vous-même la devise. La photo a été supprimée après l\'analyse.';
 
   @override
+  String get receiptCurrencySuggested =>
+      'Le reçu n\'indique pas de devise : nous avons présélectionné celle qui correspond à la langue du reçu. Vérifiez le montant et la devise. La photo a été supprimée après l\'analyse.';
+
+  @override
   String get currencyRequired => 'Choisissez une devise';
 
   @override

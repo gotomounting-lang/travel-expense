@@ -130,6 +130,7 @@
   "exportTripSheetDone": "「{title}」シートに保存しました",
   "receiptTotalNotFound": "レシートの合計金額を確認できませんでした。金額と通貨を入力してください。写真は分析後に削除しました。",
   "receiptCurrencyNotFound": "レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。",
+  "receiptCurrencySuggested": "レシートに通貨の表示がないため、レシートの言語に合う通貨を選んでおきました。金額と通貨を確認してください。写真は分析後に削除しました。",
   "currencyRequired": "通貨を選んでください",
   "batchTitle": "{count}件の支払いを読み取りました",
   "batchHint": "保存する件を選んでください。金額をタップすると修正できます。",

@@ -432,6 +432,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get receiptCurrencyNotFound => '无法确认收据上的币种。请核对金额并手动选择币种。照片已在分析后删除。';
 
   @override
+  String get receiptCurrencySuggested =>
+      '收据上没有币种标记，已按收据语言预选币种。请核对金额和币种。照片已在分析后删除。';
+
+  @override
   String get currencyRequired => '请选择币种';
 
   @override
