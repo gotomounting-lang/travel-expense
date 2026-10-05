@@ -86,7 +86,12 @@ class ReceiptParser {
 
     var currency = detectCurrency(all);
     // 영수증에 통화 표시(₩, ￦, 원, \$, RM...)가 있어야 통화를 확인한 것으로 본다.
-    final currencyFound = _currenciesIn(all).isNotEmpty;
+    // 다만 한국어 영수증은 표시가 없어도 원화다 (사용자 결정 2026-10-05).
+    var currencyFound = _currenciesIn(all).isNotEmpty;
+    if (!currencyFound && isKoreanText(all)) {
+      currency = 'KRW';
+      currencyFound = true;
+    }
     final decimals = Currency.byCode(currency).decimals;
     final amount = _findTotal(rows, decimals);
     // 합계 줄에 통화 표시가 있으면 그것이 실제 결제 통화다
@@ -149,6 +154,10 @@ class ReceiptParser {
   /// 숫자 바로 앞의 홀로 선 W 는 ₩ 로 되돌린다 ("W 1700" → "₩1700").
   static String fixWonSign(String text) =>
       text.replaceAllMapped(RegExp(r'(?<![A-Za-z0-9])W\s?(?=\d)'), (_) => '₩');
+
+  /// 한국어로 쓰인 영수증인지 (한글 10자 이상).
+  static bool isKoreanText(String text) =>
+      RegExp(r'[가-힣]').allMatches(text).length >= 10;
 
   /// 한글이 있는 글자 전체에 [fixWonSign] 을 적용한다.
   static String fixWonSignIfKorean(String text) =>

@@ -319,10 +319,10 @@ void main() {
       }
     });
 
-    test('통화 표시가 없는 한글 영수증은 통화를 비워 둔다', () {
+    test('통화 표시가 없어도 한국어 영수증은 원화', () {
       final d = parser.parse(lines(['샘플커피 가산점', '합계 17,600', '결제금액 17,600']));
       expect(d.amount, 17600);
-      expect(d.currency, isNull);
+      expect(d.currency, 'KRW');
     });
 
     test('한글이 깨져 합계를 못 읽으면 금액·통화를 비워 둔다', () {
@@ -446,12 +446,12 @@ void main() {
       expect(d.currency, 'KRW');
     });
 
-    test('원·₩ 표시가 없어도 총액은 읽고, 통화는 직접 고르게 비운다', () {
+    test('원·₩ 표시가 없어도 총액을 읽고 한국어 전표는 원화', () {
       final d = parser.parse(
         lines(['샘플편의점', '합 계 1,700', '신용카드 1,700', '사용금액 1,700']),
       );
       expect(d.amount, 1700);
-      expect(d.currency, isNull);
+      expect(d.currency, 'KRW');
     });
 
     test('합계 줄 금액이 서로 다르고 결제금액이 없으면 직접 입력', () {
@@ -459,6 +459,26 @@ void main() {
       expect(d.amount, isNull);
       expect(d.totalByWord, isFalse);
     });
+  });
+
+  test('원·₩ 표시가 없는 한국어 영수증은 원화', () {
+    final d = ReceiptParser(tripCurrency: 'USD').parse(
+      lines([
+        '[영수증]-재발행',
+        '[상호] 샘플카페 2호점',
+        '2026-10-05 15:37:33',
+        '상품명 단가 수량 금액',
+        '카페라떼(HOT) 5,500 1 5,500',
+        '시트러스 아메리카 5,300 1 5,300',
+        '합계 금액 10,800',
+        '부가세 과세물품가액 9,819',
+        '부 가 세 981',
+        '승인금액: 10,800',
+        '승인번호: 00000000',
+      ]),
+    );
+    expect(d.amount, 10800);
+    expect(d.currency, 'KRW');
   });
 
   group('한글 영수증의 원 표시 금액', () {
