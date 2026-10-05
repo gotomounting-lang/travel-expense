@@ -461,6 +461,61 @@ void main() {
     });
   });
 
+  group('유럽 비유로 영수증 총액', () {
+    final parser = ReceiptParser(tripCurrency: 'EUR');
+
+    test('헝가리: FIZETENDŐ 12 630 Ft, 유로 환산 줄은 무시', () {
+      for (final rows in [
+        [
+          'Sample Bistro',
+          'Felszolgálási díj 1148 Ft',
+          'FIZETENDŐ 12 630 Ft',
+          'Kerekítés 2 Ft',
+          '(42,10 EUR)',
+        ],
+        // 기울어진 사진: 키워드 줄 위아래에 금액 줄이 따로 읽힌 경우
+        [
+          'Sample Bistro',
+          'Felszolgálási díj 1148 Ft',
+          '12 630 Ft',
+          'FIZETENDŐ',
+          '2 Ft',
+          'Kerekítés (42,10 EUR)',
+        ],
+        // ő 를 o 로 읽은 경우
+        [
+          'Sample Bistro',
+          'FIZETENDO 12 630 Ft',
+          'Kerekites 2 Ft',
+          '(42,10 EUR)',
+        ],
+      ]) {
+        final d = parser.parse(lines(rows));
+        expect(d.amount, 12630, reason: rows.join(' / '));
+        expect(d.currency, 'HUF', reason: rows.join(' / '));
+      }
+    });
+
+    test('덴마크 환전소: "Udleveret til kunde DKK 673,50" 이 받은 금액', () {
+      final d = parser.parse(
+        lines([
+          'SAMPLE BANK',
+          'Dato 26/08/2017 10:59',
+          'Sample køber 100,00',
+          'Sedler EUR 7,1869',
+          'Kurs 45,00',
+          'Gebyr 673,69',
+          'Total',
+          'Gebyr 45,00',
+          'Moms 0,00',
+          'Udleveret til kunde DKK 673,50',
+        ]),
+      );
+      expect(d.amount, 673.5);
+      expect(d.currency, 'DKK');
+    });
+  });
+
   group('통화 표시가 없으면 영수증 언어로 통화 추천', () {
     String? suggest(List<String> rows, {String trip = 'USD'}) {
       final d = ReceiptParser(tripCurrency: trip).parse(lines(rows));

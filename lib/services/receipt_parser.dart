@@ -325,6 +325,7 @@ class ReceiptParser {
     'số tiền thanh toán', 'tổng thanh toán',
     'сумма покупки', 'сумма оплаты',
     'zahlbetrag', 'kartenzahlung',
+    'udleveret til kunde', 'at betale', 'fizetendo',
     'montant payé', 'montant ttc',
     'total bayar', 'total belanja', 'jumlah bayaran', 'jumlah dibayar',
     'kabuuang halaga',
@@ -363,6 +364,7 @@ class ReceiptParser {
   /// 합계 중에서도 실제로 낸(카드로 결제한) 금액을 뜻하는 말. 할인 전 합계와
   /// 결제금액이 다르면 이쪽을 쓴다.
   static const _paidWords = [
+    'udleveret til kunde',
     '결제금액',
     '결재금액',
     '결제 금액',
@@ -653,13 +655,21 @@ class ReceiptParser {
       if (hasStrong && !strong(row)) continue;
       var amounts = _amountsIn(row, decimals, spaced: true);
       var amountRow = row;
-      // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 아래, 그다음 바로 위 행을
-      // 본다. 다른 글자가 섞인 행("Claude Opus 4.5")은 금액만 있는 행이 아니다.
-      for (final j in [i + 1, i - 1]) {
-        if (amounts.isNotEmpty) break;
-        if (j < 0 || j >= rows.length || !_isAmountOnly(rows[j])) continue;
-        amounts = _amountsIn(rows[j], decimals, spaced: true);
-        amountRow = '$row ${rows[j]}';
+      // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 아래·바로 위 행을 본다.
+      // 둘 다 금액만 있는 행이면 큰 쪽 (기울어진 사진에서 합계 아래 "끝전 2 Ft"
+      // 같은 작은 금액이 먼저 잡히지 않게). 다른 글자가 섞인 행("Claude Opus
+      // 4.5")은 금액만 있는 행이 아니다.
+      if (amounts.isEmpty) {
+        final near = [
+          for (final j in [i + 1, i - 1])
+            if (j >= 0 && j < rows.length && _isAmountOnly(rows[j]))
+              (j, _amountsIn(rows[j], decimals, spaced: true)),
+        ].where((n) => n.$2.isNotEmpty).toList();
+        if (near.isNotEmpty) {
+          final pick = near.reduce((a, b) => b.$2.last > a.$2.last ? b : a);
+          amounts = pick.$2;
+          amountRow = '$row ${rows[pick.$1]}';
+        }
       }
       if (amounts.isEmpty) continue;
       found.add((amounts.last, amountRow, _hasAny(row, _paidWords)));
