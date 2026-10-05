@@ -6,6 +6,7 @@ import '../models/currency.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import '../util/dates.dart';
+import '../util/money.dart';
 
 /// 구글 시트에 쓰는 표 내용을 만든다. 순수 함수라 테스트하기 쉽다.
 /// 머리글·카테고리 이름은 앱에서 고른 언어로 쓴다.
@@ -62,6 +63,8 @@ List<Object> summaryHeader(AppLocalizations l, String home) => [
   l.colCategory,
   l.colHomeTotal(home),
   l.colShare,
+  // 시트 파이차트 범례에 쓰는 "카테고리 금액" 이름표. 앱 범례처럼 금액이 보인다.
+  '',
 ];
 
 final _hm = DateFormat('HH:mm');
@@ -154,11 +157,20 @@ Map<ExpenseCategory, double> categoryTotals(
 /// 요약 탭에서 한 여행이 차지하는 행 범위 (0부터, 머리글 포함 기준).
 /// 시트 파이차트의 데이터 범위로 쓴다.
 class SummaryBlock {
-  const SummaryBlock(this.title, this.total, this.startRow, this.endRow);
+  const SummaryBlock(
+    this.title,
+    this.total,
+    this.startRow,
+    this.endRow, [
+    this.categories = const [],
+  ]);
 
   final String title;
   final double total;
   final int startRow;
+
+  /// 차트 조각 순서대로의 카테고리 (앱 차트와 같은 큰 금액 순).
+  final List<ExpenseCategory> categories;
 
   /// 마지막 행 다음 (끝 미포함).
   final int endRow;
@@ -187,7 +199,13 @@ List<List<Object>> buildSummaryRows(
     final sum = totals.values.fold<double>(0, (s, v) => s + v);
     if (totals.isNotEmpty) {
       blocks.add(
-        SummaryBlock(t.title, sum, rows.length, rows.length + totals.length),
+        SummaryBlock(
+          t.title,
+          sum,
+          rows.length,
+          rows.length + totals.length,
+          totals.keys.toList(),
+        ),
       );
     }
     for (final entry in totals.entries) {
@@ -196,10 +214,13 @@ List<List<Object>> buildSummaryRows(
         entry.key.label(l),
         entry.value,
         sum == 0 ? 0 : (entry.value * 1000 / sum).round() / 10,
+        '${entry.key.label(l)}  ${formatMoney(l, entry.value, home)}',
       ]);
     }
     // 앱 총액 화면처럼 여행마다 총 지출을 맨 아래에 쓴다. (파이차트 범위 밖)
-    if (totals.isNotEmpty) rows.add([_text(t.title), l.totalSpent, sum, 100]);
+    if (totals.isNotEmpty) {
+      rows.add([_text(t.title), l.totalSpent, sum, 100, '']);
+    }
   }
   return (rows: rows, blocks: blocks);
 }

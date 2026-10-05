@@ -6,6 +6,7 @@ import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:travel_expense/l10n/app_localizations.dart';
+import 'package:travel_expense/models/category.dart';
 import 'package:travel_expense/services/sheet_rows.dart';
 import 'package:travel_expense/services/sheets_sync_service.dart';
 
@@ -101,5 +102,32 @@ void main() {
         'deleteSheet': {'sheetId': SheetTab.trips.sheetId},
       },
     ]);
+  });
+
+  test('여행별 시트 파이차트 색: 강조색을 앱 카테고리 색으로, 조각 순서대로', () {
+    final json = jsonDecode(
+      jsonEncode(
+        SheetsSyncService.themeFor([
+          ExpenseCategory.shopping,
+          ExpenseCategory.food,
+        ]).toJson(),
+      ),
+    );
+    final colors = {
+      for (final p
+          in json['updateSpreadsheetProperties']['properties']['spreadsheetTheme']['themeColors']
+              as List)
+        p['colorType']: p['color']['rgbColor'],
+    };
+    expect(colors.keys, containsAll(['TEXT', 'BACKGROUND', 'LINK']));
+    expect(colors.keys.where((k) => k.startsWith('ACCENT')), hasLength(6));
+    Map<String, double> rgb(ExpenseCategory c) => {
+      'red': c.color.r,
+      'green': c.color.g,
+      'blue': c.color.b,
+    };
+    expect(colors['ACCENT1'], rgb(ExpenseCategory.shopping));
+    expect(colors['ACCENT2'], rgb(ExpenseCategory.food));
+    expect(colors['ACCENT3'], rgb(ExpenseCategory.snack));
   });
 }

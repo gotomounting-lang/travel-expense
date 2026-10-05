@@ -37,6 +37,8 @@ class CategoryPieChart extends StatelessWidget {
           height: 160,
           child: PieChart(
             PieChartData(
+              // 구글 시트 차트처럼 12시 방향에서 시계 방향으로 그린다.
+              startDegreeOffset: 270,
               centerSpaceRadius: 36,
               sectionsSpace: 2,
               sections: [

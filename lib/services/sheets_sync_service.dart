@@ -1,3 +1,5 @@
+import 'dart:ui' show Color;
+
 import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis/sheets/v4.dart' as sheets;
@@ -5,6 +7,7 @@ import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/category.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import 'google_account_service.dart';
@@ -246,6 +249,45 @@ class SheetsSyncService {
             objectId: chartId,
           ),
         ),
+      // 카테고리 글자색을 앱 색으로. 줄 위치가 바뀌므로 먼저 지운다.
+      sheets.Request(
+        repeatCell: sheets.RepeatCellRequest(
+          range: sheets.GridRange(
+            sheetId: sheetId,
+            startRowIndex: 1,
+            startColumnIndex: 1,
+            endColumnIndex: 2,
+          ),
+          cell: sheets.CellData(userEnteredFormat: sheets.CellFormat()),
+          fields: 'userEnteredFormat.textFormat',
+        ),
+      ),
+      for (final b in blocks)
+        for (final (i, c) in b.categories.indexed)
+          sheets.Request(
+            repeatCell: sheets.RepeatCellRequest(
+              range: sheets.GridRange(
+                sheetId: sheetId,
+                startRowIndex: b.startRow + i,
+                endRowIndex: b.startRow + i + 1,
+                startColumnIndex: 1,
+                endColumnIndex: 2,
+              ),
+              cell: sheets.CellData(
+                userEnteredFormat: sheets.CellFormat(
+                  textFormat: sheets.TextFormat(
+                    bold: true,
+                    foregroundColorStyle: _colorStyle(c.color),
+                  ),
+                ),
+              ),
+              fields: 'userEnteredFormat.textFormat',
+            ),
+          ),
+      // 시트 파이차트는 조각 색을 직접 정할 수 없고 테마 강조색을 순서대로 쓴다.
+      // 그래서 차트가 하나뿐인 시트(여행별 시트)는 강조색을 그 여행의 카테고리
+      // 색으로 맞춰 앱 차트와 같은 색이 되게 한다.
+      if (blocks.length == 1) _themeFor(blocks.single.categories),
       for (final (i, b) in blocks.indexed)
         sheets.Request(
           addChart: sheets.AddChartRequest(chart: _pie(l, home, b, i)),
@@ -254,6 +296,42 @@ class SheetsSyncService {
     await api.spreadsheets.batchUpdate(
       sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,
+    );
+  }
+
+  static sheets.ColorStyle _colorStyle(Color c) => sheets.ColorStyle(
+    rgbColor: sheets.Color(red: c.r, green: c.g, blue: c.b),
+  );
+
+  /// 강조색 1~6 을 [categories] 순서의 앱 색으로 (모자라면 나머지 카테고리 색).
+  /// 테마는 모든 색 쌍을 함께 보내야 한다.
+  @visibleForTesting
+  static sheets.Request themeFor(List<ExpenseCategory> categories) =>
+      _themeFor(categories);
+
+  static sheets.Request _themeFor(List<ExpenseCategory> categories) {
+    final accents = [
+      ...categories,
+      ...ExpenseCategory.values.where((c) => !categories.contains(c)),
+    ].take(6).toList();
+    sheets.ThemeColorPair pair(String type, Color c) =>
+        sheets.ThemeColorPair(colorType: type, color: _colorStyle(c));
+    return sheets.Request(
+      updateSpreadsheetProperties: sheets.UpdateSpreadsheetPropertiesRequest(
+        properties: sheets.SpreadsheetProperties(
+          spreadsheetTheme: sheets.SpreadsheetTheme(
+            primaryFontFamily: 'Arial',
+            themeColors: [
+              pair('TEXT', const Color(0xFF000000)),
+              pair('BACKGROUND', const Color(0xFFFFFFFF)),
+              for (final (i, c) in accents.indexed)
+                pair('ACCENT${i + 1}', c.color),
+              pair('LINK', const Color(0xFF1155CC)),
+            ],
+          ),
+        ),
+        fields: 'spreadsheetTheme',
+      ),
     );
   }
 
@@ -282,8 +360,9 @@ class SheetsSyncService {
         title: '${b.title} · ${formatMoney(l, b.total, home)}',
         pieChart: sheets.PieChartSpec(
           legendPosition: 'RIGHT_LEGEND',
-          pieHole: 0.4,
-          domain: column(1), // 카테고리
+          // 앱 차트와 같은 도넛 구멍 크기.
+          pieHole: 0.46,
+          domain: column(4), // "카테고리 금액" 이름표 (앱 범례처럼)
           series: column(2), // 환산 합계
         ),
       ),

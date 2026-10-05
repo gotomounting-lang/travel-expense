@@ -76,9 +76,10 @@ void main() {
   test('요약 탭: 카테고리별 합계는 큰 순서, 비율은 소수 첫째 자리', () {
     final rows = buildSummaryRows(ko, 'KRW', [trip], expenses);
     expect(rows.length, 4);
-    expect(rows[1].sublist(1), ['기념품', 28200, 71.4]);
-    expect(rows[2].sublist(1), ['음식', 11280, 28.6]);
-    expect(rows[3].sublist(1), ['총 지출', 28200 + 11280, 100]);
+    expect(rows[1].sublist(1, 4), ['기념품', 28200, 71.4]);
+    expect(rows[2].sublist(1, 4), ['음식', 11280, 28.6]);
+    expect(rows[1][4], '기념품  28,200원', reason: '차트 범례에 금액이 보이게');
+    expect(rows[3].sublist(1), ['총 지출', 28200 + 11280, 100, '']);
   });
 
   test('시트 머리글과 카테고리는 고른 언어로 쓴다', () {
@@ -103,8 +104,8 @@ void main() {
       [usd, ...expenses.skip(1)],
     );
     expect(rows.length, 3);
-    expect(rows[1].sublist(1), ['기념품', 28200.0, 100.0]);
-    expect(rows[2].sublist(1), ['총 지출', 28200.0, 100]);
+    expect(rows[1].sublist(1, 4), ['기념품', 28200.0, 100.0]);
+    expect(rows[2].sublist(1), ['총 지출', 28200.0, 100, '']);
   });
 
   test('요약 블록: 시트 파이차트가 쓸 여행별 행 범위', () {
@@ -121,5 +122,9 @@ void main() {
     expect(s.blocks.single.endRow, 3, reason: '총 지출 줄은 차트에 넣지 않는다');
     expect(s.rows[3][1], '총 지출');
     expect(s.blocks.single.total, 28200 + 11280);
+    expect(s.blocks.single.categories, [
+      ExpenseCategory.souvenir,
+      ExpenseCategory.food,
+    ]);
   });
 }
