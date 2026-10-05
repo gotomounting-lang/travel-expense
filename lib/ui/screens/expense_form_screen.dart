@@ -64,11 +64,20 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   );
 
   /// 영수증에서 통화를 확인하지 못했으면 null 로 두고 사용자가 고르게 한다.
+  /// 직접 입력은 이 여행에서 마지막으로 쓴 통화를 미리 고른다 (없으면 비워 둔다).
+  /// 여행 통화는 쓰지 않는다: 여러 나라 여행에는 의미가 없다 (사용자 결정 2026-10-05).
   late String? _currency =
       widget.expense?.currency ??
       (_receipt != null
           ? _receipt.currency ?? _receipt.suggestedCurrency
-          : widget.trip.currency);
+          : _lastUsedCurrency());
+
+  String? _lastUsedCurrency() {
+    final expenses = context.read<AppState>().expensesFor(widget.trip.id)
+      ..sort((a, b) => b.spentAt.compareTo(a.spentAt));
+    return expenses.firstOrNull?.currency;
+  }
+
   late ExpenseCategory _category =
       widget.expense?.category ?? _receipt?.category ?? ExpenseCategory.food;
   late DateTime _spentAt =
@@ -124,7 +133,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
 
   double? get _amountValue => ReceiptParser.parseAmount(
     _amount.text.trim(),
-    decimals: Currency.byCode(_currency ?? widget.trip.currency).decimals,
+    decimals: _currency == null ? 2 : Currency.byCode(_currency!).decimals,
   );
 
   Future<void> _pickDate() async {

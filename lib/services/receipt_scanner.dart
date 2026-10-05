@@ -95,7 +95,8 @@ class ReceiptScanner {
   ) async {
     final image = InputImage.fromFilePath(path);
     final parser = ReceiptParser(
-      tripCurrency: trip.currency,
+      // 여행 통화는 쓰지 않는다 (여러 나라 여행). 영수증 표시와 말로만 정한다.
+      tripCurrency: '',
       tripStart: trip.startDate,
       tripEnd: trip.endDate,
     );
@@ -109,7 +110,7 @@ class ReceiptScanner {
     ReceiptDraft? best;
     var bestScore = -1;
     var bestConfidence = -1.0;
-    final scripts = scriptsFor(trip.currency, homeCurrency);
+    final scripts = scriptsFor('', homeCurrency);
     for (var i = 0; i < scripts.length; i++) {
       final script = scripts[i];
       final lines = await _read(image, script);

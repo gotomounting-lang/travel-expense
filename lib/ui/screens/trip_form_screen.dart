@@ -6,7 +6,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/trip.dart';
 import '../../state/app_state.dart';
 import '../../util/dates.dart';
-import '../widgets/currency_field.dart';
 
 /// 새 여행 만들기 / 여행 정보 수정.
 class TripFormScreen extends StatefulWidget {
@@ -22,9 +21,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _title = TextEditingController(text: widget.trip?.title);
   late final _country = TextEditingController(text: widget.trip?.country);
-  // 새 여행은 통화를 미리 정하지 않는다. (예전 기본값 USD 가 유럽 여행 등에
-  // 그대로 저장되는 일이 있었다.) 고르기 전엔 저장할 수 없다.
-  late String? _currency = widget.trip?.currency;
   late DateTimeRange _range = widget.trip == null
       ? DateTimeRange(
           start: dateOnly(DateTime.now()),
@@ -60,7 +56,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
       id: widget.trip?.id,
       title: _title.text,
       country: _country.text,
-      currency: _currency!,
       startDate: _range.start,
       endDate: _range.end,
     );
@@ -96,12 +91,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
                 labelText: l.countryOptional,
                 hintText: l.countryHint,
               ),
-            ),
-            const SizedBox(height: 12),
-            CurrencyField(
-              label: l.localCurrency,
-              value: _currency,
-              onChanged: (v) => setState(() => _currency = v),
             ),
             const SizedBox(height: 12),
             ListTile(

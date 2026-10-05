@@ -96,7 +96,7 @@ class AppState extends ChangeNotifier {
     String? id,
     required String title,
     required String country,
-    required String currency,
+    String currency = '',
     required DateTime startDate,
     required DateTime endDate,
   }) async {

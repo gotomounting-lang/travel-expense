@@ -50,7 +50,6 @@ List<Object> expenseHeader(AppLocalizations l, String home) => [
 List<Object> tripHeader(AppLocalizations l, String home) => [
   l.colTrip,
   l.colCountry,
-  l.colCurrency,
   l.colStartDate,
   l.colEndDate,
   l.colHomeTotal(home),
@@ -122,7 +121,6 @@ List<List<Object>> buildTripRows(
         return <Object>[
           _text(t.title),
           _text(t.country),
-          t.currency,
           formatYmd(t.startDate),
           formatYmd(t.endDate),
           categoryTotals(mine, home).values.fold<double>(0, (s, v) => s + v),

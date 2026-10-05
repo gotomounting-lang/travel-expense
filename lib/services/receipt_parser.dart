@@ -79,7 +79,8 @@ class ReceiptDraft {
 class ReceiptParser {
   ReceiptParser({required this.tripCurrency, this.tripStart, this.tripEnd});
 
-  /// 여행 기본 통화. 영수증에 통화 표시가 없거나 애매할 때 쓴다.
+  /// 여행 기본 통화. 영수증에 통화 표시가 애매할 때 쓴다. 빈 글자면 없음
+  /// (앱은 여행 통화를 더 이상 받지 않아 빈 글자를 넘긴다).
   final String tripCurrency;
   final DateTime? tripStart;
   final DateTime? tripEnd;
@@ -201,7 +202,9 @@ class ReceiptParser {
           ? tripCurrency
           : european;
     }
-    return RegExp(r'[A-Za-z]{3}').hasMatch(text) ? tripCurrency : null;
+    return tripCurrency.isNotEmpty && RegExp(r'[A-Za-z]{3}').hasMatch(text)
+        ? tripCurrency
+        : null;
   }
 
   /// 낱말 단위로 포함됐는지 ("sst" 가 "assistance" 안에 있는 것은 아님).

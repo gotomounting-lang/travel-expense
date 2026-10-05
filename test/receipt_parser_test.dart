@@ -523,6 +523,15 @@ void main() {
       return d.suggestedCurrency;
     }
 
+    test('여행 통화 없음(앱 기본): 영어 영수증은 추천 없이 사용자가 고른다', () {
+      expect(
+        suggest(['Sample Diner', 'Burger 12.50', 'Total 12.50'], trip: ''),
+        isNull,
+      );
+      expect(suggest(['Beispiel Café', 'Summe 12,50'], trip: ''), 'EUR');
+      expect(suggest(['Minta Kávézó', 'Összesen 2 490'], trip: ''), 'HUF');
+    });
+
     test('일본어 → JPY, 태국어 → THB, 베트남어 → VND', () {
       expect(suggest(['サンプル食堂', 'ラーメン 980', '合計 980']), 'JPY');
       expect(suggest(['ร้านตัวอย่าง', 'รวมทั้งสิ้น 120']), 'THB');

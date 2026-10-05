@@ -69,8 +69,9 @@ void main() {
 
   test('여행 탭: 원화 합계와 건수', () {
     final rows = buildTripRows(ko, 'KRW', [trip], expenses);
-    expect(rows[1][5], 28200 + 11280);
-    expect(rows[1][6], 3);
+    expect(rows.first, isNot(contains('통화')), reason: '여행 통화는 쓰지 않는다');
+    expect(rows[1][4], 28200 + 11280);
+    expect(rows[1][5], 3);
   });
 
   test('요약 탭: 카테고리별 합계는 큰 순서, 비율은 소수 첫째 자리', () {
