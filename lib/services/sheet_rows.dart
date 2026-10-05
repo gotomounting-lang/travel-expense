@@ -198,6 +198,8 @@ List<List<Object>> buildSummaryRows(
         sum == 0 ? 0 : (entry.value * 1000 / sum).round() / 10,
       ]);
     }
+    // 앱 총액 화면처럼 여행마다 총 지출을 맨 아래에 쓴다. (파이차트 범위 밖)
+    if (totals.isNotEmpty) rows.add([_text(t.title), l.totalSpent, sum, 100]);
   }
   return (rows: rows, blocks: blocks);
 }

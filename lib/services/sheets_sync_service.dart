@@ -196,6 +196,7 @@ class SheetsSyncService {
 
   /// 내역·여행 탭 행 높이를 맞추고, 요약 탭의 파이차트를 여행마다 하나씩 다시 그린다.
   /// (행 수가 바뀌므로 앱이 만든 요약 탭의 차트는 지우고 새로 만든다.)
+  /// 시트를 열면 총액과 파이차트가 바로 보이게 요약 탭을 맨 앞에 둔다.
   Future<void> _replaceCharts(
     sheets.SheetsApi api,
     String id,
@@ -215,6 +216,12 @@ class SheetsSyncService {
             if (c.chartId != null) c.chartId!,
     ];
     final requests = <sheets.Request>[
+      sheets.Request(
+        updateSheetProperties: sheets.UpdateSheetPropertiesRequest(
+          properties: sheets.SheetProperties(sheetId: sheetId, index: 0),
+          fields: 'index',
+        ),
+      ),
       // 예전에 여러 줄 메모로 늘어난 행 높이를 글자 한 줄 높이로 되돌린다.
       for (final tab in [SheetTab.expenses, SheetTab.trips])
         sheets.Request(
