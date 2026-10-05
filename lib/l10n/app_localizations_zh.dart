@@ -413,4 +413,58 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get next => '下一步';
+
+  @override
+  String get exportTripSheet => '保存到 Google 表格';
+
+  @override
+  String get exportTripSheetSaving => '正在保存到 Google 表格…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '已保存到“$title”表格';
+  }
+
+  @override
+  String get receiptTotalNotFound => '无法确认收据上的合计金额。请手动输入金额和币种。照片已在分析后删除。';
+
+  @override
+  String get receiptCurrencyNotFound => '无法确认收据上的币种。请核对金额并手动选择币种。照片已在分析后删除。';
+
+  @override
+  String get receiptCurrencySuggested =>
+      '收据上没有币种标记，已按收据语言预选币种。请核对金额和币种。照片已在分析后删除。';
+
+  @override
+  String get currencyRequired => '请选择币种';
+
+  @override
+  String batchTitle(int count) {
+    return '识别到 $count 笔付款';
+  }
+
+  @override
+  String get batchHint => '请选择要保存的记录。点击金额可修改。';
+
+  @override
+  String batchSave(int count) {
+    return '保存所选 $count 笔';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '已保存 $count 笔';
+  }
+
+  @override
+  String get batchOutsideTrip => '不在旅行期间';
+
+  @override
+  String get batchDuplicate => '已保存过';
+
+  @override
+  String get batchNeedsInput => '需确认金额/币种 · 点击金额输入';
+
+  @override
+  String get scanIncomplete => '有付款未能识别。请逐笔手动输入。';
 }

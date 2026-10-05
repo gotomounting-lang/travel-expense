@@ -14,7 +14,9 @@ class Trip {
   final String title;
   final String country;
 
-  /// 여행지 기본 통화. 새 지출 입력 시 기본값으로 쓴다.
+  /// 예전 여행에 저장된 여행지 통화. 새 여행은 비워 둔다.
+  /// 여러 나라를 도는 여행에는 의미가 없어서 앱은 더 이상 쓰지 않는다
+  /// (사용자 결정 2026-10-05). 지출 통화는 영수증 표시로 건마다 정한다.
   final String currency;
   final DateTime startDate;
   final DateTime endDate;

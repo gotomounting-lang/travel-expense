@@ -6,7 +6,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/trip.dart';
 import '../../state/app_state.dart';
 import '../../util/dates.dart';
-import '../widgets/currency_field.dart';
 
 /// 새 여행 만들기 / 여행 정보 수정.
 class TripFormScreen extends StatefulWidget {
@@ -22,7 +21,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _title = TextEditingController(text: widget.trip?.title);
   late final _country = TextEditingController(text: widget.trip?.country);
-  late String _currency = widget.trip?.currency ?? 'USD';
   late DateTimeRange _range = widget.trip == null
       ? DateTimeRange(
           start: dateOnly(DateTime.now()),
@@ -45,6 +43,8 @@ class _TripFormScreenState extends State<TripFormScreen> {
       lastDate: DateTime(DateTime.now().year + 3),
       initialDateRange: _range,
       helpText: AppLocalizations.of(context).tripPeriod,
+      // 직접 타자 입력은 키보드에 '.' 이 없는 기기가 있어 막는다 (달력에서만 고른다).
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
     );
     if (picked != null) setState(() => _range = picked);
   }
@@ -56,7 +56,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
       id: widget.trip?.id,
       title: _title.text,
       country: _country.text,
-      currency: _currency,
       startDate: _range.start,
       endDate: _range.end,
     );
@@ -92,12 +91,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
                 labelText: l.countryOptional,
                 hintText: l.countryHint,
               ),
-            ),
-            const SizedBox(height: 12),
-            CurrencyField(
-              label: l.localCurrency,
-              value: _currency,
-              onChanged: (v) => setState(() => _currency = v),
             ),
             const SizedBox(height: 12),
             ListTile(

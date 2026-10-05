@@ -438,4 +438,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get next => 'Next';
+
+  @override
+  String get exportTripSheet => 'Save to Google Sheets';
+
+  @override
+  String get exportTripSheetSaving => 'Saving to Google Sheets…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return 'Saved to the \'$title\' sheet';
+  }
+
+  @override
+  String get receiptTotalNotFound =>
+      'Couldn\'t confirm the total on this receipt. Please enter the amount and currency yourself. The photo was deleted after analysis.';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'Couldn\'t confirm the currency on this receipt. Check the amount and choose the currency yourself. The photo was deleted after analysis.';
+
+  @override
+  String get receiptCurrencySuggested =>
+      'The receipt shows no currency, so we picked the one that matches the receipt\'s language. Check the amount and currency. The photo was deleted after analysis.';
+
+  @override
+  String get currencyRequired => 'Choose a currency';
+
+  @override
+  String batchTitle(int count) {
+    return '$count payments found';
+  }
+
+  @override
+  String get batchHint => 'Choose which to save. Tap an amount to edit it.';
+
+  @override
+  String batchSave(int count) {
+    return 'Save $count selected';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return 'Saved $count expenses';
+  }
+
+  @override
+  String get batchOutsideTrip => 'Outside trip dates';
+
+  @override
+  String get batchDuplicate => 'Already saved';
+
+  @override
+  String get batchNeedsInput => 'Check amount/currency · tap the amount';
+
+  @override
+  String get scanIncomplete =>
+      'Some payments couldn\'t be read. Please enter each payment manually.';
 }

@@ -3,12 +3,21 @@ import '../models/currency.dart';
 
 /// OCR 이 읽은 한 줄과 화면 위치. 같은 높이의 줄을 한 행으로 묶는 데 쓴다.
 class OcrLine {
-  const OcrLine(this.text, {this.top = 0, this.bottom = 0, this.left = 0});
+  const OcrLine(
+    this.text, {
+    this.top = 0,
+    this.bottom = 0,
+    this.left = 0,
+    this.confidence,
+  });
 
   final String text;
   final double top;
   final double bottom;
   final double left;
+
+  /// 글자 모델이 이 줄을 얼마나 확신하는지 (0~1, 안드로이드만).
+  final double? confidence;
 
   double get centerY => (top + bottom) / 2;
   double get height => (bottom - top).abs();
@@ -34,9 +43,14 @@ class ReceiptDraft {
     this.category,
     this.items = const [],
     this.paymentMethod = '',
+    this.totalByWord = false,
+    this.suggestedCurrency,
   });
 
+  /// 합계 금액. 합계 단어 줄에서 읽지 못했으면 null (사용자가 직접 입력).
   final double? amount;
+
+  /// 영수증에 찍힌 통화. 통화 표시를 찾지 못했으면 null (사용자가 직접 고름).
   final String? currency;
 
   /// 날짜(와 읽을 수 있으면 시간). 못 읽으면 null.
@@ -48,6 +62,14 @@ class ReceiptDraft {
   /// 카드 알림에서 읽은 카드 이름 (영수증에서는 비어 있음).
   final String paymentMethod;
 
+  /// 합계 단어("TOTAL", "합계"...) 가 있는 줄에서 금액을 읽었는지.
+  /// 아니면 가장 큰 금액으로 짐작한 것이다.
+  final bool totalByWord;
+
+  /// 영수증에 통화 표시가 없을 때 영수증 언어로 미리 골라 둘 통화 (확정 아님,
+  /// 사용자가 확인한다). [currency] 가 있으면 쓰지 않는다.
+  final String? suggestedCurrency;
+
   bool get isEmpty => amount == null && date == null && merchant.isEmpty;
 }
 
@@ -57,7 +79,8 @@ class ReceiptDraft {
 class ReceiptParser {
   ReceiptParser({required this.tripCurrency, this.tripStart, this.tripEnd});
 
-  /// 여행 기본 통화. 영수증에 통화 표시가 없거나 애매할 때 쓴다.
+  /// 여행 기본 통화. 영수증에 통화 표시가 애매할 때 쓴다. 빈 글자면 없음
+  /// (앱은 여행 통화를 더 이상 받지 않아 빈 글자를 넘긴다).
   final String tripCurrency;
   final DateTime? tripStart;
   final DateTime? tripEnd;
@@ -67,21 +90,41 @@ class ReceiptParser {
     if (rows.isEmpty) return const ReceiptDraft();
     final all = rows.join('\n');
 
-    final currency = detectCurrency(all);
+    var currency = detectCurrency(all);
+    // 영수증에 통화 표시(₩, ￦, 원, \$, RM...)가 있어야 통화를 확인한 것으로 본다.
+    // 다만 한국어 영수증은 표시가 없어도 원화다 (사용자 결정 2026-10-05).
+    var currencyFound = _currenciesIn(all).isNotEmpty;
+    if (!currencyFound && isKoreanText(all)) {
+      currency = 'KRW';
+      currencyFound = true;
+    }
     final decimals = Currency.byCode(currency).decimals;
     final amount = _findTotal(rows, decimals);
+    // 합계 줄에 통화 표시가 있으면 그것이 실제 결제 통화다
+    // (유로 환산 금액이 함께 찍힌 체코 영수증 등).
+    final onTotal = _currenciesIn(_totalRow ?? '');
+    if (onTotal.isNotEmpty) {
+      currency = onTotal.contains(tripCurrency) ? tripCurrency : onTotal.first;
+    }
     final date = _findDate(all, currency);
     final merchant = _findMerchant(rows);
     final items = _findItems(rows, decimals, amount);
     final category = guessCategory([merchant, ...items.map((i) => i.name)]);
 
+    // 합계 단어 줄에서 읽은 금액만 쓴다. 짐작한 금액이나 통화는 비워 두고
+    // 사용자가 직접 입력하게 한다.
+    final byWord = _totalRow != null;
     return ReceiptDraft(
-      amount: amount,
-      currency: currency,
+      amount: byWord ? amount : null,
+      currency: currencyFound ? currency : null,
+      suggestedCurrency: currencyFound
+          ? null
+          : currencyByLanguage(all, tripCurrency),
       date: date,
       merchant: merchant,
       category: category,
       items: items,
+      totalByWord: byWord,
     );
   }
 
@@ -106,13 +149,143 @@ class ReceiptParser {
       }
       rows.add([line]);
     }
-    return [
+    final joined = [
       for (final row in rows)
         (row..sort((a, b) => a.left.compareTo(b.left)))
             .map((l) => l.text.trim())
             .join(' '),
     ];
+    final hangul = RegExp(r'[가-힣]').allMatches(joined.join()).length >= 4;
+    return hangul ? joined.map(fixWonSign).toList() : joined;
   }
+
+  /// 글자 모델은 "₩1,700" 의 ₩ 를 "W" 로 읽곤 한다. 한글 화면·영수증에서
+  /// 숫자 바로 앞의 홀로 선 W 는 ₩ 로 되돌린다 ("W 1700" → "₩1700").
+  static String fixWonSign(String text) =>
+      text.replaceAllMapped(RegExp(r'(?<![A-Za-z0-9])W\s?(?=\d)'), (_) => '₩');
+
+  /// 통화 표시가 없는 영수증에서 영수증 언어로 추천할 통화
+  /// (사용자 결정 2026-10-05). 영어처럼 여러 나라에서 쓰는 언어는 여행지
+  /// 통화를 추천한다. 한국어 영수증은 추천이 아니라 원화로 확정한다.
+  static String? currencyByLanguage(String text, String tripCurrency) {
+    int count(String pattern) => RegExp(pattern).allMatches(text).length;
+    final lower = text.toLowerCase();
+    bool has(List<String> words) => _hasWord(lower, words);
+    const chinese = ['CNY', 'TWD', 'HKD', 'MOP'];
+    if (count(r'[가-힣]') >= 4) return 'KRW';
+    if (count(r'[぀-ヿ]') >= 2) return 'JPY';
+    if (count(r'[฀-๿]') >= 4) return 'THB';
+    if (count(r'[က-႟]') >= 4) return 'MMK';
+    if (count(r'[ऀ-ॿ]') >= 4) return 'INR';
+    if (count(r'[Ѐ-ӿ]') >= 4) {
+      return count(r'[ӨөҮү]') > 0 ? 'MNT' : 'RUB';
+    }
+    if (count(r'[一-鿿]') >= 2) {
+      if (chinese.contains(tripCurrency)) return tripCurrency;
+      // 번체(臺灣·香港)면 대만 달러, 아니면 위안.
+      return count(r'[們總計價實門發這個錢員號]') > 0 ? 'TWD' : 'CNY';
+    }
+    if (count(r'[ạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹđĐ]') >= 2) {
+      return 'VND';
+    }
+    if (has(['kabuuan', 'salamat po'])) return 'PHP';
+    if (has(['total bayar', 'kembalian', 'ppn', 'terima kasih'])) {
+      return tripCurrency == 'MYR' ? 'MYR' : 'IDR';
+    }
+    if (has(['jumlah', 'sst', 'baki', 'tunai'])) return 'MYR';
+    // 유럽: 같은 말을 여러 나라가 쓰므로(스위스의 독일어·프랑스어, 오스트리아…)
+    // 유럽 통화로 여행 중이면 여행지 통화가 먼저. 아니면 말에 맞는 나라 통화.
+    // 유로를 쓰지 않는 체코·헝가리·폴란드·루마니아·북유럽은 자국 통화.
+    final european = _europeanByLanguage(lower, count);
+    if (european != null) {
+      return _europeanCurrencies.contains(tripCurrency)
+          ? tripCurrency
+          : european;
+    }
+    return tripCurrency.isNotEmpty && RegExp(r'[A-Za-z]{3}').hasMatch(text)
+        ? tripCurrency
+        : null;
+  }
+
+  /// 낱말 단위로 포함됐는지 ("sst" 가 "assistance" 안에 있는 것은 아님).
+  static bool _hasWord(String lower, List<String> words) => words.any(
+    (w) => RegExp(
+      '(?<![\\p{L}])${RegExp.escape(w)}(?![\\p{L}])',
+      unicode: true,
+    ).hasMatch(lower),
+  );
+
+  static const _europeanCurrencies = [
+    'EUR',
+    'GBP',
+    'CHF',
+    'CZK',
+    'HUF',
+    'PLN',
+    'RON',
+    'SEK',
+    'DKK',
+    'NOK',
+    'TRY',
+  ];
+
+  /// 유럽 언어 영수증의 그 나라 통화. 유럽 말이 아니면 null.
+  static String? _europeanByLanguage(String lower, int Function(String) count) {
+    bool has(List<String> words) => _hasWord(lower, words);
+    if (has(['celkem', 'k úhradě', 'dph', 'děkujeme', 'hotově']) ||
+        count(r'[ěřůĚŘŮ]') >= 2) {
+      return 'CZK';
+    }
+    if (has(['összesen', 'fizetendő', 'végösszeg', 'áfa', 'köszönjük']) ||
+        count(r'[őűŐŰ]') >= 1) {
+      return 'HUF';
+    }
+    if (has(['razem', 'do zapłaty', 'ptu', 'paragon', 'dziękujemy']) ||
+        count(r'[łąęśźżńŁĄĘŚŹŻŃ]') >= 2) {
+      return 'PLN';
+    }
+    if (has(['total de plată', 'bon fiscal', 'mulțumim']) ||
+        count(r'[țșȚȘ]') >= 2) {
+      return 'RON';
+    }
+    if (has(['toplam', 'kdv', 'teşekkür']) || count(r'[ğışĞİŞ]') >= 2) {
+      return 'TRY';
+    }
+    if (has(['att betala', 'kvitto'])) return 'SEK';
+    if (has(['å betale', 'mva', 'kvittering'])) return 'NOK';
+    if (has(['at betale', 'i alt', 'kvittering'])) return 'DKK';
+    if (has([
+      'summe',
+      'mwst',
+      'zu zahlen',
+      'gesamt',
+      'betrag',
+      'rückgeld',
+      'tva',
+      'ttc',
+      'à payer',
+      'montant',
+      'merci',
+      'totale',
+      'iva',
+      'importe',
+      'totaal',
+      'btw',
+      'ukupno',
+      'σύνολο',
+    ])) {
+      return 'EUR';
+    }
+    return null;
+  }
+
+  /// 한국어로 쓰인 영수증인지 (한글 10자 이상).
+  static bool isKoreanText(String text) =>
+      RegExp(r'[가-힣]').allMatches(text).length >= 10;
+
+  /// 한글이 있는 글자 전체에 [fixWonSign] 을 적용한다.
+  static String fixWonSignIfKorean(String text) =>
+      RegExp(r'[가-힣]').allMatches(text).length >= 4 ? fixWonSign(text) : text;
 
   // ---- 금액 ----
 
@@ -139,51 +312,196 @@ class ReceiptParser {
     return double.tryParse(s.replaceAll(RegExp(r'[.,]'), ''));
   }
 
+  /// 합계를 뜻하는 말 (나라별 영수증 표기). 앞쪽 목록일수록 최종 합계에 가깝다.
   static const _totalWords = [
-    'grand total',
-    'total due',
-    'amount due',
-    'total',
-    'amount',
-    'balance due',
-    'summe',
-    'gesamt',
-    'totale',
-    'importe',
-    'montant',
-    '合計',
-    '合计',
-    '総計',
-    '总计',
-    'お会計',
-    'ご請求',
-    '应付',
-    '實付',
-    '实付',
-    '총액',
-    '합계',
-    '총 금액',
+    // 영어
+    'grand total', 'total due', 'total amount', 'amount due', 'balance due',
+    'total to pay', 'total', 'to pay',
+    // 한국어
+    '총합계', '판매총액', '총판매금액', '총결제금액', '총결재금액', '결제금액',
+    '결재금액', '결제 금액', '승인금액', '승인 금액', '청구금액', '받을금액',
+    '사용금액', '사용 금액', '이용금액', '거래금액',
+    // 나라별 카드전표의 결제 금액
+    'sale amount', 'purchase amount', 'amount paid', 'total amount paid',
+    'ご利用金額', 'お支払金額', 'お支払い金額', '利用金額', '決済金額',
+    '消费金额', '消費金額', '交易金额', '交易金額', '支付金额', '实付金额',
+    'số tiền thanh toán', 'tổng thanh toán',
+    'сумма покупки', 'сумма оплаты',
+    'zahlbetrag', 'kartenzahlung',
+    'udleveret til kunde', 'at betale', 'fizetendo',
+    'montant payé', 'montant ttc',
+    'total bayar', 'total belanja', 'jumlah bayaran', 'jumlah dibayar',
+    'kabuuang halaga',
+    'нийт төлөх',
+    'ပေးချေငွေ',
+    'भुगतान राशि',
+    '총액', '총 금액', '총금액', '합계', '합 계',
+    // 일본어
+    '合計', '合 計', '総合計', '総計', 'お買上計', 'お買上げ計', 'ご請求', 'お会計',
+    'お支払', '税込合計',
+    // 중국어
+    '合计', '总计', '總計', '总额', '總額', '总金额', '總金額', '应付', '應付',
+    '应收', '實付', '实付', '实收', '實收', '小票金额',
+    // 동남아
+    'tổng cộng', 'tổng tiền', 'tổng', 'thanh toán', 'thành tiền',
+    'รวมทั้งสิ้น', 'ยอดรวม', 'รวมเงิน', 'รวม', 'jumlah besar', 'jumlah',
+    'kabuuan',
+    // 유럽
+    'gesamtbetrag', 'gesamt', 'summe', 'zu zahlen', 'endbetrag',
+    'totale complessivo', 'totale', 'total ttc', 'net à payer', 'à payer',
+    'importe total', 'total a pagar', 'valor total', 'a pagar',
+    'totaal', 'te betalen', 'totalt', 'att betala', 'i alt', 'å betale',
+    'yhteensä', 'celkem', 'k úhradě', 'razem', 'do zapłaty', 'suma',
+    'összesen', 'végösszeg', 'fizetendő', 'ukupno', 'za plaćanje',
+    'total de plată', 'σύνολο', 'πληρωτέο', 'итого', 'всего', 'к оплате',
+    'toplam', 'genel toplam',
+    // 몽골·미얀마·인도
+    'нийт дүн', 'нийт', 'төлөх', 'စုစုပေါင်း', 'ပေးရန်', 'कुल योग', 'कुल राशि',
+    // 중동·남아시아
+    'الإجمالي', 'المجموع', 'סה"כ', 'कुल',
+    // 그 밖의 "금액" (합계 단어가 없을 때만 쓴다)
+    'amount', 'montant', 'importe', 'importo', 'betrag', 'сумма', 'số tiền',
+    'halaga', 'дүн', 'राशि', 'ငွေပမာဏ', '金额', '金額',
+  ];
+
+  /// 합계 중에서도 실제로 낸(카드로 결제한) 금액을 뜻하는 말. 할인 전 합계와
+  /// 결제금액이 다르면 이쪽을 쓴다.
+  static const _paidWords = [
+    'udleveret til kunde',
     '결제금액',
+    '결재금액',
+    '결제 금액',
+    '승인금액',
+    '승인 금액',
+    '사용금액',
+    '사용 금액',
+    '이용금액',
+    '청구금액',
     '받을금액',
-    'tổng',
+    '총결제금액',
+    '총결재금액',
+    'amount paid',
+    'total amount paid',
+    'amount due',
+    'total due',
+    'balance due',
+    'total to pay',
+    'to pay',
+    'ご利用金額',
+    'お支払金額',
+    'お支払い金額',
+    'お支払',
+    'ご請求',
+    '決済金額',
+    '实付',
+    '實付',
+    '实收',
+    '實收',
+    '应付',
+    '應付',
+    '支付金额',
+    '消费金额',
+    '消費金額',
+    'số tiền thanh toán',
+    'tổng thanh toán',
     'thanh toán',
-    'รวม',
+    'к оплате',
+    'сумма оплаты',
+    'сумма покупки',
+    'zu zahlen',
+    'zahlbetrag',
+    'kartenzahlung',
+    'net à payer',
+    'à payer',
+    'montant payé',
+    'total a pagar',
+    'a pagar',
+    'te betalen',
+    'att betala',
+    'å betale',
+    'k úhradě',
+    'do zapłaty',
+    'fizetendő',
+    'za plaćanje',
+    'πληρωτέο',
+    'total bayar',
+    'jumlah dibayar',
+    'jumlah bayaran',
+    'нийт төлөх',
+    'төлөх',
+    'ပေးချေငွေ',
+    'ပေးရန်',
+    'भुगतान राशि',
+  ];
+
+  /// "합계"가 아니라 그보다 약한 "금액" 단어. 진짜 합계 단어가 있으면 무시한다.
+  static const _weakTotalWords = [
+    'amount',
+    'montant',
+    'importe',
+    'importo',
+    'betrag',
+    'сумма',
+    'số tiền',
+    'halaga',
+    'дүн',
+    'राशि',
+    'ငွေပမာဏ',
+    '金额',
+    '金額',
     'jumlah',
+    'รวม',
+    'tổng',
+    'suma',
+    'a pagar',
+    'to pay',
   ];
 
   static const _notTotalWords = [
     'subtotal',
     'sub total',
     'sub-total',
+    'sous-total',
+    'subtotale',
+    'zwischensumme',
+    'tussentotaal',
+    'промежуточный',
     'tax',
     'vat',
     'gst',
+    'mwst',
+    'ust',
+    'tva',
+    'iva',
+    'btw',
+    'moms',
+    'dph',
+    'ptu',
+    'áfa',
+    'kdv',
+    'ндс',
+    'φπα',
+    'ppn',
+    'thuế',
     'change',
     'cash',
+    'tendered',
     'tip',
+    'gratuity',
     'discount',
     'points',
     'saving',
+    'saved',
+    'rückgeld',
+    'gegeben',
+    'monnaie',
+    'rendu',
+    'cambio',
+    'resto',
+    'wechselgeld',
+    'sdacha',
+    'reszta',
+    'сдача',
     '小計',
     '小计',
     '税',
@@ -191,16 +509,60 @@ class ReceiptParser {
     'おつり',
     '釣銭',
     '找零',
+    '找赎',
     '现金',
     '現金',
     '预付',
     'お預',
     '預り',
+    '소계',
     '부가세',
+    '과세',
+    '면세',
     '거스름',
     '받은금액',
+    '승인번호',
+    '카드번호',
+    '주문번호',
+    '가맹점번호',
+    '사업자',
+    'approval',
+    'auth code',
+    'auth no',
+    'card no',
+    '承認番号',
+    'カード番号',
+    '伝票番号',
+    '授权号',
+    '授權號',
+    '卡号',
+    '卡號',
+    'mã giao dịch',
+    'số thẻ',
+    'код авторизации',
+    'номер карты',
+    'genehmigungsnr',
+    'kartennr',
+    'autorisation',
+    'n° carte',
+    'kode otorisasi',
+    'no. kartu',
+    'no. kad',
     '할인',
+    '포인트',
     'tiền thừa',
+    'sukli',
+    'buwis',
+    'cukai',
+    'pajak',
+    'जीएसटी',
+    'хариулт',
+    'нөат',
+    'tiền khách đưa',
+    'เงินทอน',
+    'ภาษี',
+    'kembalian',
+    'tunai',
   ];
 
   bool _hasAny(String row, List<String> words) {
@@ -222,41 +584,168 @@ class ReceiptParser {
     return re.hasMatch(lowerText);
   }
 
-  List<double> _amountsIn(String row, int decimals) {
+  /// 띄어 쓴 천 단위 금액 (체코·폴란드 등: "2 118 Kč").
+  static final _spacedNumber = RegExp(
+    r'(?<![\d.,])\d{1,3}(?:[ \u00a0]\d{3})+(?:[.,]\d{1,2})?(?![\d.,])',
+  );
+
+  static final _hyphenNumber = RegExp(r'\d+(?:[ ]?-[ ]?\d+)+');
+
+  List<double> _amountsIn(String row, int decimals, {bool spaced = false}) {
     // 날짜·시간·전화번호처럼 보이는 부분은 빼고 숫자를 찾는다.
     final cleaned = row
         .replaceAll(_dateLike, ' ')
         .replaceAll(RegExp(r'\b\d{1,2}:\d{2}(:\d{2})?\b'), ' ')
-        .replaceAll(RegExp(r'\d{2,4}-\d{3,4}-\d{4}'), ' ');
+        // 전화번호·사업자번호처럼 '-' 로 이어진 숫자 ("201-81- 21515").
+        .replaceAll(_hyphenNumber, ' ');
+    // 천 단위 구분 없이 7자리 넘게 이어진 숫자는 승인번호·사업자번호다
+    // (금액이면 "1,000,000" 처럼 찍힌다).
+    final noIds = cleaned.replaceAll(RegExp(r'(?<![\d.,])\d{7,}(?![\d])'), ' ');
+    if (spaced) {
+      final m = _spacedNumber.allMatches(noIds).lastOrNull;
+      final v = m == null ? null : parseAmount(m[0]!, decimals: decimals);
+      if (v != null && v > 0) return [v];
+    }
     return [
-      for (final m in _number.allMatches(cleaned))
+      for (final m in _number.allMatches(noIds))
         if (parseAmount(m.group(0)!, decimals: decimals) case final v?)
           if (v > 0) v,
     ];
   }
 
-  double? _findTotal(List<String> rows, int decimals) {
+  /// 금액·통화 표시 말고 다른 글자가 거의 없는 행 (예: "\$10.65", "623.00 CZK").
+  static bool _isAmountOnly(String row) {
+    final letters = row
+        .replaceAll(RegExp(r'\b[A-Z]{3}\b'), '')
+        .replaceAll(RegExp(r'Kč|zł|Ft|円|元|원', caseSensitive: false), '')
+        .replaceAll(RegExp(r'[^\p{L}]', unicode: true), '');
+    return letters.length <= 2 && RegExp(r'\d').hasMatch(row);
+  }
+
+  /// 합계 금액을 읽은 줄 (합계 단어 줄, 금액이 옆 줄이면 그 줄까지).
+  String? _totalRow;
+
+  /// OCR 이 자주 틀리는 합계 표기를 바로잡는다 ("Totai", "T0TAL" → total)
+  /// "Incl GST" 처럼 세금 포함을 뜻하는 말은 세금 줄이 아니므로 지운다.
+  /// 한글은 글자 사이 띄어쓰기를 붙이고 ("합 계" "결 제 금 액"), 흐리게 찍혀
+  /// 앞 글자가 빠지거나 틀린 "제금액" "곁제금액" 을 결제금액으로 본다.
+  static String _normalizeTotalRow(String row) => row
+      .replaceAllMapped(RegExp(r'([가-힣])[  ]+(?=[가-힣])'), (m) => m[1]!)
+      .replaceAll(RegExp(r'[결곁걸겔겸]?[제재]금액'), '결제금액')
+      .replaceAll(RegExp(r'\bt[o0]ta[il1|]\b', caseSensitive: false), 'total')
+      .replaceAll(
+        RegExp(
+          r'\b(?:incl|inkl|including|inclusive|included|incl\.)\.?\s*(?:of\s+)?'
+          r'(?:[g6]st|vat|tax|mwst|ust|tva|iva|ppn|sst|btw|moms)\b',
+          caseSensitive: false,
+        ),
+        ' ',
+      );
+
+  double? _findTotal(List<String> rawRows, int decimals) {
+    _totalRow = null;
+    final rows = rawRows.map(_normalizeTotalRow).toList();
     // 1) 합계 키워드가 있는 행의 마지막 금액. 아래쪽 행(최종 합계)일수록 우선.
-    double? best;
+    // 진짜 합계 단어가 있는 행이 하나라도 있으면 "금액" 같은 약한 단어 행은 뺀다.
+    bool strong(String row) => _totalWords
+        .where((w) => !_weakTotalWords.contains(w))
+        .any((w) => containsWord(row.toLowerCase(), w));
+    final hasStrong = rows.any((r) => strong(r) && !_hasAny(r, _notTotalWords));
+    final found = <(double, String, bool)>[];
     for (var i = 0; i < rows.length; i++) {
       final row = rows[i];
       if (!_hasAny(row, _totalWords) || _hasAny(row, _notTotalWords)) continue;
-      var amounts = _amountsIn(row, decimals);
-      // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 다음 행을 본다.
-      if (amounts.isEmpty && i + 1 < rows.length) {
-        amounts = _amountsIn(rows[i + 1], decimals);
+      if (hasStrong && !strong(row)) continue;
+      var amounts = _amountsIn(row, decimals, spaced: true);
+      var amountRow = row;
+      // 키워드와 금액이 줄바꿈으로 나뉜 경우 바로 아래·바로 위 행을 본다.
+      // 둘 다 금액만 있는 행이면 큰 쪽 (기울어진 사진에서 합계 아래 "끝전 2 Ft"
+      // 같은 작은 금액이 먼저 잡히지 않게). 다른 글자가 섞인 행("Claude Opus
+      // 4.5")은 금액만 있는 행이 아니다.
+      if (amounts.isEmpty) {
+        final near = [
+          for (final j in [i + 1, i - 1])
+            if (j >= 0 && j < rows.length && _isAmountOnly(rows[j]))
+              (j, _amountsIn(rows[j], decimals, spaced: true)),
+        ].where((n) => n.$2.isNotEmpty).toList();
+        if (near.isNotEmpty) {
+          final pick = near.reduce((a, b) => b.$2.last > a.$2.last ? b : a);
+          amounts = pick.$2;
+          amountRow = '$row ${rows[pick.$1]}';
+        }
       }
       if (amounts.isEmpty) continue;
-      final v = amounts.last;
-      if (best == null || v >= best) best = v;
+      found.add((amounts.last, amountRow, _hasAny(row, _paidWords)));
     }
-    if (best != null) return best;
+    if (found.isNotEmpty) {
+      // 실제로 낸 금액(결제금액·사용금액·お支払...)이 있으면 그중 맨 아래 것.
+      // 없으면 합계 줄 금액들이 모두 같을 때만 그 금액. 서로 다르면 어느 것이
+      // 총액인지 확실하지 않으니 비워 두고 사용자가 직접 입력한다.
+      final paid = found.where((f) => f.$3);
+      final pick = paid.isNotEmpty
+          ? paid.last
+          : found.map((f) => f.$1).toSet().length == 1
+          ? found.last
+          : null;
+      if (pick == null) return null;
+      _totalRow = pick.$2;
+      return pick.$1;
+    }
 
-    // 2) 키워드가 없으면 (거스름돈·현금 행을 뺀) 가장 큰 금액.
-    final candidates = [
+    // 2) 한글 영수증에서 "원"이 붙은 금액 ("7,900원")은 결제금액이다.
+    // 포인트·거스름돈 줄을 뺀 "원" 금액이 하나로 모일 때만 쓴다.
+    if (RegExp(r'[가-힣]').allMatches(rows.join()).length >= 4) {
+      final won = <double>{};
+      String? wonRow;
+      for (final row in rows) {
+        if (_hasAny(row, _notTotalWords)) continue;
+        for (final m in RegExp(
+          // 감열지 점 글씨는 쉼표가 점이나 띄어쓰기로 읽히기도 한다
+          // ("7.900원", "7, 900원"). 원화는 소수점이 없다.
+          r'(?<![\d.,])(\d{1,3}(?:[.,] ?\d{3})+|\d+)[  ]?원',
+        ).allMatches(row)) {
+          final v = parseAmount(
+            m[1]!.replaceAll(RegExp(r'[., ]'), ''),
+            decimals: 0,
+          );
+          if (v == null || v <= 0) continue;
+          won.add(v);
+          wonRow ??= row;
+        }
+      }
+      if (won.length == 1) {
+        _totalRow = wonRow;
+        return won.single;
+      }
+    }
+
+    // 3) 키워드가 없으면 (거스름돈·현금 행을 뺀) 가장 큰 금액.
+    // 사업자번호("1088962-P") 같은 글자 붙은 숫자는 금액이 아니다.
+    // 소수 통화에서 소수점 있는 금액이 있으면 그것만 본다.
+    final rowsForAmounts = [
       for (final row in rows)
-        if (!_hasAny(row, _notTotalWords)) ..._amountsIn(row, decimals),
+        if (!_hasAny(row, _notTotalWords))
+          row
+              .replaceAll(_hyphenNumber, ' ')
+              .replaceAll(
+                RegExp(r'[\p{L}\d]*\d[-\p{L}][\p{L}\d-]*', unicode: true),
+                ' ',
+              ),
+    ];
+    var candidates = [
+      for (final row in rowsForAmounts) ..._amountsIn(row, decimals),
     ].where((v) => v < 100000000).toList();
+    if (decimals > 0) {
+      final withCents = [
+        for (final row in rowsForAmounts)
+          for (final m in RegExp(
+            r'(?<![\d.,])\d[\d,.]*[.,]\d{2}(?![\d.,])',
+          ).allMatches(row))
+            if (parseAmount(m[0]!, decimals: decimals) case final v?)
+              if (v > 0 && v < 100000000) v,
+      ];
+      if (withCents.isNotEmpty) candidates = withCents;
+    }
     if (candidates.isEmpty) return null;
     candidates.sort();
     return candidates.last;
@@ -264,50 +753,112 @@ class ReceiptParser {
 
   // ---- 통화 ----
 
+  static const _symbols = {
+    'NT\$': 'TWD',
+    'HK\$': 'HKD',
+    'S\$': 'SGD',
+    'A\$': 'AUD',
+    'NZ\$': 'NZD',
+    'US\$': 'USD',
+    'C\$': 'CAD',
+    'R\$': 'BRL',
+    'MOP\$': 'MOP',
+    'RMB': 'CNY',
+    'KČ': 'CZK',
+    'ZŁ': 'PLN',
+    '€': 'EUR',
+    '£': 'GBP',
+    '₩': 'KRW',
+    '￦': 'KRW',
+    '฿': 'THB',
+    '₫': 'VND',
+    '₱': 'PHP',
+    '₹': 'INR',
+    '₺': 'TRY',
+    '₽': 'RUB',
+    '₮': 'MNT',
+    '₸': 'KZT',
+    '円': 'JPY',
+    '元': 'CNY',
+    'บาท': 'THB',
+    'ĐỒNG': 'VND',
+  };
+
+  /// 영수증에 찍힌 통화. 유로(€, EUR) 표시가 있으면 유로, 다음은 여행지(현지)
+  /// 통화, 그다음 처음 나온 각국 통화 표시 (사용자 결정 2026-10-05).
+  /// 합계 줄에 찍힌 표시는 이보다 우선한다 (parse 참고).
   String detectCurrency(String text) {
+    final found = _currenciesIn(text);
+    if (found.contains('EUR')) return 'EUR';
+    if (found.contains(tripCurrency)) return tripCurrency;
+    return found.isEmpty ? tripCurrency : found.first;
+  }
+
+  /// 글자 속 통화 코드·기호를 나온 순서대로.
+  List<String> _currenciesIn(String text) {
     final upper = text.toUpperCase();
-    final codes = RegExp(r'\b([A-Z]{3})\b').allMatches(upper).map((m) => m[1]!);
-    for (final code in codes) {
-      if (Currency.common.any((c) => c.code == code)) return code;
+    final found = <String>[];
+    for (final m in RegExp(r'\b([A-Z]{3})\b').allMatches(upper)) {
+      final code = m[1]!;
+      if (Currency.common.any((c) => c.code == code)) found.add(code);
     }
-    const symbols = {
-      'NT\$': 'TWD',
-      'HK\$': 'HKD',
-      'S\$': 'SGD',
-      'A\$': 'AUD',
-      'NZ\$': 'NZD',
-      'US\$': 'USD',
-      'C\$': 'CAD',
-      '€': 'EUR',
-      '£': 'GBP',
-      '₩': 'KRW',
-      '฿': 'THB',
-      '₫': 'VND',
-      '₱': 'PHP',
-      '円': 'JPY',
-      '元': 'CNY',
-      '원': 'KRW',
-      'RM': 'MYR',
-      'RP': 'IDR',
-      'บาท': 'THB',
-    };
-    for (final e in symbols.entries) {
+    for (final e in _symbols.entries) {
       if (upper.contains(e.key)) {
-        // '元' 은 대만·홍콩 영수증에도 쓰인다.
-        if (e.key == '元' && ['TWD', 'HKD'].contains(tripCurrency)) {
-          return tripCurrency;
+        // '元' 은 대만·홍콩·마카오 영수증에도 쓰인다.
+        if (e.key == '元' && ['TWD', 'HKD', 'MOP'].contains(tripCurrency)) {
+          found.add(tripCurrency);
+        } else {
+          found.add(e.value);
         }
-        return e.value;
       }
     }
+    // 'RM 12.50', 'Rp 25.000' 처럼 숫자 바로 앞의 표시만 본다 ("TERMINAL" 의 RM 은 아님).
+    if (RegExp(r'\bRM\s?\d').hasMatch(upper)) found.add('MYR');
+    // '원' 은 금액 단위로 쓰일 때만 ("17,600원", "금액(원)", "단위: 원").
+    // "회원", "원두" 의 원은 아님.
+    if (RegExp(r'\d\s?원|\(\s*원\s*\)|단위\s*[:：]?\s*원').hasMatch(text)) {
+      found.add('KRW');
+    }
+    if (RegExp(r'\bRP\.?\s?\d').hasMatch(upper)) found.add('IDR');
+    // 유럽 각국 통화: 숫자 앞뒤의 Ft(헝가리), lei(루마니아), kr(북유럽).
+    if (RegExp(r'\d\s?FT\b|\bFT\s?\d').hasMatch(upper)) found.add('HUF');
+    if (RegExp(r'\d\s?LEI\b|\bLEI\s?\d').hasMatch(upper)) found.add('RON');
+    if (RegExp(r'\d\s?KR\b\.?|\bKR\.?\s?\d').hasMatch(upper)) {
+      const kroner = ['SEK', 'NOK', 'DKK'];
+      final lang = _europeanByLanguage(
+        text.toLowerCase(),
+        (p) => RegExp(p).allMatches(text).length,
+      );
+      found.add(
+        kroner.contains(tripCurrency)
+            ? tripCurrency
+            : kroner.contains(lang)
+            ? lang!
+            : 'SEK',
+      );
+    }
     if (text.contains('¥') || text.contains('￥')) {
-      return tripCurrency == 'CNY' ? 'CNY' : 'JPY';
+      found.add(tripCurrency == 'CNY' ? 'CNY' : 'JPY');
     }
     if (text.contains('\$')) {
-      const dollars = ['USD', 'TWD', 'HKD', 'SGD', 'AUD', 'NZD', 'CAD'];
-      return dollars.contains(tripCurrency) ? tripCurrency : 'USD';
+      // 달러·페소 나라는 모두 '\$' 를 쓴다.
+      const dollars = [
+        'USD',
+        'TWD',
+        'HKD',
+        'SGD',
+        'AUD',
+        'NZD',
+        'CAD',
+        'MXN',
+        'MOP',
+        'ARS',
+        'CLP',
+        'COP',
+      ];
+      found.add(dollars.contains(tripCurrency) ? tripCurrency : 'USD');
     }
-    return tripCurrency;
+    return found;
   }
 
   // ---- 날짜 ----
@@ -315,6 +866,27 @@ class ReceiptParser {
   static final _dateLike = RegExp(
     r'(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?'
     r'|(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{4}|\d{2})\b',
+  );
+  static const _months = {
+    'jan': 1,
+    'feb': 2,
+    'mar': 3,
+    'apr': 4,
+    'may': 5,
+    'jun': 6,
+    'jul': 7,
+    'aug': 8,
+    'sep': 9,
+    'oct': 10,
+    'nov': 11,
+    'dec': 12,
+  };
+
+  /// "15 Dec 17", "15-Dec-2017", "Dec 15, 2017" 처럼 영문 달 이름이 있는 날짜.
+  static final _namedDate = RegExp(
+    r'\b(\d{1,2})[\s\-/.]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?[\s\-/.,]*(\d{4}|\d{2})\b'
+    r'|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*(\d{1,2}),?\s*(\d{4})\b',
+    caseSensitive: false,
   );
   static final _time = RegExp(r'\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b');
 
@@ -332,7 +904,11 @@ class ReceiptParser {
         final a = int.parse(m[4]!);
         final b = int.parse(m[5]!);
         var y = int.parse(m[6]!);
-        if (y < 100) y += 2000;
+        // "6.15.00" 같은 번호 조각은 날짜가 아니다 (두 자리 연도는 2010년 이후만).
+        if (y < 100) {
+          if (y < 10) continue;
+          y += 2000;
+        }
         // 앞 숫자가 12 보다 크면 일/월, 뒤가 크면 월/일. 애매하면 미국 달러만 월/일.
         final monthFirst = a <= 12 && (b > 12 || currency == 'USD');
         if (monthFirst) {
@@ -341,6 +917,13 @@ class ReceiptParser {
           _addDate(candidates, y, b, a);
         }
       }
+    }
+    for (final m in _namedDate.allMatches(text)) {
+      final day = int.parse(m[1] ?? m[5]!);
+      final month = _months[(m[2] ?? m[4]!).toLowerCase()]!;
+      var y = int.parse(m[3] ?? m[6]!);
+      if (y < 100) y += 2000;
+      _addDate(candidates, y, month, day, front: true);
     }
     if (candidates.isEmpty) return null;
     // 여행 기간 안의 날짜를 우선한다.
@@ -360,11 +943,12 @@ class ReceiptParser {
     return date;
   }
 
-  void _addDate(List<DateTime> out, int y, int m, int d) {
+  void _addDate(List<DateTime> out, int y, int m, int d, {bool front = false}) {
     if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return;
     final date = DateTime(y, m, d);
     if (date.month != m) return; // 2월 30일 같은 날짜
-    out.add(date);
+    // 달 이름이 쓰인 날짜는 숫자만 있는 것보다 확실하다.
+    front ? out.insert(0, date) : out.add(date);
   }
 
   bool _inTrip(DateTime d) {
@@ -419,7 +1003,7 @@ class ReceiptParser {
   // ---- 품목 ----
 
   static final _trailingPrice = RegExp(
-    r'^(.*?[^\d\s.,x×@*].*?)\s*[¥￥$€£₩฿₫]?\s*(\d[\d,.]*)\s*[円元원]?\s*$',
+    r'^(.*?[^\d\s.,x×@*].*?)\s*[¥￥$€£₩￦฿₫]?\s*(\d[\d,.]*)\s*[円元원]?\s*$',
   );
 
   List<ReceiptItem> _findItems(List<String> rows, int decimals, double? total) {

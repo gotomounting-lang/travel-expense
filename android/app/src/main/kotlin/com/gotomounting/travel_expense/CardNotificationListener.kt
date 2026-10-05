@@ -37,11 +37,33 @@ class CardNotificationListener : NotificationListenerService() {
     }
 
     companion object {
-        private val approved = Regex("승인|approved|approval|承認|批准|消費|已消费", RegexOption.IGNORE_CASE)
-        private val foreignAmount = Regex("\\b(?!KRW)[A-Z]{3}\\s?\\d|\\d\\s?(?!KRW)[A-Z]{3}\\b")
+        // 결제 알림 표시 (앱이 지원하는 14개 언어 나라의 카드사·은행 표기).
+        // 실제 해석은 Dart 의 CardNotificationParser 가 하고, 여기서는 결제 알림이
+        // 아닌 것을 저장하지 않으려고 넓게 거른다.
+        private val approved = Regex(
+            "승인|approved|approval|purchase|spent|charged|debited|transaction|payment of|paid|txn|" +
+                "承認|ご利用|利用|決済|批准|已消费|消费|消費|支付|交易|刷卡|" +
+                "giao dịch|\\bGD\\b|thanh toán|chi tiêu|" +
+                "покупка|оплата|списание|" +
+                "zahlung|bezahlt|umsatz|belastung|" +
+                "гүйлгээ|төлбөр|зарцуулалт|худалдан авалт|" +
+                "paiement|achat|débit|" +
+                "ငွေပေးချေ|ဝယ်ယူ|" +
+                "nagbayad|bayad|binili|" +
+                "transaksi|pembelian|pembayaran|bayaran|belian|" +
+                "लेनदेन|खर्च|भुगतान|डेबिट",
+            RegexOption.IGNORE_CASE,
+        )
+
+        // 통화 코드나 통화 기호가 붙은 금액. 내 나라 통화인지는 Dart 에서 가린다
+        // (외국인 사용자는 원화 결제가 해외 결제다).
+        private val currencyAmount = Regex(
+            "\\b[A-Z]{3}[  ]?\\d|\\d[  ]?[A-Z]{3}\\b|" +
+                "[₩￦€£₫₽₮₹₱฿₺¥￥$]|\\d[  ]?(원|円|元|đ|Ks|zł|Kč|төг|руб)|\\b(Rp|RM|Rs)\\.?[  ]?\\d",
+        )
 
         fun looksLikeForeignPayment(text: String): Boolean =
-            approved.containsMatchIn(text) && foreignAmount.containsMatchIn(text)
+            approved.containsMatchIn(text) && currencyAmount.containsMatchIn(text)
 
         /** 앱이 켜져 있으면 새 알림이 왔다고 알려 준다 (MainActivity 가 등록). */
         @Volatile

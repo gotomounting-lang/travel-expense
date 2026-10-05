@@ -5,9 +5,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_fil.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_hi.dart';
+import 'app_localizations_id.dart';
 import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
+import 'app_localizations_mn.dart';
+import 'app_localizations_ms.dart';
+import 'app_localizations_my.dart';
+import 'app_localizations_ru.dart';
+import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -96,9 +106,19 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
     Locale('en'),
+    Locale('fil'),
+    Locale('fr'),
+    Locale('hi'),
+    Locale('id'),
     Locale('ja'),
     Locale('ko'),
+    Locale('mn'),
+    Locale('ms'),
+    Locale('my'),
+    Locale('ru'),
+    Locale('vi'),
     Locale('zh'),
   ];
 
@@ -851,6 +871,96 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'다음'**
   String get next;
+
+  /// No description provided for @exportTripSheet.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 시트로 저장'**
+  String get exportTripSheet;
+
+  /// No description provided for @exportTripSheetSaving.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 시트에 저장하는 중…'**
+  String get exportTripSheetSaving;
+
+  /// No description provided for @exportTripSheetDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'\'{title}\' 시트에 저장했어요'**
+  String exportTripSheetDone(String title);
+
+  /// No description provided for @receiptTotalNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'영수증에서 합계 금액을 확인할 수 없어요. 금액과 통화를 직접 입력해 주세요. 사진은 분석 후 삭제했습니다.'**
+  String get receiptTotalNotFound;
+
+  /// No description provided for @receiptCurrencyNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'영수증에서 통화를 확인할 수 없어요. 금액을 확인하고 통화를 직접 골라 주세요. 사진은 분석 후 삭제했습니다.'**
+  String get receiptCurrencyNotFound;
+
+  /// No description provided for @receiptCurrencySuggested.
+  ///
+  /// In ko, this message translates to:
+  /// **'영수증에 통화 표시가 없어 영수증 언어에 맞는 통화를 골라 두었어요. 금액과 통화가 맞는지 확인해 주세요. 사진은 분석 후 삭제했습니다.'**
+  String get receiptCurrencySuggested;
+
+  /// No description provided for @currencyRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화를 골라 주세요'**
+  String get currencyRequired;
+
+  /// No description provided for @batchTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'결제 {count}건 읽음'**
+  String batchTitle(int count);
+
+  /// No description provided for @batchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장할 건을 고르세요. 금액을 누르면 고칠 수 있어요.'**
+  String get batchHint;
+
+  /// No description provided for @batchSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 {count}건 저장'**
+  String batchSave(int count);
+
+  /// No description provided for @batchSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}건 저장했어요'**
+  String batchSaved(int count);
+
+  /// No description provided for @batchOutsideTrip.
+  ///
+  /// In ko, this message translates to:
+  /// **'여행 기간 밖'**
+  String get batchOutsideTrip;
+
+  /// No description provided for @batchDuplicate.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미 저장된 건'**
+  String get batchDuplicate;
+
+  /// No description provided for @batchNeedsInput.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화·금액 확인 필요 · 금액을 눌러 입력'**
+  String get batchNeedsInput;
+
+  /// No description provided for @scanIncomplete.
+  ///
+  /// In ko, this message translates to:
+  /// **'읽지 못한 결제 건이 있어요. 건별로 직접 입력해 주세요.'**
+  String get scanIncomplete;
 }
 
 class _AppLocalizationsDelegate
@@ -863,8 +973,22 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'ja', 'ko', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+    'de',
+    'en',
+    'fil',
+    'fr',
+    'hi',
+    'id',
+    'ja',
+    'ko',
+    'mn',
+    'ms',
+    'my',
+    'ru',
+    'vi',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -873,12 +997,32 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
+    case 'fil':
+      return AppLocalizationsFil();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'id':
+      return AppLocalizationsId();
     case 'ja':
       return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
+    case 'mn':
+      return AppLocalizationsMn();
+    case 'ms':
+      return AppLocalizationsMs();
+    case 'my':
+      return AppLocalizationsMy();
+    case 'ru':
+      return AppLocalizationsRu();
+    case 'vi':
+      return AppLocalizationsVi();
     case 'zh':
       return AppLocalizationsZh();
   }

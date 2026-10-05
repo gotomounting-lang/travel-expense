@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'data/expense_repository.dart';
 import 'l10n/app_localizations.dart';
+import 'models/country.dart';
 import 'services/card_notification_source.dart';
 import 'services/exchange_rate_service.dart';
 import 'services/google_account_service.dart';
@@ -32,7 +33,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
 
-  final profile = UserProfile();
+  final profile = UserProfile(
+    deviceCountry: Country.fromRegions(
+      WidgetsBinding.instance.platformDispatcher.locales.map(
+        (l) => l.countryCode,
+      ),
+    ),
+  );
   await profile.load();
   final locale = LocaleController(profile: profile);
   await locale.load();
@@ -92,10 +99,11 @@ class TravelExpenseApp extends StatelessWidget {
         builder: (context, locale, _) => MaterialApp(
           onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
           debugShowCheckedModeBanner: false,
-          // null 이면 기기 언어를 따르고, 지원하지 않는 언어면 한국어.
+          // null 이면 기기(플레이스토어) 언어를 따르고, 지원하지 않는 언어면
+          // 국적을 골랐을 때 영어, 아니면 한국어.
           locale: locale.selected,
           localeListResolutionCallback: (deviceLocales, _) =>
-              LocaleController.resolve(deviceLocales),
+              locale.resolveDevice(deviceLocales),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           theme: ThemeData(

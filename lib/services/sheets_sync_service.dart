@@ -1,9 +1,13 @@
+import 'dart:ui' show Color;
+
+import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/category.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import 'google_account_service.dart';
@@ -57,22 +61,100 @@ class SheetsSyncService {
     final email = _account.account?.email;
     if (email == null) throw SheetsSyncException(SheetsSyncError.notSignedIn);
 
+    return _withClient(interactive, (client) async {
+      final url = await _syncWith(
+        client,
+        l,
+        home,
+        trips,
+        expenses,
+        _Target(
+          prefKey: _prefKey(email),
+          appPropValue: _appPropValue,
+          title: l.sheetFileTitle,
+          // 사용자가 바꾼 이름을 존중한다.
+          renameToTitle: false,
+        ),
+      );
+      // "구글 시트로 저장"으로 한 번 만든 여행별 시트도 함께 최신으로 맞춘다.
+      final prefs = await SharedPreferences.getInstance();
+      for (final trip in trips) {
+        final target = _tripTarget(email, trip);
+        if (prefs.getString(target.prefKey) == null) continue;
+        try {
+          await _syncWith(
+            client,
+            l,
+            home,
+            [trip],
+            [
+              for (final e in expenses)
+                if (e.tripId == trip.id) e,
+            ],
+            target,
+          );
+        } catch (e) {
+          debugPrint('trip sheet sync failed (${trip.id}): $e');
+        }
+      }
+      return url;
+    });
+  }
+
+  _Target _tripTarget(String email, Trip trip) => _Target(
+    prefKey: 'trip_spreadsheet_id:$email:${trip.id}',
+    appPropValue: 'trip:${trip.id}',
+    title: trip.title,
+    // 여행이 하나뿐이라 여행 탭은 한 줄짜리가 되므로 두지 않는다.
+    tabs: const [SheetTab.summary, SheetTab.expenses],
+  );
+
+  /// 여행 하나의 지출을 그 여행 이름의 스프레드시트에 따로 저장한다.
+  /// 같은 여행은 같은 시트를 다시 쓰고, 여행 이름이 바뀌면 시트 이름도 바꾼다.
+  Future<String> exportTrip(
+    AppLocalizations l,
+    String home,
+    Trip trip,
+    List<Expense> expenses,
+  ) async {
+    final email = _account.account?.email;
+    if (email == null) throw SheetsSyncException(SheetsSyncError.notSignedIn);
+    return _withClient(
+      true,
+      (client) => _syncWith(
+        client,
+        l,
+        home,
+        [trip],
+        [
+          for (final e in expenses)
+            if (e.tripId == trip.id) e,
+        ],
+        _tripTarget(email, trip),
+      ),
+    );
+  }
+
+  /// 인증한 클라이언트로 [run] 을 실행한다. 토큰이 만료됐으면 한 번 다시 시도한다.
+  Future<String> _withClient(
+    bool interactive,
+    Future<String> Function(gapis.AuthClient client) run,
+  ) async {
     var client = await _account.authClient(interactive: interactive);
     if (client == null) {
       throw SheetsSyncException(SheetsSyncError.noPermission);
     }
     try {
-      return await _syncWith(client, email, l, home, trips, expenses);
+      return await run(client);
     } on sheets.DetailedApiRequestError catch (e) {
       if (e.status != 401) rethrow;
-      // 토큰 만료: 한 번만 새 토큰으로 다시 시도한다.
       await _account.invalidateToken(client);
       client.close();
       client = await _account.authClient(interactive: interactive);
       if (client == null) {
         throw SheetsSyncException(SheetsSyncError.expired);
       }
-      return await _syncWith(client, email, l, home, trips, expenses);
+      return await run(client);
     } finally {
       client?.close();
     }
@@ -80,21 +162,21 @@ class SheetsSyncService {
 
   Future<String> _syncWith(
     gapis.AuthClient client,
-    String email,
     AppLocalizations l,
     String home,
     List<Trip> trips,
     List<Expense> expenses,
+    _Target target,
   ) async {
     final sheetsApi = sheets.SheetsApi(client);
     final driveApi = drive.DriveApi(client);
-    final id = await _ensureSpreadsheet(sheetsApi, driveApi, email, l);
+    final id = await _ensureSpreadsheet(sheetsApi, driveApi, l, target);
 
     final summary = buildSummary(l, home, trips, expenses);
     final values = sheetsApi.spreadsheets.values;
     await values.batchClear(
       sheets.BatchClearValuesRequest(
-        ranges: [for (final tab in SheetTab.values) _quote(tab.title(l))],
+        ranges: [for (final tab in target.tabs) _quote(tab.title(l))],
       ),
       id,
     );
@@ -107,24 +189,27 @@ class SheetsSyncService {
             SheetTab.expenses,
             buildExpenseRows(l, home, trips, expenses),
           ),
-          _range(l, SheetTab.trips, buildTripRows(l, home, trips, expenses)),
+          if (target.tabs.contains(SheetTab.trips))
+            _range(l, SheetTab.trips, buildTripRows(l, home, trips, expenses)),
           _range(l, SheetTab.summary, summary.rows),
         ],
       ),
       id,
     );
-    await _replaceCharts(sheetsApi, id, l, home, summary.blocks);
+    await _replaceCharts(sheetsApi, id, l, home, summary.blocks, target.tabs);
     return 'https://docs.google.com/spreadsheets/d/$id';
   }
 
-  /// 요약 탭의 파이차트를 여행마다 하나씩 다시 그린다.
+  /// 내역·여행 탭 행 높이를 맞추고, 요약 탭의 파이차트를 여행마다 하나씩 다시 그린다.
   /// (행 수가 바뀌므로 앱이 만든 요약 탭의 차트는 지우고 새로 만든다.)
+  /// 시트를 열면 총액과 파이차트가 바로 보이게 요약 탭을 맨 앞에 둔다.
   Future<void> _replaceCharts(
     sheets.SheetsApi api,
     String id,
     AppLocalizations l,
     String home,
     List<SummaryBlock> blocks,
+    List<SheetTab> tabs,
   ) async {
     final sheetId = SheetTab.summary.sheetId;
     final ss = await api.spreadsheets.get(
@@ -138,21 +223,115 @@ class SheetsSyncService {
             if (c.chartId != null) c.chartId!,
     ];
     final requests = <sheets.Request>[
+      sheets.Request(
+        updateSheetProperties: sheets.UpdateSheetPropertiesRequest(
+          properties: sheets.SheetProperties(sheetId: sheetId, index: 0),
+          fields: 'index',
+        ),
+      ),
+      // 예전에 여러 줄 메모로 늘어난 행 높이를 글자 한 줄 높이로 되돌린다.
+      for (final tab in [SheetTab.expenses, SheetTab.trips])
+        if (tabs.contains(tab))
+          sheets.Request(
+            updateDimensionProperties: sheets.UpdateDimensionPropertiesRequest(
+              range: sheets.DimensionRange(
+                sheetId: tab.sheetId,
+                dimension: 'ROWS',
+                startIndex: 0,
+              ),
+              properties: sheets.DimensionProperties(pixelSize: 21),
+              fields: 'pixelSize',
+            ),
+          ),
       for (final chartId in existing)
         sheets.Request(
           deleteEmbeddedObject: sheets.DeleteEmbeddedObjectRequest(
             objectId: chartId,
           ),
         ),
+      // 카테고리 글자색을 앱 색으로. 줄 위치가 바뀌므로 먼저 지운다.
+      sheets.Request(
+        repeatCell: sheets.RepeatCellRequest(
+          range: sheets.GridRange(
+            sheetId: sheetId,
+            startRowIndex: 1,
+            startColumnIndex: 1,
+            endColumnIndex: 2,
+          ),
+          cell: sheets.CellData(userEnteredFormat: sheets.CellFormat()),
+          fields: 'userEnteredFormat.textFormat',
+        ),
+      ),
+      for (final b in blocks)
+        for (final (i, c) in b.categories.indexed)
+          sheets.Request(
+            repeatCell: sheets.RepeatCellRequest(
+              range: sheets.GridRange(
+                sheetId: sheetId,
+                startRowIndex: b.startRow + i,
+                endRowIndex: b.startRow + i + 1,
+                startColumnIndex: 1,
+                endColumnIndex: 2,
+              ),
+              cell: sheets.CellData(
+                userEnteredFormat: sheets.CellFormat(
+                  textFormat: sheets.TextFormat(
+                    bold: true,
+                    foregroundColorStyle: _colorStyle(c.color),
+                  ),
+                ),
+              ),
+              fields: 'userEnteredFormat.textFormat',
+            ),
+          ),
+      // 시트 파이차트는 조각 색을 직접 정할 수 없고 테마 강조색을 순서대로 쓴다.
+      // 그래서 차트가 하나뿐인 시트(여행별 시트)는 강조색을 그 여행의 카테고리
+      // 색으로 맞춰 앱 차트와 같은 색이 되게 한다.
+      if (blocks.length == 1) _themeFor(blocks.single.categories),
       for (final (i, b) in blocks.indexed)
         sheets.Request(
           addChart: sheets.AddChartRequest(chart: _pie(l, home, b, i)),
         ),
     ];
-    if (requests.isEmpty) return;
     await api.spreadsheets.batchUpdate(
       sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,
+    );
+  }
+
+  static sheets.ColorStyle _colorStyle(Color c) => sheets.ColorStyle(
+    rgbColor: sheets.Color(red: c.r, green: c.g, blue: c.b),
+  );
+
+  /// 강조색 1~6 을 [categories] 순서의 앱 색으로 (모자라면 나머지 카테고리 색).
+  /// 테마는 모든 색 쌍을 함께 보내야 한다.
+  @visibleForTesting
+  static sheets.Request themeFor(List<ExpenseCategory> categories) =>
+      _themeFor(categories);
+
+  static sheets.Request _themeFor(List<ExpenseCategory> categories) {
+    final accents = [
+      ...categories,
+      ...ExpenseCategory.values.where((c) => !categories.contains(c)),
+    ].take(6).toList();
+    sheets.ThemeColorPair pair(String type, Color c) =>
+        sheets.ThemeColorPair(colorType: type, color: _colorStyle(c));
+    return sheets.Request(
+      updateSpreadsheetProperties: sheets.UpdateSpreadsheetPropertiesRequest(
+        properties: sheets.SpreadsheetProperties(
+          spreadsheetTheme: sheets.SpreadsheetTheme(
+            primaryFontFamily: 'Arial',
+            themeColors: [
+              pair('TEXT', const Color(0xFF000000)),
+              pair('BACKGROUND', const Color(0xFFFFFFFF)),
+              for (final (i, c) in accents.indexed)
+                pair('ACCENT${i + 1}', c.color),
+              pair('LINK', const Color(0xFF1155CC)),
+            ],
+          ),
+        ),
+        fields: 'spreadsheetTheme',
+      ),
     );
   }
 
@@ -181,8 +360,9 @@ class SheetsSyncService {
         title: '${b.title} · ${formatMoney(l, b.total, home)}',
         pieChart: sheets.PieChartSpec(
           legendPosition: 'RIGHT_LEGEND',
-          pieHole: 0.4,
-          domain: column(1), // 카테고리
+          // 앱 차트와 같은 도넛 구멍 크기.
+          pieHole: 0.46,
+          domain: column(4), // "카테고리 금액" 이름표 (앱 범례처럼)
           series: column(2), // 환산 합계
         ),
       ),
@@ -211,34 +391,56 @@ class SheetsSyncService {
   Future<String> _ensureSpreadsheet(
     sheets.SheetsApi sheetsApi,
     drive.DriveApi driveApi,
-    String email,
     AppLocalizations l,
+    _Target target,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    var id = prefs.getString(_prefKey(email));
+    var id = prefs.getString(target.prefKey);
 
     if (id != null) {
       try {
-        await _ensureTabs(sheetsApi, id, l);
+        await ensureTabs(sheetsApi, id, l, tabs: target.tabs);
+        if (target.renameToTitle) {
+          await _ensureTitle(driveApi, id, target.title);
+        }
         return id;
       } on sheets.DetailedApiRequestError catch (e) {
         // 사용자가 시트를 지웠거나 휴지통에 넣은 경우: 새로 찾거나 만든다.
         if (e.status != 404 && e.status != 403) rethrow;
-        await prefs.remove(_prefKey(email));
+        await prefs.remove(target.prefKey);
         id = null;
       }
     }
 
-    id = await _findExisting(driveApi) ?? await _create(sheetsApi, driveApi, l);
-    await _ensureTabs(sheetsApi, id, l);
-    await prefs.setString(_prefKey(email), id);
+    final existing = await _findExisting(driveApi, target.appPropValue);
+    id = existing ?? await _create(sheetsApi, driveApi, l, target);
+    await ensureTabs(sheetsApi, id, l, tabs: target.tabs);
+    if (existing != null && target.renameToTitle) {
+      await _ensureTitle(driveApi, id, target.title);
+    }
+    await prefs.setString(target.prefKey, id);
     return id;
   }
 
-  Future<String?> _findExisting(drive.DriveApi driveApi) async {
+  /// 여행 이름이 바뀌었으면 시트 파일 이름도 맞춘다.
+  Future<void> _ensureTitle(
+    drive.DriveApi driveApi,
+    String id,
+    String title,
+  ) async {
+    final file = await driveApi.files.get(id, $fields: 'name') as drive.File;
+    if (file.name == title) return;
+    await driveApi.files.update(drive.File(name: title), id);
+  }
+
+  Future<String?> _findExisting(
+    drive.DriveApi driveApi,
+    String appPropValue,
+  ) async {
+    final value = appPropValue.replaceAll("'", r"\'");
     final list = await driveApi.files.list(
       q:
-          "appProperties has { key='$_appPropKey' and value='$_appPropValue' } "
+          "appProperties has { key='$_appPropKey' and value='$value' } "
           "and mimeType='application/vnd.google-apps.spreadsheet' "
           'and trashed=false',
       orderBy: 'createdTime',
@@ -252,15 +454,16 @@ class SheetsSyncService {
     sheets.SheetsApi sheetsApi,
     drive.DriveApi driveApi,
     AppLocalizations l,
+    _Target target,
   ) async {
     final created = await sheetsApi.spreadsheets.create(
       sheets.Spreadsheet(
         properties: sheets.SpreadsheetProperties(
-          title: l.sheetFileTitle,
+          title: target.title,
           locale: l.localeName,
         ),
         sheets: [
-          for (final tab in SheetTab.values)
+          for (final tab in target.tabs)
             sheets.Sheet(properties: _tabProperties(l, tab)),
         ],
       ),
@@ -268,26 +471,30 @@ class SheetsSyncService {
     final id = created.spreadsheetId!;
     // 재설치 후에도 이 시트를 찾을 수 있도록 표시를 남긴다.
     await driveApi.files.update(
-      drive.File(appProperties: {_appPropKey: _appPropValue}),
+      drive.File(appProperties: {_appPropKey: target.appPropValue}),
       id,
     );
     return id;
   }
 
-  sheets.SheetProperties _tabProperties(AppLocalizations l, SheetTab tab) =>
-      sheets.SheetProperties(
-        sheetId: tab.sheetId,
-        title: tab.title(l),
-        gridProperties: sheets.GridProperties(frozenRowCount: 1),
-      );
+  static sheets.SheetProperties _tabProperties(
+    AppLocalizations l,
+    SheetTab tab,
+  ) => sheets.SheetProperties(
+    sheetId: tab.sheetId,
+    title: tab.title(l),
+    gridProperties: sheets.GridProperties(frozenRowCount: 1),
+  );
 
   /// 탭을 sheetId 로 찾아, 사용자가 지운 탭은 다시 만들고 이름은 지금
   /// 언어에 맞춘다. 같은 이름의 다른 탭이 있으면 그 탭 이름을 피한다.
-  Future<void> _ensureTabs(
+  @visibleForTesting
+  static Future<void> ensureTabs(
     sheets.SheetsApi api,
     String id,
-    AppLocalizations l,
-  ) async {
+    AppLocalizations l, {
+    List<SheetTab> tabs = SheetTab.values,
+  }) async {
     final ss = await api.spreadsheets.get(
       id,
       $fields: 'sheets.properties(sheetId,title)',
@@ -297,8 +504,15 @@ class SheetsSyncService {
         if (s.properties?.sheetId != null)
           s.properties!.sheetId!: s.properties!,
     };
-    final requests = <sheets.Request>[];
-    for (final tab in SheetTab.values) {
+    final requests = <sheets.Request>[
+      // 이 시트에 두지 않는 앱 탭(예전 여행별 시트의 여행 탭)은 지운다.
+      for (final tab in SheetTab.values)
+        if (!tabs.contains(tab) && byId.containsKey(tab.sheetId))
+          sheets.Request(
+            deleteSheet: sheets.DeleteSheetRequest(sheetId: tab.sheetId),
+          ),
+    ];
+    for (final tab in tabs) {
       final want = tab.title(l);
       final current = byId[tab.sheetId];
       if (current?.title == want) continue;
@@ -342,10 +556,33 @@ class SheetsSyncService {
         );
       }
     }
+    // 탭이 이미 다 맞으면 보낼 것이 없다 (빈 요청은 시트 API 가 400 으로 거절한다).
     if (requests.isEmpty) return;
     await api.spreadsheets.batchUpdate(
       sheets.BatchUpdateSpreadsheetRequest(requests: requests),
       id,
     );
   }
+}
+
+/// 데이터를 쓸 스프레드시트: 이 기기에 저장한 ID 키, 드라이브에서 다시 찾을
+/// 표시, 파일 이름.
+class _Target {
+  const _Target({
+    required this.prefKey,
+    required this.appPropValue,
+    required this.title,
+    this.renameToTitle = true,
+    this.tabs = SheetTab.values,
+  });
+
+  final String prefKey;
+  final String appPropValue;
+  final String title;
+
+  /// 파일 이름이 [title] 과 다르면 바꾼다 (여행 이름을 바꾼 경우).
+  final bool renameToTitle;
+
+  /// 이 시트에 두는 탭. 여행 하나짜리 시트에는 여행 탭이 필요 없다.
+  final List<SheetTab> tabs;
 }

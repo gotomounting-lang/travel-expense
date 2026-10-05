@@ -417,4 +417,60 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get next => '次へ';
+
+  @override
+  String get exportTripSheet => 'Google スプレッドシートに保存';
+
+  @override
+  String get exportTripSheetSaving => 'Google スプレッドシートに保存中…';
+
+  @override
+  String exportTripSheetDone(String title) {
+    return '「$title」シートに保存しました';
+  }
+
+  @override
+  String get receiptTotalNotFound =>
+      'レシートの合計金額を確認できませんでした。金額と通貨を入力してください。写真は分析後に削除しました。';
+
+  @override
+  String get receiptCurrencyNotFound =>
+      'レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。';
+
+  @override
+  String get receiptCurrencySuggested =>
+      'レシートに通貨の表示がないため、レシートの言語に合う通貨を選んでおきました。金額と通貨を確認してください。写真は分析後に削除しました。';
+
+  @override
+  String get currencyRequired => '通貨を選んでください';
+
+  @override
+  String batchTitle(int count) {
+    return '$count件の支払いを読み取りました';
+  }
+
+  @override
+  String get batchHint => '保存する件を選んでください。金額をタップすると修正できます。';
+
+  @override
+  String batchSave(int count) {
+    return '選んだ$count件を保存';
+  }
+
+  @override
+  String batchSaved(int count) {
+    return '$count件を保存しました';
+  }
+
+  @override
+  String get batchOutsideTrip => '旅行期間外';
+
+  @override
+  String get batchDuplicate => '保存済み';
+
+  @override
+  String get batchNeedsInput => '金額・通貨の確認が必要 · 金額をタップして入力';
+
+  @override
+  String get scanIncomplete => '読み取れなかった支払いがあります。1件ずつ入力してください。';
 }

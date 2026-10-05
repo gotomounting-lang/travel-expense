@@ -19,16 +19,36 @@ class Country {
     return _names[i < 0 ? 1 : i];
   }
 
-  /// 국적에 따른 앱 언어: 한국어·중국어·일본어권 외에는 모두 영어.
-  String get language => switch (code) {
+  /// 국적에 따른 앱 언어. 앱이 지원하는 언어의 나라가 아니면 영어.
+  String get language => ownLanguage ?? 'en';
+
+  /// 그 나라 말을 앱이 지원하면 그 언어, 아니면 null.
+  String? get ownLanguage => switch (code) {
+    'US' || 'GB' || 'CA' || 'AU' || 'NZ' => 'en',
     'KR' => 'ko',
     'CN' || 'TW' || 'HK' || 'MO' => 'zh',
     'JP' => 'ja',
-    _ => 'en',
+    'VN' => 'vi',
+    'RU' => 'ru',
+    'DE' || 'AT' => 'de',
+    'MN' => 'mn',
+    'FR' => 'fr',
+    'MM' => 'my',
+    'PH' => 'fil',
+    'ID' => 'id',
+    'MY' => 'ms',
+    'IN' => 'hi',
+    _ => null,
   };
 
   static Country? byCode(String? code) =>
       all.where((c) => c.code == code).firstOrNull;
+
+  /// 기기(플레이스토어) 지역 설정의 나라. 목록에 있는 첫 나라, 없으면 null.
+  static Country? fromRegions(Iterable<String?> regionCodes) => regionCodes
+      .map((r) => byCode(r?.toUpperCase()))
+      .whereType<Country>()
+      .firstOrNull;
 
   static const all = <Country>[
     Country('KR', 'KRW', '🇰🇷', ['대한민국', 'South Korea', '韩国', '韓国']),
@@ -50,6 +70,7 @@ class Country {
     Country('ID', 'IDR', '🇮🇩', ['인도네시아', 'Indonesia', '印度尼西亚', 'インドネシア']),
     Country('IN', 'INR', '🇮🇳', ['인도', 'India', '印度', 'インド']),
     Country('MN', 'MNT', '🇲🇳', ['몽골', 'Mongolia', '蒙古', 'モンゴル']),
+    Country('MM', 'MMK', '🇲🇲', ['미얀마', 'Myanmar', '缅甸', 'ミャンマー']),
     Country('KZ', 'KZT', '🇰🇿', ['카자흐스탄', 'Kazakhstan', '哈萨克斯坦', 'カザフスタン']),
     Country('UZ', 'UZS', '🇺🇿', ['우즈베키스탄', 'Uzbekistan', '乌兹别克斯坦', 'ウズベキスタン']),
     Country('RU', 'RUB', '🇷🇺', ['러시아', 'Russia', '俄罗斯', 'ロシア']),

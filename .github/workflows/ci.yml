@@ -64,6 +64,22 @@ jobs:
           flutter build apk --release
           --build-number=${{ github.run_number }}
           --dart-define=GOOGLE_SERVER_CLIENT_ID=${{ vars.GOOGLE_SERVER_CLIENT_ID }}
+      # 오류 화면의 r8-map-id 와 맞춰 볼 수 있게 매핑 해시를 남기고,
+      # 출시용 최적화가 ML Kit 클래스를 다시 지우거나 이름을 바꾸면 빌드를 멈춘다.
+      - name: 난독화 매핑 확인
+        run: |
+          M=build/app/outputs/mapping/release/mapping.txt
+          grep -E '^# pg_map_(id|hash)' $M || true
+          for c in com.google.mlkit.vision.common.InputImage \
+                   com.google.android.gms.internal.mlkit_vision_common.zzmj; do
+            grep -q "^$c -> $c:" $M || { echo "::error::$c 가 난독화됨"; exit 1; }
+          done
+      # 글자 모델(한·중·일·데바나가리)이 APK 에 모두 들어갔는지 남긴다.
+      - name: ML Kit 글자 모델 목록
+        run: |
+          unzip -l build/app/outputs/flutter-apk/app-release.apk \
+            | grep -vE 'flutter_assets|res/|META-INF' \
+            | grep -iE 'assets/|\.so$|\.tflite|\.binarypb|\.pb' || true
       - name: AAB 빌드 (Play 스토어 업로드용)
         run: >
           flutter build appbundle --release

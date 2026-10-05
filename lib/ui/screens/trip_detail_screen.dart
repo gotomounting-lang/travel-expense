@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/expense.dart';
 import '../../models/trip.dart';
 import '../../services/card_notification_parser.dart';
+import '../../services/receipt_parser.dart';
 import '../../services/receipt_scanner.dart';
 import '../../services/sheet_rows.dart';
+import '../../services/sheets_sync_service.dart';
 import '../../state/app_state.dart';
 import '../../util/dates.dart';
 import '../../util/money.dart';
 import '../widgets/category_pie_chart.dart';
+import 'batch_review_screen.dart';
 import 'expense_form_screen.dart';
 import 'trip_form_screen.dart';
 
@@ -72,6 +76,11 @@ class TripDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(trip.title),
         actions: [
+          IconButton(
+            tooltip: l.exportTripSheet,
+            icon: const Icon(Icons.table_chart_outlined),
+            onPressed: () => _exportToSheet(context, tripId),
+          ),
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'edit') {
@@ -144,6 +153,47 @@ class TripDetailScreen extends StatelessWidget {
   }
 }
 
+/// 이 여행의 지출을 여행 이름의 구글 스프레드시트로 저장한다.
+Future<void> _exportToSheet(BuildContext context, String tripId) async {
+  final l = AppLocalizations.of(context);
+  final state = context.read<AppState>();
+  final trip = state.tripById(tripId)!;
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(l.exportTripSheetSaving),
+      duration: const Duration(minutes: 1),
+    ),
+  );
+  try {
+    final url = await state.exportTrip(trip.id);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l.exportTripSheetDone(trip.title)),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: l.openSheet,
+            onPressed: () =>
+                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+          ),
+        ),
+      );
+  } catch (e) {
+    final details = e is SheetsSyncException
+        ? switch (e.reason) {
+            SheetsSyncError.notSignedIn => l.syncErrorNotSignedIn,
+            SheetsSyncError.noPermission => l.syncErrorNoPermission,
+            SheetsSyncError.expired => l.syncErrorExpired,
+          }
+        : '$e';
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l.syncFailed(details))));
+  }
+}
+
 enum _AddMode { camera, gallery, paste, manual }
 
 /// 지출 추가 방법 고르기: 영수증 촬영 / 앨범 사진 / 직접 입력.
@@ -156,6 +206,11 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: Text(l.enterManually),
+            onTap: () => Navigator.pop(ctx, _AddMode.manual),
+          ),
           ListTile(
             leading: const Icon(Icons.photo_camera_outlined),
             title: Text(l.scanReceipt),
@@ -170,11 +225,6 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
             leading: const Icon(Icons.content_paste),
             title: Text(l.pasteCardAlert),
             onTap: () => Navigator.pop(ctx, _AddMode.paste),
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_outlined),
-            title: Text(l.enterManually),
-            onTap: () => Navigator.pop(ctx, _AddMode.manual),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -208,9 +258,10 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
       : ReceiptImageSource.gallery;
   var progressShown = false;
   try {
-    final draft = await scanner.scan(
+    final result = await scanner.scan(
       trip,
       source,
+      homeCurrency: context.read<AppState>().homeCurrency(),
       // 사진을 고른 뒤 분석하는 동안만 진행 표시를 띄운다.
       onAnalyzing: () {
         progressShown = true;
@@ -233,12 +284,40 @@ Future<void> _addExpense(BuildContext context, Trip trip) async {
       },
     );
     if (progressShown) navigator.pop();
-    if (draft == null) return; // 사진을 고르지 않음
-    navigator.push(
-      MaterialPageRoute(
-        builder: (_) => ExpenseFormScreen(trip: trip, receipt: draft),
-      ),
-    );
+    if (result == null) return; // 사진을 고르지 않음
+    final drafts = result.drafts;
+    // 여러 건은 모두 읽혔을 때만 한 번에 등록한다. 한 건이라도 못 읽었으면
+    // (사진을 못 읽었거나 금액·통화가 비었으면) 건별로 직접 입력하도록 안내하고
+    // 직접 입력 화면으로 간다.
+    final incomplete =
+        result.unreadable > 0 ||
+        drafts.isEmpty ||
+        drafts.any((d) => d.amount == null || d.currency == null);
+    if (incomplete && (result.photoCount > 1 || drafts.length > 1)) {
+      messenger.showSnackBar(SnackBar(content: Text(l.scanIncomplete)));
+      navigator.push(
+        MaterialPageRoute(builder: (_) => ExpenseFormScreen(trip: trip)),
+      );
+    } else if (drafts.length <= 1) {
+      // 한 건: 읽은 만큼 채운 입력 화면 (못 읽은 칸은 비우고 안내한다).
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ExpenseFormScreen(
+            trip: trip,
+            receipt:
+                drafts.firstOrNull ??
+                result.firstFailed ??
+                const ReceiptDraft(),
+          ),
+        ),
+      );
+    } else {
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => BatchReviewScreen(trip: trip, drafts: drafts),
+        ),
+      );
+    }
   } catch (e) {
     if (progressShown) navigator.pop();
     messenger.showSnackBar(SnackBar(content: Text(l.receiptScanFailed('$e'))));

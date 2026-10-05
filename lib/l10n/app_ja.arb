@@ -124,5 +124,20 @@
   "welcomeTitle": "旅行経費へようこそ",
   "welcomeBody": "Google アカウントを接続すると、記録した支出があなたの Google ドライブのシートに自動で保存されます。",
   "skipForNow": "あとで",
-  "next": "次へ"
+  "next": "次へ",
+  "exportTripSheet": "Google スプレッドシートに保存",
+  "exportTripSheetSaving": "Google スプレッドシートに保存中…",
+  "exportTripSheetDone": "「{title}」シートに保存しました",
+  "receiptTotalNotFound": "レシートの合計金額を確認できませんでした。金額と通貨を入力してください。写真は分析後に削除しました。",
+  "receiptCurrencyNotFound": "レシートの通貨を確認できませんでした。金額を確認し、通貨を選んでください。写真は分析後に削除しました。",
+  "receiptCurrencySuggested": "レシートに通貨の表示がないため、レシートの言語に合う通貨を選んでおきました。金額と通貨を確認してください。写真は分析後に削除しました。",
+  "currencyRequired": "通貨を選んでください",
+  "batchTitle": "{count}件の支払いを読み取りました",
+  "batchHint": "保存する件を選んでください。金額をタップすると修正できます。",
+  "batchSave": "選んだ{count}件を保存",
+  "batchSaved": "{count}件を保存しました",
+  "batchOutsideTrip": "旅行期間外",
+  "batchDuplicate": "保存済み",
+  "batchNeedsInput": "金額・通貨の確認が必要 · 金額をタップして入力",
+  "scanIncomplete": "読み取れなかった支払いがあります。1件ずつ入力してください。"
 }

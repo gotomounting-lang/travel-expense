@@ -124,5 +124,20 @@
   "welcomeTitle": "欢迎使用旅行记账",
   "welcomeBody": "连接 Google 账号后，记录的支出会自动保存到你自己的 Google 云端硬盘中的表格。",
   "skipForNow": "以后再说",
-  "next": "下一步"
+  "next": "下一步",
+  "exportTripSheet": "保存到 Google 表格",
+  "exportTripSheetSaving": "正在保存到 Google 表格…",
+  "exportTripSheetDone": "已保存到“{title}”表格",
+  "receiptTotalNotFound": "无法确认收据上的合计金额。请手动输入金额和币种。照片已在分析后删除。",
+  "receiptCurrencyNotFound": "无法确认收据上的币种。请核对金额并手动选择币种。照片已在分析后删除。",
+  "receiptCurrencySuggested": "收据上没有币种标记，已按收据语言预选币种。请核对金额和币种。照片已在分析后删除。",
+  "currencyRequired": "请选择币种",
+  "batchTitle": "识别到 {count} 笔付款",
+  "batchHint": "请选择要保存的记录。点击金额可修改。",
+  "batchSave": "保存所选 {count} 笔",
+  "batchSaved": "已保存 {count} 笔",
+  "batchOutsideTrip": "不在旅行期间",
+  "batchDuplicate": "已保存过",
+  "batchNeedsInput": "需确认金额/币种 · 点击金额输入",
+  "scanIncomplete": "有付款未能识别。请逐笔手动输入。"
 }
