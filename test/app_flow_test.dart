@@ -58,6 +58,14 @@ void main() {
     await tester.tap(find.text('새 여행'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, '오사카');
+    // 통화를 고르지 않으면 저장되지 않는다.
+    await tester.tap(find.text('저장'));
+    await tester.pumpAndSettle();
+    expect(find.text('통화를 골라 주세요'), findsOneWidget);
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('JPY').last);
+    await tester.pumpAndSettle();
     await tester.runAsync(() async {
       await tester.tap(find.text('저장'));
       await Future<void>.delayed(const Duration(milliseconds: 300));

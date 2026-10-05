@@ -61,4 +61,45 @@ void main() {
     expect(bodies, hasLength(1));
     expect(bodies.single, contains('addSheet'));
   });
+
+  test('여행별 시트: 예전에 만든 여행 탭은 지우고 요약·내역 탭만 둔다', () async {
+    final bodies = <String>[];
+    final api = sheets.SheetsApi(
+      MockClient((req) async {
+        if (req.method != 'GET') {
+          bodies.add(req.body);
+          return http.Response(
+            '{}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response(
+          jsonEncode({
+            'sheets': [
+              for (final tab in SheetTab.values)
+                {
+                  'properties': {'sheetId': tab.sheetId, 'title': tab.title(l)},
+                },
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    await SheetsSyncService.ensureTabs(
+      api,
+      'id',
+      l,
+      tabs: const [SheetTab.summary, SheetTab.expenses],
+    );
+    expect(bodies, hasLength(1));
+    final requests = jsonDecode(bodies.single)['requests'] as List;
+    expect(requests, [
+      {
+        'deleteSheet': {'sheetId': SheetTab.trips.sheetId},
+      },
+    ]);
+  });
 }

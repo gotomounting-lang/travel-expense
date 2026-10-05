@@ -102,6 +102,8 @@ class SheetsSyncService {
     prefKey: 'trip_spreadsheet_id:$email:${trip.id}',
     appPropValue: 'trip:${trip.id}',
     title: trip.title,
+    // 여행이 하나뿐이라 여행 탭은 한 줄짜리가 되므로 두지 않는다.
+    tabs: const [SheetTab.summary, SheetTab.expenses],
   );
 
   /// 여행 하나의 지출을 그 여행 이름의 스프레드시트에 따로 저장한다.
@@ -171,7 +173,7 @@ class SheetsSyncService {
     final values = sheetsApi.spreadsheets.values;
     await values.batchClear(
       sheets.BatchClearValuesRequest(
-        ranges: [for (final tab in SheetTab.values) _quote(tab.title(l))],
+        ranges: [for (final tab in target.tabs) _quote(tab.title(l))],
       ),
       id,
     );
@@ -184,13 +186,14 @@ class SheetsSyncService {
             SheetTab.expenses,
             buildExpenseRows(l, home, trips, expenses),
           ),
-          _range(l, SheetTab.trips, buildTripRows(l, home, trips, expenses)),
+          if (target.tabs.contains(SheetTab.trips))
+            _range(l, SheetTab.trips, buildTripRows(l, home, trips, expenses)),
           _range(l, SheetTab.summary, summary.rows),
         ],
       ),
       id,
     );
-    await _replaceCharts(sheetsApi, id, l, home, summary.blocks);
+    await _replaceCharts(sheetsApi, id, l, home, summary.blocks, target.tabs);
     return 'https://docs.google.com/spreadsheets/d/$id';
   }
 
@@ -203,6 +206,7 @@ class SheetsSyncService {
     AppLocalizations l,
     String home,
     List<SummaryBlock> blocks,
+    List<SheetTab> tabs,
   ) async {
     final sheetId = SheetTab.summary.sheetId;
     final ss = await api.spreadsheets.get(
@@ -224,17 +228,18 @@ class SheetsSyncService {
       ),
       // 예전에 여러 줄 메모로 늘어난 행 높이를 글자 한 줄 높이로 되돌린다.
       for (final tab in [SheetTab.expenses, SheetTab.trips])
-        sheets.Request(
-          updateDimensionProperties: sheets.UpdateDimensionPropertiesRequest(
-            range: sheets.DimensionRange(
-              sheetId: tab.sheetId,
-              dimension: 'ROWS',
-              startIndex: 0,
+        if (tabs.contains(tab))
+          sheets.Request(
+            updateDimensionProperties: sheets.UpdateDimensionPropertiesRequest(
+              range: sheets.DimensionRange(
+                sheetId: tab.sheetId,
+                dimension: 'ROWS',
+                startIndex: 0,
+              ),
+              properties: sheets.DimensionProperties(pixelSize: 21),
+              fields: 'pixelSize',
             ),
-            properties: sheets.DimensionProperties(pixelSize: 21),
-            fields: 'pixelSize',
           ),
-        ),
       for (final chartId in existing)
         sheets.Request(
           deleteEmbeddedObject: sheets.DeleteEmbeddedObjectRequest(
@@ -315,7 +320,7 @@ class SheetsSyncService {
 
     if (id != null) {
       try {
-        await ensureTabs(sheetsApi, id, l);
+        await ensureTabs(sheetsApi, id, l, tabs: target.tabs);
         if (target.renameToTitle) {
           await _ensureTitle(driveApi, id, target.title);
         }
@@ -330,7 +335,7 @@ class SheetsSyncService {
 
     final existing = await _findExisting(driveApi, target.appPropValue);
     id = existing ?? await _create(sheetsApi, driveApi, l, target);
-    await ensureTabs(sheetsApi, id, l);
+    await ensureTabs(sheetsApi, id, l, tabs: target.tabs);
     if (existing != null && target.renameToTitle) {
       await _ensureTitle(driveApi, id, target.title);
     }
@@ -379,7 +384,7 @@ class SheetsSyncService {
           locale: l.localeName,
         ),
         sheets: [
-          for (final tab in SheetTab.values)
+          for (final tab in target.tabs)
             sheets.Sheet(properties: _tabProperties(l, tab)),
         ],
       ),
@@ -408,8 +413,9 @@ class SheetsSyncService {
   static Future<void> ensureTabs(
     sheets.SheetsApi api,
     String id,
-    AppLocalizations l,
-  ) async {
+    AppLocalizations l, {
+    List<SheetTab> tabs = SheetTab.values,
+  }) async {
     final ss = await api.spreadsheets.get(
       id,
       $fields: 'sheets.properties(sheetId,title)',
@@ -419,8 +425,15 @@ class SheetsSyncService {
         if (s.properties?.sheetId != null)
           s.properties!.sheetId!: s.properties!,
     };
-    final requests = <sheets.Request>[];
-    for (final tab in SheetTab.values) {
+    final requests = <sheets.Request>[
+      // 이 시트에 두지 않는 앱 탭(예전 여행별 시트의 여행 탭)은 지운다.
+      for (final tab in SheetTab.values)
+        if (!tabs.contains(tab) && byId.containsKey(tab.sheetId))
+          sheets.Request(
+            deleteSheet: sheets.DeleteSheetRequest(sheetId: tab.sheetId),
+          ),
+    ];
+    for (final tab in tabs) {
       final want = tab.title(l);
       final current = byId[tab.sheetId];
       if (current?.title == want) continue;
@@ -481,6 +494,7 @@ class _Target {
     required this.appPropValue,
     required this.title,
     this.renameToTitle = true,
+    this.tabs = SheetTab.values,
   });
 
   final String prefKey;
@@ -489,4 +503,7 @@ class _Target {
 
   /// 파일 이름이 [title] 과 다르면 바꾼다 (여행 이름을 바꾼 경우).
   final bool renameToTitle;
+
+  /// 이 시트에 두는 탭. 여행 하나짜리 시트에는 여행 탭이 필요 없다.
+  final List<SheetTab> tabs;
 }
