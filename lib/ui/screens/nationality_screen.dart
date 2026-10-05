@@ -35,9 +35,13 @@ class _NationalityScreenState extends State<NationalityScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final current = context.watch<UserProfile>().country;
+    final profile = context.watch<UserProfile>();
+    final current = profile.country;
+    final device = profile.deviceCountry;
     final q = _query.trim().toLowerCase();
-    final countries = Country.all.where((c) {
+    // 기기(플레이스토어) 지역의 나라를 맨 위에.
+    final ordered = [?device, ...Country.all.where((c) => c != device)];
+    final countries = ordered.where((c) {
       if (q.isEmpty) return true;
       return [
         c.code,
@@ -78,7 +82,7 @@ class _NationalityScreenState extends State<NationalityScreen> {
                   subtitle: Text(
                     '${c.currency} · ${Currency.byCode(c.currency).name(l.localeName)}',
                   ),
-                  trailing: current?.code == c.code
+                  trailing: (current ?? device)?.code == c.code
                       ? Icon(Icons.check, color: theme.colorScheme.primary)
                       : null,
                   onTap: () => _choose(c),

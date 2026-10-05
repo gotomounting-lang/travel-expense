@@ -44,6 +44,12 @@ class Country {
   static Country? byCode(String? code) =>
       all.where((c) => c.code == code).firstOrNull;
 
+  /// 기기(플레이스토어) 지역 설정의 나라. 목록에 있는 첫 나라, 없으면 null.
+  static Country? fromRegions(Iterable<String?> regionCodes) => regionCodes
+      .map((r) => byCode(r?.toUpperCase()))
+      .whereType<Country>()
+      .firstOrNull;
+
   static const all = <Country>[
     Country('KR', 'KRW', '🇰🇷', ['대한민국', 'South Korea', '韩国', '韓国']),
     Country('US', 'USD', '🇺🇸', ['미국', 'United States', '美国', 'アメリカ']),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'data/expense_repository.dart';
 import 'l10n/app_localizations.dart';
+import 'models/country.dart';
 import 'services/card_notification_source.dart';
 import 'services/exchange_rate_service.dart';
 import 'services/google_account_service.dart';
@@ -32,7 +33,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
 
-  final profile = UserProfile();
+  final profile = UserProfile(
+    deviceCountry: Country.fromRegions(
+      WidgetsBinding.instance.platformDispatcher.locales.map(
+        (l) => l.countryCode,
+      ),
+    ),
+  );
   await profile.load();
   final locale = LocaleController(profile: profile);
   await locale.load();
